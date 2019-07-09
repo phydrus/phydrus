@@ -1,0 +1,10 @@
+objects = INPUT.o HYDRUS.o HYSTER.o MATERIAL.o OUTPUT.o SINK.o SOLUTE.o TEMPER.o TIME.o WATFLOW.o
+
+clean : 
+	rm $(objects)
+
+
+files = HYDRUS.FOR INPUT.FOR HYSTER.FOR MATERIAL.FOR OUTPUT.FOR SINK.FOR SOLUTE.FOR TEMPER.FOR TIME.FOR WATFLOW.FOR
+f2py : 
+	f2py -c $(files) -m hydrus
+	
