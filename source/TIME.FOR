@@ -548,7 +548,7 @@ c        tMax=tAtm
           end if
           if(iRadiation.eq.1.and.iSunSh.eq.3)	then
             Rad_cs=Ra*(ShortWaveRadA+ShortWaveRadB*1.0)         ! solar radiation of clear-sky		 
-            if(iMetHour) then	  ! Short term interval, calculate daily variation of Rad_cs
+            if(iMetHour.eq.1) then	  ! Short term interval, calculate daily variation of Rad_cs
               Sum=0.
               do 10 k=1,24
                 sine1=xx+yy*cos(2.*PI/24.*(k-12.))

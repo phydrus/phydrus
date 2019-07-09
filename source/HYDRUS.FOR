@@ -26,23 +26,21 @@
 *         - abnormal termination 
 *         - floating point error 
 *-----------------------------------------------------------------------
-      use MSFLIB
-
-      interface
-        function h_sig (signum)
-          !MS$ATTRIBUTES C :: h_sig
-          integer(4) h_sig
-          integer(2) signum
-        end function
-      end interface
-
-      interface
-        function hand_fpe (sigid, except)
-           !MS$ATTRIBUTES C :: hand_fpe
-          integer(4) hand_fpe
-          integer(2)  sigid, except
-        end function
-      end interface
+!     use MSFLIB
+!!     interface
+!       function h_sig (signum)
+!         !MS$ATTRIBUTES C :: h_sig
+!         integer(4) h_sig
+!         integer(2) signum
+!       end function
+!     end interface
+!!     interface
+!       function hand_fpe (sigid, except)
+!          !MS$ATTRIBUTES C :: hand_fpe
+!         integer(4) hand_fpe
+!         integer(2)  sigid, except
+!       end function
+!     end interface
 *#######################################################################
 
       parameter (NumNPD=1001,
@@ -97,16 +95,17 @@
       data lStopConv,iNonConv /.true. , 0 /
 
 *-----------------------------------------------------------------------
-      i4ret = SIGNALQQ(SIG$ABORT, h_sig)
-      i4ret = SIGNALQQ(SIG$BREAK, h_sig)
-      i4ret = SIGNALQQ(SIG$INT,   h_sig)
-      i4ret = SIGNALQQ(SIG$FPE,   hand_fpe)
+!     i4ret = SIGNALQQ(SIG$ABORT, h_sig)
+!     i4ret = SIGNALQQ(SIG$BREAK, h_sig)
+!     i4ret = SIGNALQQ(SIG$INT,   h_sig)
+!     i4ret = SIGNALQQ(SIG$FPE,   hand_fpe)
 *-----------------------------------------------------------------------
 
-      iCount = NARGS()
+      ! iCount = NARGS()
+      iCount = IARGC()
       if(iCount.gt.1) then
         i2=1
-        call GETARG(i2, cDataPath, status)
+        ! call GETARG(i2, cDataPath, status)
       else
         cFileName = 'LEVEL_01.DIR'
         open(10,file=cFileName, status='old',err=901)
@@ -388,8 +387,9 @@
      !  call Exclusion(NumNP,NMat,NSD,ParD,ChPar,ThNew,vNew,ThOld,vOld)
 
       if(lScreen) write(*,*) 'beginning of numerical solution'
-      call getdat(iYear,iMonth,iDay)
-      call gettim(iHours,iMins,iSecs,i100th)
+!     call getdat(iYear,iMonth,iDay)
+!     call gettim(iHours,iMins,iSecs,i100th)
+      PRINT*, "getdat and gettim called but not available"
       Rtime1=RTime(iMonth,iDay,iHours,iMins,iSecs,i100th)
 
 *     Time stepping calculations ---------------------------------------
@@ -847,13 +847,14 @@ c      goto 1000
       subroutine CloseOutput(RTime1,NS,TopInF,BotInF,lChem,lScreen,
      !                       lMeteo,lPrint)
 
-      use MSFLIB
+      ! use MSFLIB
       logical TopInF,BotInF,lChem,lScreen,lMeteo,lPrint
       integer*2 iYear,iMonth,iDay,iHours,iMins,iSecs,i100th
       double precision RTime1,RTime2,RTime
 
-      call getdat(iYear,iMonth,iDay)
-      call gettim(iHours,iMins,iSecs,i100th)
+!     call getdat(iYear,iMonth,iDay)
+!     call gettim(iHours,iMins,iSecs,i100th)
+      PRINT*, "getdat and gettim called but not available"
       Rtime2=RTime(iMonth,iDay,iHours,iMins,iSecs,i100th)
       if(lScreen) write( *,*) 'Real time [sec]',Rtime2-RTime1
       if(lPrint) then
@@ -880,50 +881,49 @@ c      goto 1000
 *-----------------------------------------------------------------------
 *     Signal handler routines 
 *-----------------------------------------------------------------------
-      integer(4) function h_sig (signum)
-        use MSFLIB
-        !MS$ATTRIBUTES C :: h_sig
-        integer(2) signum             
-        select case (signum)
-          case (SIG$ABORT)
-            write(*,*) 'Abnormal termination !'
-          case (SIG$INT) 
-            write(*,*) 'Program terminated !'
-          case (SIG$FPE)
-            write(*,*) 'Floating point error !'
-          case (SIG$BREAK) 
-            write(*,*) 'Program terminated !'
-          case default
-            write(*,*) 'Unknown signal handler !'
-        end select
-        h_sig = 1
-        call CloseFiles
-        stop
-      end
-
-      function hand_fpe (signum, excnum)
-        !MS$ATTRIBUTES C :: hand_fpe
-        use MSFLIB
-        integer(2)  signum, excnum
-        select case(excnum)
-          case(FPE$INVALID )
-            write(*,*) 'Floating Point Error - Invalid number !'
-          case( FPE$DENORMAL )
-            write(*,*) 'Floating Point Error - Denormalized number !'
-          case( FPE$ZERODIVIDE )
-            write(*,*) 'Floating Point Error - Zero divide !'
-          case( FPE$OVERFLOW )
-            write(*,*) 'Floating Point Error - Overflow !'
-          case( FPE$UNDERFLOW )
-            write(*,*) 'Floating Point Error - Underflow !'
-          case( FPE$INEXACT )
-            write(*,*) 'Floating Point Error - Inexact precision !'
-          case default
-            write(*,*) 'Floating Point Error - Non-IEEE type !'
-        end select
-        hand_fpe = 1
-        call CloseFiles
-      end
+!     integer(4) function h_sig (signum)
+!       ! use MSFLIB
+!       !MS$ATTRIBUTES C :: h_sig
+!       integer(2) signum
+!       select case (signum)
+!         case (SIG$ABORT)
+!           write(*,*) 'Abnormal termination !'
+!         case (SIG$INT)
+!           write(*,*) 'Program terminated !'
+!         case (SIG$FPE)
+!           write(*,*) 'Floating point error !'
+!         case (SIG$BREAK)
+!           write(*,*) 'Program terminated !'
+!         case default
+!           write(*,*) 'Unknown signal handler !'
+!       end select
+!       h_sig = 1
+!       call CloseFiles
+!       stop
+!     end
+!!     function hand_fpe (signum, excnum)
+!       !MS$ATTRIBUTES C :: hand_fpe
+!       ! use MSFLIB
+!       integer(2)  signum, excnum
+!       select case(excnum)
+!         case(FPE$INVALID )
+!           write(*,*) 'Floating Point Error - Invalid number !'
+!         case( FPE$DENORMAL )
+!           write(*,*) 'Floating Point Error - Denormalized number !'
+!         case( FPE$ZERODIVIDE )
+!           write(*,*) 'Floating Point Error - Zero divide !'
+!         case( FPE$OVERFLOW )
+!           write(*,*) 'Floating Point Error - Overflow !'
+!         case( FPE$UNDERFLOW )
+!           write(*,*) 'Floating Point Error - Underflow !'
+!         case( FPE$INEXACT )
+!           write(*,*) 'Floating Point Error - Inexact precision !'
+!         case default
+!           write(*,*) 'Floating Point Error - Non-IEEE type !'
+!       end select
+!       hand_fpe = 1
+!       call CloseFiles
+!     end
 
 ************************************************************************
 
