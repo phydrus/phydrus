@@ -1790,7 +1790,7 @@ c     write(*,*) "r_c microns", 10000.*r_c
       dimension DMoist(NMatD,NSD,13,6)
 
       iLengthPath = Len_Trim(cDataPath)
-      cFileName = cDataPath(1:iLengthPath)//'\MoistDep.in'
+      cFileName = cDataPath(1:iLengthPath)//'/MoistDep.in'
       open(15,file=cFileName, status='unknown',err=901)
 
       read(15,*,err=902)

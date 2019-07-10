@@ -26,21 +26,23 @@
 *         - abnormal termination 
 *         - floating point error 
 *-----------------------------------------------------------------------
-!     use MSFLIB
-!!     interface
-!       function h_sig (signum)
-!         !MS$ATTRIBUTES C :: h_sig
-!         integer(4) h_sig
-!         integer(2) signum
-!       end function
-!     end interface
-!!     interface
-!       function hand_fpe (sigid, except)
-!          !MS$ATTRIBUTES C :: hand_fpe
-!         integer(4) hand_fpe
-!         integer(2)  sigid, except
-!       end function
-!     end interface
+*      use MSFLIB
+*
+*      interface
+*        function h_sig (signum)
+*          !MS$ATTRIBUTES C :: h_sig
+*          integer(4) h_sig
+*          integer(2) signum
+*        end function
+*      end interface
+*
+*     interface
+*        function hand_fpe (sigid, except)
+*           !MS$ATTRIBUTES C :: hand_fpe
+*          integer(4) hand_fpe
+*          integer(2)  sigid, except
+*        end function
+*      end interface
 *#######################################################################
 
       parameter (NumNPD=1001,
@@ -66,6 +68,14 @@
       character cFileName*260,cDataPath*260
       integer*2 status
       integer*2 i2,iYear,iMonth,iDay,iHours,iMins,iSecs,i100th
+*---- START gettim and getdat gnu alternative function VARABLES ----
+      integer dtv(8)
+      character(8)  :: date
+      character(10) :: time
+      character(5)  :: zone
+      integer hundred
+*---- START gettim and getdat gnu alternative function VARABLES ----
+    
 
       dimension x(NumNPD),hNew(NumNPD),hOld(NumNPD),hTemp(NumNPD),
      !  MatNum(NumNPD),ParD(11,NMatD),TPrint(NPD),Sink(NumNPD),
@@ -95,26 +105,26 @@
       data lStopConv,iNonConv /.true. , 0 /
 
 *-----------------------------------------------------------------------
-!     i4ret = SIGNALQQ(SIG$ABORT, h_sig)
-!     i4ret = SIGNALQQ(SIG$BREAK, h_sig)
-!     i4ret = SIGNALQQ(SIG$INT,   h_sig)
-!     i4ret = SIGNALQQ(SIG$FPE,   hand_fpe)
+*      i4ret = SIGNALQQ(SIG$ABORT, h_sig)
+*      i4ret = SIGNALQQ(SIG$BREAK, h_sig)
+*      i4ret = SIGNALQQ(SIG$INT,   h_sig)
+*      i4ret = SIGNALQQ(SIG$FPE,   hand_fpe)
 *-----------------------------------------------------------------------
 
-      ! iCount = NARGS()
+*      iCount = NARGS()
       iCount = IARGC()
-      if(iCount.gt.1) then
+      if(iCount.gt.1.or.iCount.eq.0) then
         i2=1
-        ! call GETARG(i2, cDataPath, status)
+        call GETARG(i2, cDataPath)
       else
         cFileName = 'LEVEL_01.DIR'
-        open(10,file=cFileName, status='old',err=901)
-        read(10,101,err=904) cDataPath
+        open(10, file=cFileName, status='old', err=901)
+        read(10, 101, err=904) cDataPath
         close (10)
       end if
       iLengthPath = Len_Trim(cDataPath)
       if(iLengthPath.gt.260-13) goto 930
-      cFileName = cDataPath(1:iLengthPath)//'\Options.in'
+      cFileName = cDataPath(1:iLengthPath)//'/Options.in'
       open(35,file=cFileName, status='old',err=998)
 998   continue
 
@@ -132,24 +142,27 @@
      !          OmegaW,lEnd,lVaporOut,lFluxOut)
       data iUnit /50,70,71,75,76,77,78/
 
-      cFileName = cDataPath(1:iLengthPath)//'\Selector.in'
+      ! Force lEnter to be False for the Python implementation
+      lEnter = .false.
+
+      cFileName = cDataPath(1:iLengthPath)//'/SELECTOR.IN'
       open(30,file=cFileName, status='old',err=901)
-      cFileName = cDataPath(1:iLengthPath)//'\Profile.dat'
+      cFileName = cDataPath(1:iLengthPath)//'/PROFILE.DAT'
       open(32,file=cFileName, status='old',err=901)
-      cFileName = cDataPath(1:iLengthPath)//'\I_CHECK.OUT'
+      cFileName = cDataPath(1:iLengthPath)//'/I_CHECK.OUT'
       open(50,file=cFileName, status='unknown',err=902)
       if(lPrint) then
-        cFileName = cDataPath(1:iLengthPath)//'\RUN_INF.OUT'
+        cFileName = cDataPath(1:iLengthPath)//'/RUN_INF.OUT'
         open(70,file=cFileName, status='unknown',err=902)
-        cFileName = cDataPath(1:iLengthPath)//'\T_LEVEL.OUT'
+        cFileName = cDataPath(1:iLengthPath)//'/T_LEVEL.OUT'
         open(71,file=cFileName, status='unknown',err=902)
-        cFileName = cDataPath(1:iLengthPath)//'\NOD_INF.OUT'
+        cFileName = cDataPath(1:iLengthPath)//'/NOD_INF.OUT'
         open(75,file=cFileName, status='unknown',err=902)
-        cFileName = cDataPath(1:iLengthPath)//'\BALANCE.OUT'
+        cFileName = cDataPath(1:iLengthPath)//'/BALANCE.OUT'
         open(76,file=cFileName, status='unknown',err=902)
-        cFileName = cDataPath(1:iLengthPath)//'\OBS_NODE.OUT'
+        cFileName = cDataPath(1:iLengthPath)//'/OBS_NODE.OUT'
         open(77,file=cFileName, status='unknown',err=902)
-        cFileName = cDataPath(1:iLengthPath)//'\PROFILE.OUT'
+        cFileName = cDataPath(1:iLengthPath)//'/PROFILE.OUT'
         open(78,file=cFileName, status='unknown',err=902)
       end if
 
@@ -167,26 +180,26 @@
 
       if(lPrint) then
         if(lFluxOut) then
-          cFileName = cDataPath(1:iLengthPath)//'\T_Level1.OUT'
+          cFileName = cDataPath(1:iLengthPath)//'/T_Level1.OUT'
           open(44,file=cFileName, status='unknown',err=902)
         end if
         if(lVaporOut.and.lVapor) then
-          cFileName = cDataPath(1:iLengthPath)//'\NOD_INF_V.OUT'
+          cFileName = cDataPath(1:iLengthPath)//'/NOD_INF_V.OUT'
           open(45,file=cFileName, status='unknown',err=902)
         end if
       end if
       if(TopInF.or.BotInF.or.AtmBC) then
-        cFileName = cDataPath(1:iLengthPath)//'\ATMOSPH.IN'
+        cFileName = cDataPath(1:iLengthPath)//'/ATMOSPH.IN'
         open(31,file=cFileName, status='old',err=901)
         if(lPrint) then
-          cFileName = cDataPath(1:iLengthPath)//'\A_LEVEL.OUT'
+          cFileName = cDataPath(1:iLengthPath)//'/A_LEVEL.OUT'
           open(72,file=cFileName, status='unknown',err=902)
         end if
         if(lMeteo) then
-          cFileName = cDataPath(1:iLengthPath)//'\Meteo.in'
+          cFileName = cDataPath(1:iLengthPath)//'/Meteo.in'
           open(33,file=cFileName, status='old',err=902)
           if(lPrint) then
-            cFileName = cDataPath(1:iLengthPath)//'\Meteo.out'
+            cFileName = cDataPath(1:iLengthPath)//'/Meteo.out'
             open(43,file=cFileName, status='unknown',err=902)
           end if
         end if
@@ -207,7 +220,7 @@
      !              AThS,ThRR,ConO,ConR,AKS,KappaO,Ah,AK,iHyst,iModel,
      !              cDataPath)      
       if(iModel.eq.nTabMod) then
-        cFileName = cDataPath(1:iLengthPath)//'\Mater.in'
+        cFileName = cDataPath(1:iLengthPath)//'/Mater.in'
         open(36,file=cFileName, status='old',err=901)
       end if
       if(lInitW.and.iModel.lt.nTabMod) then
@@ -387,9 +400,21 @@
      !  call Exclusion(NumNP,NMat,NSD,ParD,ChPar,ThNew,vNew,ThOld,vOld)
 
       if(lScreen) write(*,*) 'beginning of numerical solution'
-!     call getdat(iYear,iMonth,iDay)
-!     call gettim(iHours,iMins,iSecs,i100th)
-      PRINT*, "getdat and gettim called but not available"
+      ! using keyword arguments
+
+*---- START gettim and getdat gnu alternative function ----
+      call date_and_time(date,time,zone,dtv)
+      hundred=100
+      iYear=dtv(1)
+      iMonth=dtv(2)
+      iDay=dtv(3)
+      iHours=dtv(5)
+      iMins=dtv(6)
+      iSecs=dtv(7)
+      i100th=mod(dtv(8),hundred)
+*      call getdat(iYear,iMonth,iDay)
+*      call gettim(iHours,iMins,iSecs,i100th)
+*---- END gettim and getdat gnu alternative function ----
       Rtime1=RTime(iMonth,iDay,iHours,iMins,iSecs,i100th)
 
 *     Time stepping calculations ---------------------------------------
@@ -728,8 +753,8 @@
       goto 1000
 916   ierr=16
       goto 1000
-c917   ierr=17
-c      goto 1000
+917   ierr=17
+      goto 1000
 918   ierr=18
       goto 1000
 919   ierr=19
@@ -824,7 +849,7 @@ c      goto 1000
       cErr(33)='Crop Height must be smaller than the height of wind and 
      !temperature measurements!'
 
-      cFileNameErr = cDataPath(1:iLengthPath)//'\Error.msg'
+      cFileNameErr = cDataPath(1:iLengthPath)//'/Error.msg'
       open(99,file=cFileNameErr,status='unknown',err=901)
       if(ierr.le.2) then
         if(lScreen) write( *,*) cErr(ierr),cFileName
@@ -847,14 +872,30 @@ c      goto 1000
       subroutine CloseOutput(RTime1,NS,TopInF,BotInF,lChem,lScreen,
      !                       lMeteo,lPrint)
 
-      ! use MSFLIB
+*      use MSFLIB
       logical TopInF,BotInF,lChem,lScreen,lMeteo,lPrint
       integer*2 iYear,iMonth,iDay,iHours,iMins,iSecs,i100th
       double precision RTime1,RTime2,RTime
+*---- START gettim and getdat gnu alternative function ----
+      integer dtv(8)
+      character(8)  :: date
+      character(10) :: time
+      character(5)  :: zone
+      integer hundred
+      
+      call date_and_time(date,time,zone,dtv)
+      hundred=100
+      iYear=dtv(1)
+      iMonth=dtv(2)
+      iDay=dtv(3)
+      iHours=dtv(5)
+      iMins=dtv(6)
+      iSecs=dtv(7)
+      i100th=mod(dtv(8),hundred)
+*      call getdat(iYear,iMonth,iDay)
+*      call gettim(iHours,iMins,iSecs,i100th)
+*---- END gettim and getdat gnu alternative function ----
 
-!     call getdat(iYear,iMonth,iDay)
-!     call gettim(iHours,iMins,iSecs,i100th)
-      PRINT*, "getdat and gettim called but not available"
       Rtime2=RTime(iMonth,iDay,iHours,iMins,iSecs,i100th)
       if(lScreen) write( *,*) 'Real time [sec]',Rtime2-RTime1
       if(lPrint) then
@@ -881,50 +922,51 @@ c      goto 1000
 *-----------------------------------------------------------------------
 *     Signal handler routines 
 *-----------------------------------------------------------------------
-!     integer(4) function h_sig (signum)
-!       ! use MSFLIB
-!       !MS$ATTRIBUTES C :: h_sig
-!       integer(2) signum
-!       select case (signum)
-!         case (SIG$ABORT)
-!           write(*,*) 'Abnormal termination !'
-!         case (SIG$INT)
-!           write(*,*) 'Program terminated !'
-!         case (SIG$FPE)
-!           write(*,*) 'Floating point error !'
-!         case (SIG$BREAK)
-!           write(*,*) 'Program terminated !'
-!         case default
-!           write(*,*) 'Unknown signal handler !'
-!       end select
-!       h_sig = 1
-!       call CloseFiles
-!       stop
-!     end
-!!     function hand_fpe (signum, excnum)
-!       !MS$ATTRIBUTES C :: hand_fpe
-!       ! use MSFLIB
-!       integer(2)  signum, excnum
-!       select case(excnum)
-!         case(FPE$INVALID )
-!           write(*,*) 'Floating Point Error - Invalid number !'
-!         case( FPE$DENORMAL )
-!           write(*,*) 'Floating Point Error - Denormalized number !'
-!         case( FPE$ZERODIVIDE )
-!           write(*,*) 'Floating Point Error - Zero divide !'
-!         case( FPE$OVERFLOW )
-!           write(*,*) 'Floating Point Error - Overflow !'
-!         case( FPE$UNDERFLOW )
-!           write(*,*) 'Floating Point Error - Underflow !'
-!         case( FPE$INEXACT )
-!           write(*,*) 'Floating Point Error - Inexact precision !'
-!         case default
-!           write(*,*) 'Floating Point Error - Non-IEEE type !'
-!       end select
-!       hand_fpe = 1
-!       call CloseFiles
-!     end
-
+*      integer(4) function h_sig (signum)
+*        use MSFLIB
+*        !MS$ATTRIBUTES C :: h_sig
+*        integer(2) signum             
+*        select case (signum)
+*          case (SIG$ABORT)
+*            write(*,*) 'Abnormal termination !'
+*          case (SIG$INT) 
+*            write(*,*) 'Program terminated !'
+*          case (SIG$FPE)
+*            write(*,*) 'Floating point error !'
+*          case (SIG$BREAK) 
+*            write(*,*) 'Program terminated !'
+*          case default
+*            write(*,*) 'Unknown signal handler !'
+*        end select
+*        h_sig = 1
+*        call CloseFiles
+*        stop
+*      end
+*
+*      function hand_fpe (signum, excnum)
+*        !MS$ATTRIBUTES C :: hand_fpe
+*        use MSFLIB
+*        integer(2)  signum, excnum
+*        select case(excnum)
+*          case(FPE$INVALID )
+*            write(*,*) 'Floating Point Error - Invalid number !'
+*          case( FPE$DENORMAL )
+*            write(*,*) 'Floating Point Error - Denormalized number !'
+*          case( FPE$ZERODIVIDE )
+*            write(*,*) 'Floating Point Error - Zero divide !'
+*          case( FPE$OVERFLOW )
+*            write(*,*) 'Floating Point Error - Overflow !'
+*          case( FPE$UNDERFLOW )
+*            write(*,*) 'Floating Point Error - Underflow !'
+*          case( FPE$INEXACT )
+*            write(*,*) 'Floating Point Error - Inexact precision !'
+*          case default
+*            write(*,*) 'Floating Point Error - Non-IEEE type !'
+*        end select
+*        hand_fpe = 1
+*        call CloseFiles
+*      end
+*
 ************************************************************************
 
       subroutine CloseFiles
