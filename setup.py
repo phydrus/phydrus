@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='phydrus-1d',
+    name='pydrus',
     version='0.1',
     packages=[''],
     url='https://github.com/raoulcollenteur/pydrus',
