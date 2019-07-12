@@ -6,7 +6,7 @@ import os
 import pydrus as ps
 import pandas as pd
 
-ws = "DRAINAGE"
+ws = "TEST"
 exe = os.path.join(os.getcwd(), "hydrus")
 
 # Create the basic model
@@ -18,14 +18,14 @@ ml.time_information["tMax"] = 500
 ml.time_information["dtMax"] = 500
 ml.time_information["TPrint(MPL)"] = 500
 
-# Create a Profile
-# data = ps.Profile.read_profile(ws=ws)
-# p = ps.Profile(data=data)
-# p.observations = [1,2,3]
-#
-# ml.add_profile(p)
-#
-# # p.write_file()
+m = pd.DataFrame(data=[[0.08, 0.3421, 0.03, 5, 1, -0.5]],
+                 columns=["thr", "ths", "Alfa", "n", "Ks", "l"])
+ml.add_material(m)
 
 
+profile = ps.create_profile(h=0.342)
+
+ml.add_profile(profile)
+
+ml.write_files()
 rs = ml.simulate()

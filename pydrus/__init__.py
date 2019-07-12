@@ -1,2 +1,2 @@
 from .model import Model
-from .profile import Profile
+from .profile import create_profile

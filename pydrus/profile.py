@@ -1,6 +1,64 @@
 
 import os
 import pandas as pd
+import numpy as np
+
+def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1,
+                   ak=1, ath=1, temp=None, conc=None, sconc=None):
+    """
+
+    Parameters
+    ----------
+    data
+    top: float, optional
+        Top of the soil column
+    bot: float or list of float, optional
+        Bottom of the soil column. If a list is provided, multiple
+        layers are created and other arguments need to be of the same
+        length (e.g. mat).
+    dx: float: optional
+        Size of each grid cell. Default 0.1 meter.
+    lay: int or list of int, optional
+        subregion number (for mass balance calculations)
+    mat: int or list of int, optional
+        Material number (for heterogeneity)
+    beta: float or list of float, optional
+
+    ah: float or list of float, optional
+        Scaling factor for the pressure head (Axz in profile.dat).
+    ak: float or list of float, optional
+        Scaling factor the hydraulic conductivity (Bxz in profile.dat).
+    ath: float or list of float, optional
+        Scaling factor the the water content (Dxz in profile.dat).
+    temp: float, optional
+    conc: float, optional
+    sconc: float, optional
+
+    """
+    if not isinstance(bot, list):
+        bot = [bot]
+    steps = int(top - bot[-1] / dx)
+    grid = np.linspace(top, bot[-1], steps)
+    cols = ["x", "h", "Mat", "Lay", "Beta", "Axz", "Bxz", "Dxz", "Temp",
+            "Conc", "SConc"]
+    data = pd.DataFrame(columns=cols)
+    data["x"] = grid
+
+    if len(bot) == 1:
+        data[["h", "Lay", "Mat", "Beta", "Axz", "Bxz", "Dxz", "Temp", "Conc",
+              "SConc"]] = [h, lay, mat, beta, ah, ak, ath, temp, conc, sconc]
+    else:
+        # If there are multiple layers
+        for arg in [h, lay, mat, beta, ah, ak, ath, temp, conc, sconc]:
+            arg
+
+        for b in bot:
+            data.loc[top < data.loc["x"] < b]
+            top = b
+    data = data.fillna("")
+    data.index = data.index+1
+    return data
+
 
 class Profile:
     def __init__(self, data=None, top=0, bot=-1, dx=0.1, lay=1, mat=1,
@@ -85,7 +143,7 @@ class Profile:
             file.write("".join(["   {}".format(i) for i in self.observations]))
 
     @classmethod
-    def read_profile(self, fname="PROFILE.DAT", ws=None):
+    def from_file(self, fname="PROFILE.DAT", ws=None):
         """Method to read a profile.dat file
 
         Parameters
