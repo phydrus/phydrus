@@ -43,7 +43,7 @@ class Model:
         self.description = description
 
         self.basic_information = {
-            "iVer": "0.1",
+            "iVer": "4",
             "Hed": "Heading",
             "LUnit": length_unit,
             "TUnit": time_unit,
@@ -66,7 +66,7 @@ class Model:
             "lActRSU": False,
             "lFlux": False,
             "NMat": 0,
-            "NLay": 1,
+            "NLay": 0,
             "CosAlfa": 1,
         }
 
@@ -120,9 +120,9 @@ class Model:
         }
 
         self.profile = None
-        self.material = None
+        self.materials = None
         self.observations = []
-        self.drain = None
+        self.drains = None
 
         # The following processes will be implemented at a later stage.
         self.solute_transport = None
@@ -135,6 +135,8 @@ class Model:
 
         """
         self.profile = profile
+        self.basic_information["NLay"] =
+
 
     def add_material(self, material):
         """Method to add a material to the model.
@@ -152,10 +154,10 @@ class Model:
         ml.add_material(m)
 
         """
-        if self.material is None:
-            self.material = material
+        if self.materials is None:
+            self.materials = material
         else:
-            self.material = self.material.append(material)
+            self.materials = self.materials.append(material)
 
         self.basic_information["NMat"] += 1
 
@@ -266,11 +268,11 @@ class Model:
         if self.water_flow["iHyst"] > 0:
             lines.append("iKappa\n{}\n".format(self.water_flow["iKappa"]))
 
-        if self.drain:
+        if self.drains:
             raise NotImplementedError
 
         # Write the material parameters
-        lines.append(self.material.to_string(index=False))
+        lines.append(self.materials.to_string(index=False))
         lines.append("\n")
 
         # Write BLOCK C: TIME INFORMATION
