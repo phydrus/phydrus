@@ -1,4 +1,4 @@
-# Pydrus
+# Pydrus: Python implementation of the HYDRUS-1D
 <a href="http://www.gnu.org/licenses/gpl-3.0.txt"><img src=https://img.shields.io/pypi/l/pastas.svg></a>
 
 This package provides a Python implementation of the HYDRUS-1D unsaturated zone model developed by Šimůnek, J., M. Th. van Genuchten, and M. Šejna. More information on the HYDRUS-1D model is available [here](https://www.pc-progress.com/en/Default.aspx?hydrus-1d). This software is licenced under the GNU GENERAL PUBLIC LICENSE found [here](http://www.gnu.org/licenses/gpl-3.0.txt). The Pydrus code is developed by Raoul Collenteur, Giuseppe Brunetti and Matevz Vremec. 
