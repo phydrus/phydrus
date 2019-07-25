@@ -7,6 +7,8 @@ import os
 import subprocess
 from numpy import logspace, log10
 
+from .plot import Plots
+
 
 class Model:
     def __init__(self, exe_name, ws_name, name="model", description=None,
@@ -66,7 +68,7 @@ class Model:
             "lActRSU": False,
             "lFlux": False,
             "NMat": 0,
-            "NLay": 0,
+            "NLay": 1,
             "CosAlfa": 1,
         }
 
@@ -109,7 +111,7 @@ class Model:
             "rTop": 0,
             "rBot": 0,
             "rRoot": 0,
-            "WGL0L": 0,
+            "GWL0L": 0,
             "Aqh": 0,
             "Bqh": 0,
             "ha": 0.001,
@@ -129,14 +131,16 @@ class Model:
         self.heat_transport = None
         self.rootwater_uptake = None
         self.root_growth = None
+        self.atmosphere = None
+
+        self.plots = Plots(ml=self)
 
     def add_profile(self, profile):
         """Method to add the soil profile to the model.
 
         """
         self.profile = profile
-        self.basic_information["NLay"] =
-
+        # self.basic_information["NLay"] =
 
     def add_material(self, material):
         """Method to add a material to the model.
@@ -156,10 +160,10 @@ class Model:
         """
         if self.materials is None:
             self.materials = material
+            self.basic_information["NMat"] = material.index.size
         else:
             self.materials = self.materials.append(material)
-
-        self.basic_information["NMat"] += 1
+            self.basic_information["NMat"] += 1
 
     def add_drain(self):
         """Method to add a drain to the model.
@@ -188,6 +192,11 @@ class Model:
 
     def write_files(self):
         self.write_selector()
+
+        # Write Block Block I - Atmospheric information
+        if self.basic_information["AtmInf"]:
+            self.write_atmosphere()
+
         self.write_profile()
 
     def write_selector(self, fname="SELECTOR.IN"):
@@ -246,10 +255,20 @@ class Model:
 
         vars2 = [["TopInf", "WLayer", "KodTop", "lInitW", "\n"],
                  ["BotInf", "qGWLF", "FreeD", "SeepF", "KodBot", "qDrain",
-                  "hSeep", "\n"],
-                 ["rTop", "rBot", "rRoot", "\n"],
-                 ["ha", "hb", "\n"],
-                 ["iModel", "iHyst", "\n"]]
+                  "hSeep", "\n"]]
+
+        if (self.water_flow["KodTop"] >= 0) or \
+                (self.water_flow["KodBot"] >= 0):
+            vars2.append(["rTop", "rBot", "rRoot", "\n"])
+
+        if self.water_flow["qGWLF"]:
+            vars2.append(["GWL0L", "Aqh", "Bqh", "\n"])
+
+        vars2.append(["ha", "hb", "\n"])
+        vars2.append(["iModel", "iHyst", "\n"])
+
+        if self.water_flow["iHyst"] > 0:
+            vars2.append(["iKappa", "\n"])
 
         for vars in vars2:
             lines.append("  ".join(vars))
@@ -264,9 +283,6 @@ class Model:
                     vals.append(str(val))
             vals.append("\n")
             lines.append("     ".join(vals))
-
-        if self.water_flow["iHyst"] > 0:
-            lines.append("iKappa\n{}\n".format(self.water_flow["iKappa"]))
 
         if self.drains:
             raise NotImplementedError
@@ -297,9 +313,9 @@ class Model:
             lines.append(" ".join(vals))
 
         lines.append("".join(["TPrint(1),TPrint(2),...,TPrint(MPL)\n"]))
-        times = logspace(self.time_information["TPrint(1)"],
+        times = logspace(log10(self.time_information["TPrint(1)"]),
                          log10(self.time_information["TPrint(MPL)"]),
-                         self.time_information["MPL"])
+                         self.time_information["MPL"]).round(2)
         lines.append(" ".join([str(time) for time in times]))
         lines.append("\n")
 
@@ -333,12 +349,6 @@ class Model:
         if False:  # No Idea how to check for this yet
             raise NotImplementedError
             lines.append(string.format(" Block H: Nodal information ",
-                                       fill="*", align="<", width=72))
-
-        # Write Block Block I - Atmospheric information
-        if self.basic_information["AtmInf"]:
-            raise NotImplementedError
-            lines.append(string.format(" Block I: Atmospheric information ",
                                        fill="*", align="<", width=72))
 
         # Write Block J - Inverse solution information
@@ -379,6 +389,35 @@ class Model:
             file.writelines(lines)
         print("Succesfully wrote {}".format(fname))
 
+    def write_atmosphere(self, fname="ATMOSPH.IN"):
+        """Method to write the ATMOSPH.IN file
+
+        """
+        # 1 Write Header information
+        lines = []
+        lines.append("*** BLOCK I: ATMOSPHERIC INFORMATION  "
+                     "**********************************\nMaxAL "
+                     "(MaxAL = number of atmospheric data-records)\n")
+
+        # Print some values
+        nrow = self.atmosphere.index.size
+        lines.append("{}\n".format(nrow))
+        lines.append("hCritS (max. allowed pressure head at the soil surface)")
+        lines.append("\n{}\n".format(1e+30))
+
+        # 2. Write the atmospheric data
+        lines.append(self.atmosphere.to_string(index=False))
+        lines.append("\n")
+
+        lines.append("end*** END OF INPUT FILE 'ATMOSPH.IN' "
+                     "**********************************\n")
+
+        # Write the actual file
+        fname = os.path.join(self.ws_name, fname)
+        with open(fname, "w") as file:
+            file.writelines(lines)
+        print("Succesfully wrote {}".format(fname))
+
     def write_profile(self, fname="PROFILE.DAT", ws=""):
         """Method to write the profile.dat file
 
@@ -389,8 +428,8 @@ class Model:
 
         # Print some values
         nrow = self.profile.index.size
-        ii = 0# TODO Figure this out
-        ns = 0 # TODO Number of solutes
+        ii = 0  # TODO Figure this out
+        ns = 0  # TODO Number of solutes
         lines.append("{} {} {} ".format(nrow, ii, ns))
 
         # 2. Write the profile data

@@ -18,14 +18,16 @@ ml.time_information["tMax"] = 100
 ml.time_information["dtMax"] = 100
 ml.time_information["TPrint(MPL)"] = 100
 
-m = pd.DataFrame(data=[[0.08, 0.3421, 0.03, 5, 1, -0.5]],
+m = pd.DataFrame(data=[[0.08, 0.3421, 0.03, 5, 1, -0.5],
+                       [0.08, 0.3421, 0.03, 5, 0.1, -0.5]],
                  columns=["thr", "ths", "Alfa", "n", "Ks", "l"])
+m.index = m.index+1
 ml.add_material(m)
 
-
 profile = ps.create_profile(h=0.342)
-
+profile.loc[5:11, "Mat"] = 2
 ml.add_profile(profile)
 
 ml.write_files()
 rs = ml.simulate()
+ml.plots.profile()
