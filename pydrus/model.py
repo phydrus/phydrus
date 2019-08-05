@@ -67,6 +67,7 @@ class Model:
             "lVapor": False,
             "lActRSU": False,
             "lFlux": False,
+            "lIrrig": False,
             "NMat": 0,
             "NLay": 1,
             "CosAlfa": 1,
@@ -129,9 +130,33 @@ class Model:
         # The following processes will be implemented at a later stage.
         self.solute_transport = None
         self.heat_transport = None
-        self.rootwater_uptake = None
+        self.rootwater_uptake = {
+            "Model (0 - Feddes, 1 - S shape)": 0,
+            "cRootMax":1,
+            "OmegaC": "nan",
+            "P0": -10,
+            "P2H": -200,
+            "P2L": -800,
+            "P3": -8000,
+            "r2H": 0.5,
+            "r2L": 0.1,
+            "POptm(1),POptm(2),...,POptm(NMat)": -25,
+        }
         self.root_growth = None
-        self.atmosphere = None
+        self.atmosphere = {
+            "MaxAL": 214,
+            "DailyVar": False,
+            "SinusVar": False,
+            "lLay": False,
+            "lBCCycles": False,
+            "lInterc": False,  
+            "lDummy": False,
+            "lDummy": False,
+            "lDummy": False,
+            "lDummy": False,
+            "lDummy": False,
+            "hCritS": 0,            
+        }
 
         self.plots = Plots(ml=self)
 
@@ -172,7 +197,14 @@ class Model:
         -------
 
         """
+    def add_atmosphere(self, atmosphere_bc):
+        """Method to add the atmosphere boundary_condition to the model.
 
+        """
+        if self.basic_information["AtmInf"] is True:
+            self.atmosphere_bc = atmosphere_bc
+        else:
+            pass
     def simulate(self):
         """Method to call the Hydrus-1D executable.
 
@@ -222,7 +254,7 @@ class Model:
         vars2 = [['lWat', 'lChem', 'lTemp', 'lSink', 'lRoot', 'lShort',
                   'lWDep', 'lScreen', 'AtmInf', 'lEquil', 'lInverse', "\n"],
                  ['lSnow', 'lHP1', 'lMeteo', 'lVapor', 'lActRSU', 'lFlux',
-                  "\n"]]
+                  "lIrrig","\n"]]
 
         for vars in vars2:
             lines.append("  ".join(vars))
@@ -316,7 +348,8 @@ class Model:
         times = logspace(log10(self.time_information["TPrint(1)"]),
                          log10(self.time_information["TPrint(MPL)"]),
                          self.time_information["MPL"]).round(2)
-        lines.append(" ".join([str(time) for time in times]))
+#        lines.append(" ".join([str(time) for time in times]))
+        lines.append("214")
         lines.append("\n")
 
         # Write BLOCK D: Root Growth Information
@@ -340,10 +373,27 @@ class Model:
 
         # Write Block G - Root water uptake information
         if self.basic_information["lSink"]:
-            raise NotImplementedError
             lines.append(string.format(" Block G: Root water uptake "
                                        "information ", fill="*", align="<",
-                                       width=72))
+                                      width=72))
+            vars4 = [["Model (0 - Feddes, 1 - S shape)", "cRootMax", "OmegaC", 
+                              "\n"], 
+                     ["P0", "P2H", "P2L", "P3", "r2H", "r2L", "\n"],
+                     ["POptm(1),POptm(2),...,POptm(NMat)", "\n"]]
+            for vars in vars4:
+                lines.append(" ".join(vars))
+                vals=[]
+                for var in vars[:-1]:
+                    val = self.rootwater_uptake[var]
+                    if var:
+                        if val is True:
+                            vals.append("t")
+                        elif val is False:
+                            vals.append("f")
+                        else:
+                            vals.append(str(val)) 
+                lines.append(" ".join(vals))
+                lines.append("\n")
 
         # Write Block H - Nodal information
         if False:  # No Idea how to check for this yet
@@ -394,24 +444,40 @@ class Model:
 
         """
         # 1 Write Header information
-        lines = []
+        lines = ["Pcp_File_Version=4\n"]
         lines.append("*** BLOCK I: ATMOSPHERIC INFORMATION  "
                      "**********************************\nMaxAL "
                      "(MaxAL = number of atmospheric data-records)\n")
 
         # Print some values
-        nrow = self.atmosphere.index.size
+        nrow = self.atmosphere["MaxAL"]
         lines.append("{}\n".format(nrow))
-        lines.append("hCritS (max. allowed pressure head at the soil surface)")
-        lines.append("\n{}\n".format(1e+30))
+        
+        vars5 = ["DailyVar", "SinusVar", "lLay", "lBCCycles", "lInterc", 
+                  "lDummy", "lDummy", "lDummy", "lDummy", "lDummy", "\n"]
 
-        # 2. Write the atmospheric data
-        lines.append(self.atmosphere.to_string(index=False))
+        lines.append(" ".join(vars5))
+        vals=[]
+        for var in vars5[:-1]:
+            val = self.atmosphere[var]
+            if var:
+                if val is True:
+                    vals.append("t")
+                elif val is False:
+                    vals.append("f")
+                else:
+                    vals.append(str(val)) 
+        lines.append(" ".join(vals))
         lines.append("\n")
-
+        
+        
+        lines.append("hCritS (max. allowed pressure head at the soil surface)")
+        lines.append("\n{}\n".format(self.atmosphere["hCritS"]))
+        
+        lines.append(self.atmosphere_bc.to_string(index=False))
+        lines.append("\n")
         lines.append("end*** END OF INPUT FILE 'ATMOSPH.IN' "
                      "**********************************\n")
-
         # Write the actual file
         fname = os.path.join(self.ws_name, fname)
         with open(fname, "w") as file:
