@@ -50,7 +50,7 @@ class Model:
             "LUnit": length_unit,
             "TUnit": time_unit,
             "MUnit": mass_units,
-            "lWat": True,
+            "lWat": False,
             "lChem": False,
             "lTemp": False,
             "lSink": False,
@@ -74,7 +74,7 @@ class Model:
         }
 
         self.time_information = {
-            "dt": 0.001,
+            "dt": 0.1,
             "dtMin": 0.0001,
             "dtMax": 0.5,
             "dMul": 1.3,
@@ -87,76 +87,25 @@ class Model:
             "lPrint": False,
             "nPrintSteps": 1,
             "tPrintInterval": 1,
-            "lEnter": False,
+            "lEnter": False,  # This should not be changed!
             "TPrint(1)": 0,
             "TPrint(2)": 1,
             "TPrint(MPL)": 1,
         }
 
         # The main processes to describe the simulation
-        self.water_flow = {
-            "MaxIt": 20,
-            "TolTh": 0.0001,
-            "TolH": 0.1,
-            "TopInf": False,
-            "WLayer": False,
-            "KodTop": -1,  # Depends on boundary condition
-            "lInitW": True,
-            "BotInf": False,
-            "qGWLF": False,
-            "FreeD": False,
-            "SeepF": False,
-            "KodBot": 1,
-            "qDrain": False,
-            "hSeep": 0,
-            "rTop": 0,
-            "rBot": 0,
-            "rRoot": 0,
-            "GWL0L": 0,
-            "Aqh": 0,
-            "Bqh": 0,
-            "ha": 0.001,
-            "hb": 1000,
-            "iModel": 0,
-            "iHyst": 0,
-            "iKappa": -1,
-        }
-
         self.profile = None
         self.materials = None
         self.observations = []
         self.drains = None
 
-        # The following processes will be implemented at a later stage.
+        self.water_flow = None
         self.solute_transport = None
         self.heat_transport = None
-        self.rootwater_uptake = {
-            "Model (0 - Feddes, 1 - S shape)": 0,
-            "cRootMax":1,
-            "OmegaC": "nan",
-            "P0": -10,
-            "P2H": -200,
-            "P2L": -800,
-            "P3": -8000,
-            "r2H": 0.5,
-            "r2L": 0.1,
-            "POptm(1),POptm(2),...,POptm(NMat)": -25,
-        }
+        self.rootwater_uptake = None
         self.root_growth = None
-        self.atmosphere = {
-            "MaxAL": 214,
-            "DailyVar": False,
-            "SinusVar": False,
-            "lLay": False,
-            "lBCCycles": False,
-            "lInterc": False,  
-            "lDummy": False,
-            "lDummy": False,
-            "lDummy": False,
-            "lDummy": False,
-            "lDummy": False,
-            "hCritS": 0,            
-        }
+        self.atmosphere_information = None
+        self.atmosphere = None
 
         self.plots = Plots(ml=self)
 
@@ -165,7 +114,6 @@ class Model:
 
         """
         self.profile = profile
-        # self.basic_information["NLay"] =
 
     def add_material(self, material):
         """Method to add a material to the model.
@@ -179,7 +127,8 @@ class Model:
         Examples
         --------
         m = pd.DataFrame({1: [0.08, 0.3421, 0.03, 5, 1, -0.5]},
-                 columns=["thr", "ths", "Alfa", "n" "Ks", "l"])
+                 columns=["thr", "ths", "Alfa", "n" "Ks", "l"],
+                 index=[1])
         ml.add_material(m)
 
         """
@@ -190,21 +139,315 @@ class Model:
             self.materials = self.materials.append(material)
             self.basic_information["NMat"] += 1
 
-    def add_drain(self):
+    def add_drains(self):
         """Method to add a drain to the model.
 
         Returns
         -------
 
         """
-    def add_atmosphere(self, atmosphere_bc):
-        """Method to add the atmosphere boundary_condition to the model.
+        return NotImplementedError
+
+    def add_observations(self):
+        """Method to add observation points.
+
+        Returns
+        -------
 
         """
-        if self.basic_information["AtmInf"] is True:
-            self.atmosphere_bc = atmosphere_bc
+        return NotImplementedError
+
+    def add_waterflow(self, model=0, maxit=20, tolth=1e-4, tolh=0.1, ha=1e-3,
+                      hb=1e3, topinf=False, botinf=False, kodtop=-1, kodbot=1,
+                      linitw=True, free_drainage=False, seepage_face=False,
+                      qdrain=False, hseep=0, rtop=0, rbot=0, rroot=0,
+                      qgwlf=False, gw_level=None, aqh=None, bqh=None,
+                      hysteresis=0, ikappa=-1, wlayer=False):
+        """Method to add a water_flow module to the model.
+
+        Parameters
+        ----------
+        model: int, optional
+            Soil hydraulic properties model:
+            0 = van Genuchten's [1980] model with 6 parameters.
+            1 = modified van Genuchten's model  with 10 parameters [Vogel
+                and Císlerová, 1988].
+            2 = Brooks and Corey's [1964] model with 6 parameters.
+            3 = van Genuchten's [1980] model with air-entry value of -2 cm
+                and with 6 parameters.
+            4 = Kosugi’s [1996] model with 6 parameters.
+            5 = dual porosity model of Durner [1994] with 9 parameters.
+            6 = dual-porosity system with transfer proportional to the
+            effective saturation (9 parameters).
+            7 = dual-porosity system with transfer proportional to the
+            pressure head (11 parameters).
+            9 = dual-permeability system with transfer proportional to the
+            pressure head (17 parameters)
+            !!! model>3 options are not available with the major ion chemistry.
+            module.
+        maxit: int, optional
+            Maximum number of iterations allowed during any time step.
+        tolth: float, optional
+            Absolute water content tolerance for nodes in the unsaturated part
+            of the flow region [-]. TolTh represents the maximum desired
+            absolute change in the value of the water content, θ, between
+            two successive iterations during a particular time step.
+        tolh: float, optional
+            Absolute pressure head tolerance for nodes in the saturated part of
+             the flow region [L] (its recommended value is 0.1 cm). TolH
+             represents the maximum desired absolute change in the value of the
+             pressure head, h, between two successive iterations during a
+             particular time step.
+        ha: float, optional
+            Absolute value of the upper limit [L] of the pressure head interval
+            below which a table of hydraulic properties will be generated
+            internally for each material.
+        hb: float, optional
+            Absolute value of the lower limit [L] of the pressure head interval
+             for which a table of hydraulic properties will be generated
+             internally for each material.
+        topinf: bool, optional
+            Set to True if the surface boundary condition is time-dependent.
+        botinf: bool, optional
+            Set to True if the bottom boundary condition is time-dependent.
+        kodtop: int, optional
+            Code specifying type of boundary condition (BC) for water flow at
+            the surface. 1 for Dirichlet BC and -1 for Neumann BC. Set to 0
+            when a prescribed BC can change from Dirichlet BC to Neumann BC
+            and vice versa.
+        kodbot: int, optional
+            Code specifying type of boundary condition for water flow at the
+            bottom of the profile. Set to -1 for a Dirichlet BC and to 1 for
+            a Neumann BC. In case of a seepage face or free drainage BC set
+            KodBot=-1.
+        linitw: bool, optional
+            Set to True if the initial condition is given in terms of the
+            water content. Set to False if given in terms of pressure head.
+        free_drainage: bool, optional
+            True if free drainage is to be considered as bottom BC.
+        seepage_face: bool, optional
+            True if seepage face is to be considered as the bottom BC.
+        qdrain: bool, optional
+            True if flow to horizontal drains is considered as bottom BC.
+        hseep: float, optional
+            Pressure head (i.e., 0) that initiates flow over the seepage face
+            bottom boundary.
+        rtop: float, optional
+            Prescribed top flux [LT-1] (in case of a Dirichlet BC set this
+            variable equal to zero).
+        rbot: float, optional
+            Prescribed bottom flux [LT-1] (in case of a Dirichlet BC set this
+            variable equal to zero).
+        rroot: float, optional
+            Prescribed potential transpiration rate [LT-1] (if no transpiration
+            occurs or if transpiration is variable in time set this variable
+            equal to zero).
+        qgwlf: bool, optional
+            Set to True if the discharge-groundwater level relationship q(
+            GWL) is applied as bottom boundary condition.
+        gw_level: float, optional
+            Reference position of the groundwater table (e.g., the
+            x-coordinate of the soil surface).
+        aqh: float, optional
+            Value of the parameter Aqh [LT-1] in the q(GWL)-relationship.
+        bqh: float, optional
+            Value of the parameter Bqh [L-1] in the q(GWL)-relationship.
+        hysteresis: int, optional
+            Hysteresis in the soil hydraulic properties:
+            0 = No hysteresis.
+            1 = Hysteresis in the retention curve only.
+            2 = Hysteresis in both the retention and hydraulic conductivity
+            functions.
+            3 = Hysteresis using Robert Lenhard’s model [Lenhard et al.,
+            1991; Lenhard and Parker, 1992]. (Not available with major ion
+            chemistry module.)
+        ikappa: int, optional
+            Set to -1 if the initial condition is to be calculated from the
+            main drying branch. Set to 1 if the initial condition is to be
+            calculated from the main wetting branch.
+        wlayer: bool: optional
+            Set to True if water can accumulate at the surface with zero
+            surface runoff.
+
+        """
+
+        # If qgwlf is user as bottom boundary condition
+        if qgwlf:
+            for var in [gw_level, aqh, bqh]:
+                if var is None:
+                    raise TypeError("When the groundwater level is used as "
+                                    "bottom boundary condition, the keyword "
+                                    "{} needs to be provided".format(var))
+
+        if self.water_flow is None:
+            self.water_flow = {
+                "MaxIt": maxit,  # Maximum No. of Iterations
+                "TolTh": tolth,  # [-]
+                "TolH": tolh,  # [L], default is 0.1 cm
+                "TopInf": topinf,
+                "WLayer": wlayer,
+                "KodTop": kodtop,  # Depends on boundary condition
+                "lInitW": linitw,
+                "BotInf": botinf,
+                "qGWLF": qgwlf,
+                "FreeD": free_drainage,
+                "SeepF": seepage_face,
+                "KodBot": kodbot,  # Depends on boundary condition
+                "qDrain": qdrain,
+                "hSeep": hseep,  # [L]
+                "rTop": rtop,  # [LT-1]
+                "rBot": rbot,  # [LT-1]
+                "rRoot": rroot,  # [LT-1]
+                "GWL0L": gw_level,  # [L]
+                "Aqh": aqh,  # [LT-1]
+                "Bqh": bqh,  # [L-1]
+                "ha": ha,  # [L]
+                "hb": hb,  # [L]
+                "iModel": model,
+                "iHyst": hysteresis,
+                "iKappa": ikappa,
+            }
         else:
-            pass
+            raise Warning("Water flow was already provided. Please delete "
+                          "the old information firt through "
+                          "ml.del_water_flow().")
+
+        self.basic_information["lWat"] = True
+
+    def add_atmosphere(self, atmosphere, ldailyvar=False, lsinusvar=False,
+                       llai=False, lbccycles=False, linterc=False,
+                       rextinct=0.463, hcrits=1e+30):
+        """Method to add the atmosphere boundary_condition to the model.
+
+        Parameters
+        ----------
+        atmosphere: Pandas.DataFrame
+            Pandas DataFrame with at least the following columns: tAtm,
+            Prec, rSoil, rRoot, hCritA, rB, hB, hT, tTop, tBot, and Ampl.
+        ldailyvar: bool, optional
+            True if HYDRUS-1D is to generate daily variations in evaporation
+            and transpiration (see section 2.7.2.). False otherwise.
+        lsinusvar: bool, optional
+            True if HYDRUS-1D is to generate sinusoidal variations in
+            precipitation (see section 2.7.2.). False otherwise.
+        llai: bool, optional
+            Boolean indicating that potential evapotranspiration is
+            to be divided into potential evaporation and potential
+            transpiration using eq. (2.75) of the manual.
+        lbccycles: bool, optional
+            ???
+        linterc: bool, optional
+            ???
+        rextinct: float, optional
+            A constant for the radiation extinction by the canopy
+            (rExtinct=0.463) [-]. only used when lLai is True.
+        hcrits: float, optional
+            Maximum allowed pressure head at the soil surface [L]. Default is
+            1e+30.
+
+        Notes
+        -----
+        The index of the atmosphere DataFrame should be a RangeIndex with
+        integers.
+
+        """
+        if self.atmosphere_information is None:
+            self.atmosphere_information = {
+                "lDailyVar": ldailyvar,
+                "lSinusVar": lsinusvar,
+                "lLai": llai,
+                "lBCCycles": lbccycles,
+                "lInterc": linterc,
+                "lExtinct": rextinct,
+                "hCritS": hcrits,
+            }
+        else:
+            raise Warning("Atmospheric information was already provided. "
+                          "Please delete the old information firt through "
+                          "ml.del_atmosphere().")
+
+        # Enable atmosphere module
+        self.basic_information["AtmInf"] = True
+        self.water_flow["TopInf"] = True
+        self.water_flow["KodTop"] = -1
+        self.atmosphere = atmosphere
+
+    def add_rootwater_uptake(self, model=0, crootmax=None, omegac=1, p0=-10,
+                             p2h=-200, p2l=-800, p3=-8000, r2h=0.5, r2l=0.1,
+                             poptm=None):
+        """Method to add rootwater update modeule to the model.
+
+        Parameters
+        ----------
+        model: int, optional
+            Type of root water uptake stress response function. 0 = Feddes
+            et al. [1978]. 1 = S-shaped, van Genuchten [1987]
+        crootmax: float, optional
+            Maximum allowed concentration in the root solute uptake term for
+            the first solute [ML-3]. When the nodal concentration is lower than
+            cRootMax, all solute is taken up. When the nodal concentration
+            is higher than cRootMax, additional solute stays behind.
+        omegac: float, optional
+            Maximum allowed concentration in the root solute uptake term for
+            the last solute [ML-3].
+        p0: float, optional
+            Only used if model=0. Value of the pressure head, h1 (Fig. 2.1),
+            below which roots start to extract water from the soil.
+        p2h: float, optional
+            Only used if model=0. Value of the limiting pressure head, h3,
+            below which the roots cannot extract water at the maximum rate
+            (assuming a potential transpiration rate of r2H).
+        p2l: float, optional
+            Only used if model=0. As above, but for a potential transpiration
+            rate of r2L.
+        p3: float, optional
+            Only used if model=0. Value of the pressure head, h4, below which
+            root water uptake ceases (usually equal to the wilting point).
+        r2h: float, optional
+            Only used if model=0. Potential transpiration rate [LT-1]
+            (currently set at 0.5 cm/day).
+        r2l: float, optional
+            Only used if model=0. Potential transpiration rate [LT-1]
+            (currently set at 0.1 cm/day).
+        poptm: iterable, optional
+            Value of the pressure head, h2, below which roots start to extract
+            water at the maximum possible rate. The length of poptm should
+            equal the No. of materials.
+
+        Notes
+        -----
+        This method creates the information necessary to write "Block G -
+        Root water uptake information."
+
+
+        """
+        if model == 1:
+            raise NotImplementedError("Sorry, the S-shaped model has not been "
+                                      "implemented yet!")
+
+        if self.rootwater_uptake is None:
+            self.rootwater_uptake = {
+                "Model (0 - Feddes, 1 - S shape)": model,
+                "cRootMax": crootmax,
+                "OmegaC": omegac,
+                "P0": p0,
+                "P2H": p2h,
+                "P2L": p2l,
+                "P3": p3,
+                "r2H": r2h,
+                "r2L": r2l,
+            }
+
+            # Number of pressure heads should equal the number of materials.
+            if poptm:
+                if len(poptm) != self.basic_information["NMat"]:
+                    raise Warning("Length of pressure heads poptm does not "
+                                  "equal the number of materials!")
+                else:
+                    self.rootwater_uptake["POptm"] = poptm
+
+        self.basic_information["lSink"] = True
+
     def simulate(self):
         """Method to call the Hydrus-1D executable.
 
@@ -238,23 +481,24 @@ class Model:
         # Create Header string
         string = "***{:{fill}{align}{width}}\n"
 
-        lines = ["Pcp_File_Version=4\n"]
+        lines = ["Pcp_File_Version={}\n".format(
+            self.basic_information["iVer"]),
+            string.format(" BLOCK A: BASIC INFORMATION ", fill="*",
+                          align="<", width=72),
+            "{}\n".format(self.basic_information["Hed"]),
+            "{}\n".format(self.description),
+            "LUnit  TUnit  MUnit  (indicated units are obligatory "
+            "for all input data)\n",
+            "{}\n".format(self.basic_information["LUnit"]),
+            "{}\n".format(self.basic_information["TUnit"]),
+            "{}\n".format(self.basic_information["MUnit"])]
 
         # Write block A: BASIC INFORMATION
-        lines.append(string.format(" BLOCK A: BASIC INFORMATION ", fill="*",
-                                   align="<", width=72))
-        lines.append("{}\n".format(self.basic_information["Hed"]))
-        lines.append("{}\n".format(self.description))
-        lines.append("LUnit  TUnit  MUnit  (indicated units are obligatory "
-                     "for all input data)\n")
-        lines.append("{}\n".format(self.basic_information["LUnit"]))
-        lines.append("{}\n".format(self.basic_information["TUnit"]))
-        lines.append("{}\n".format(self.basic_information["MUnit"]))
 
         vars2 = [['lWat', 'lChem', 'lTemp', 'lSink', 'lRoot', 'lShort',
                   'lWDep', 'lScreen', 'AtmInf', 'lEquil', 'lInverse', "\n"],
                  ['lSnow', 'lHP1', 'lMeteo', 'lVapor', 'lActRSU', 'lFlux',
-                  "lIrrig","\n"]]
+                  "lIrrig", "\n"]]
 
         for vars in vars2:
             lines.append("  ".join(vars))
@@ -344,45 +588,37 @@ class Model:
             vals.append("\n")
             lines.append(" ".join(vals))
 
-        lines.append("".join(["TPrint(1),TPrint(2),...,TPrint(MPL)\n"]))
+        lines.append("TPrint(1),TPrint(2),...,TPrint(MPL)\n")
         times = logspace(log10(self.time_information["TPrint(1)"]),
                          log10(self.time_information["TPrint(MPL)"]),
                          self.time_information["MPL"]).round(2)
-#        lines.append(" ".join([str(time) for time in times]))
-        lines.append("214")
+        lines.append(" ".join([str(time) for time in times]))
         lines.append("\n")
 
         # Write BLOCK D: Root Growth Information
         if self.basic_information["lRoot"]:
             raise NotImplementedError
-            lines.append(string.format(" BLOCK D: Root Growth Information ",
-                                       fill="*", align="<", width=72))
 
         # Write Block E - Heat transport information
         if self.basic_information["lTemp"]:
             raise NotImplementedError
-            lines.append(string.format(" Block E: Heat transport information ",
-                                       fill="*", align="<", width=72))
 
         # Write Block F - Solute transport information
         if self.basic_information["lChem"]:
             raise NotImplementedError
-            lines.append(string.format(" Block F: Solute transport "
-                                       "information ", fill="*", align="<",
-                                       width=72))
 
         # Write Block G - Root water uptake information
         if self.basic_information["lSink"]:
             lines.append(string.format(" Block G: Root water uptake "
                                        "information ", fill="*", align="<",
-                                      width=72))
-            vars4 = [["Model (0 - Feddes, 1 - S shape)", "cRootMax", "OmegaC", 
-                              "\n"], 
+                                       width=72))
+            vars4 = [["Model (0 - Feddes, 1 - S shape)", "cRootMax", "OmegaC",
+                      "\n"],
                      ["P0", "P2H", "P2L", "P3", "r2H", "r2L", "\n"],
-                     ["POptm(1),POptm(2),...,POptm(NMat)", "\n"]]
+                     ["POptm", "\n"]]
             for vars in vars4:
                 lines.append(" ".join(vars))
-                vals=[]
+                vals = []
                 for var in vars[:-1]:
                     val = self.rootwater_uptake[var]
                     if var:
@@ -391,7 +627,7 @@ class Model:
                         elif val is False:
                             vals.append("f")
                         else:
-                            vals.append(str(val)) 
+                            vals.append(str(val))
                 lines.append(" ".join(vals))
                 lines.append("\n")
 
@@ -444,37 +680,37 @@ class Model:
 
         """
         # 1 Write Header information
-        lines = ["Pcp_File_Version=4\n"]
-        lines.append("*** BLOCK I: ATMOSPHERIC INFORMATION  "
-                     "**********************************\nMaxAL "
-                     "(MaxAL = number of atmospheric data-records)\n")
+        lines = ["Pcp_File_Version={}\n".format(
+            self.basic_information["iVer"]),
+            "*** BLOCK I: ATMOSPHERIC INFORMATION  "
+            "**********************************\nMaxAL "
+            "(MaxAL = number of atmospheric data-records)\n"]
 
         # Print some values
-        nrow = self.atmosphere["MaxAL"]
+        nrow = self.atmosphere.index.size
         lines.append("{}\n".format(nrow))
-        
-        vars5 = ["DailyVar", "SinusVar", "lLay", "lBCCycles", "lInterc", 
-                  "lDummy", "lDummy", "lDummy", "lDummy", "lDummy", "\n"]
+
+        vars5 = ["lDailyVar", "lSinusVar", "lLai", "lBCCycles", "lInterc",
+                 "\n"]
 
         lines.append(" ".join(vars5))
-        vals=[]
+        vals = []
         for var in vars5[:-1]:
-            val = self.atmosphere[var]
+            val = self.atmosphere_information[var]
             if var:
                 if val is True:
                     vals.append("t")
                 elif val is False:
                     vals.append("f")
                 else:
-                    vals.append(str(val)) 
+                    vals.append(str(val))
         lines.append(" ".join(vals))
         lines.append("\n")
-        
-        
+
         lines.append("hCritS (max. allowed pressure head at the soil surface)")
-        lines.append("\n{}\n".format(self.atmosphere["hCritS"]))
-        
-        lines.append(self.atmosphere_bc.to_string(index=False))
+        lines.append("\n{}\n".format(self.atmosphere_information["hCritS"]))
+
+        lines.append(self.atmosphere.to_string(index=False))
         lines.append("\n")
         lines.append("end*** END OF INPUT FILE 'ATMOSPH.IN' "
                      "**********************************\n")
@@ -570,7 +806,8 @@ class Model:
             file.seek(0)  # Go back to start of file
             # Read the profile data into a Pandas DataFrame
             data = pd.read_csv(file, skiprows=start, skipfooter=2, index_col=0,
-                               skipinitialspace=True, delim_whitespace=True)
+                               skipinitialspace=True, delim_whitespace=True,
+                               engine="python")
             # Fix the header
             data.columns = [col + str(col1) for col, col1 in
                             data.iloc[0].items()]
