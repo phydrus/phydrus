@@ -114,6 +114,7 @@ class Model:
 
         """
         self.profile = profile
+        self.basic_information["NLay"] = len(profile.loc[:, "Lay"].unique())
 
     def add_material(self, material):
         """Method to add a material to the model.
@@ -148,14 +149,18 @@ class Model:
         """
         return NotImplementedError
 
-    def add_observations(self):
+    def add_observations(self, observations):
         """Method to add observation points.
 
-        Returns
-        -------
+        Parameters
+        ----------
+        observations: list of ints
+            List of integers denoting the nodes to add a observation point
+            to.
 
         """
-        return NotImplementedError
+        for obs in observations:
+            self.observations.append(obs)
 
     def add_waterflow(self, model=0, maxit=20, tolth=1e-4, tolh=0.1, ha=1e-3,
                       hb=1e3, topinf=False, botinf=False, kodtop=-1, kodbot=1,
@@ -309,8 +314,7 @@ class Model:
             }
         else:
             raise Warning("Water flow was already provided. Please delete "
-                          "the old information firt through "
-                          "ml.del_water_flow().")
+                          "the old information first.")
 
         self.basic_information["lWat"] = True
 
@@ -812,4 +816,5 @@ class Model:
             data.columns = [col + str(col1) for col, col1 in
                             data.iloc[0].items()]
             data = data.drop(data.index[0]).apply(pd.to_numeric)
+            data.index = pd.to_numeric(data.index)
         return data
