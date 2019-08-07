@@ -99,7 +99,22 @@ html_theme = 'alabaster'
 # documentation.
 #
 # html_theme_options = {}
+html_static_path = ['_static']
 
+html_theme_options = {
+    'logo': 'logo.png',
+    'travis_button': True,
+    'logo_name': False,
+    'github_user': 'raoulcollenteur',
+    'github_repo': 'pydrus',
+    'github_banner': True,
+    'github_button': True,
+    'github_type': 'watch',
+    'github_count': True,
+    'description': "Pydrus is a Python implementation for unsaturated zone "
+                   "modeling in Hydrus-1D.",
+    'codecov_button': True,
+}
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
