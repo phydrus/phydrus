@@ -1,11 +1,12 @@
 <img src=https://github.com/raoulcollenteur/pydrus/blob/master/docs/_static/logo.png width=120, align=left>
 
-# Pydrus: Python implementation of the HYDRUS-1D
+# Pydrus: Python implementation of HYDRUS-1D
 
 <a href="http://www.gnu.org/licenses/gpl-3.0.txt"><img src=https://img.shields.io/github/license/raoulcollenteur/pydrus> </a>
 <a href="https://pypi.python.org/pypi/pydrus"> <img src=https://img.shields.io/pypi/pyversions/pydrus> </a>
 <a href="https://github.com/pastas/pydrus/releases"> <img src=https://img.shields.io/github/release-pre/raoulcollenteur/pydrus> </a>
 <a href="https://pydrus.readthedocs.io/en/latest/?badge=latest"> <img src="https://readthedocs.org/projects/pydrus/badge/?version=latest"></a>
+[![Build Status](https://travis-ci.org/raoulcollenteur/pydrus.svg?branch=master)](https://travis-ci.org/raoulcollenteur/pydrus)
 
 This package provides a Python implementation of the HYDRUS-1D unsaturated zone model developed by Šimůnek, J., M. Th. van Genuchten, and M. Šejna. More information on the HYDRUS-1D model is available [here](https://www.pc-progress.com/en/Default.aspx?hydrus-1d). This software is licenced under the GNU GENERAL PUBLIC LICENSE found [here](http://www.gnu.org/licenses/gpl-3.0.txt). The Pydrus code is developed by Raoul Collenteur, Giuseppe Brunetti and Matevz Vremec. With Pydrus, a HYDRUS-1D model can be created, calibrated and visualized through Python scripts, making it easy to adjust the model and providing a 100% reproducible workflow of your modeling process.
 
