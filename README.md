@@ -1,3 +1,5 @@
+<img src=https://github.com/raoulcollenteur/pydrus/blob/master/docs/_static/logo.png width=120, align=left>
+
 # Pydrus: Python implementation of the HYDRUS-1D
 
 <a href="http://www.gnu.org/licenses/gpl-3.0.txt"><img src=https://img.shields.io/pypi/l/pydrus.svg> </a>
