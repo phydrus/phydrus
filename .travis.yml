@@ -40,7 +40,7 @@ install:
 
 # command to run tests
 script:
-   - py.test ./tests --cov=pastas --cov-report=xml
+   - py.test ./tests --cov=pydrus --cov-report=xml
 
 after_success:
    - codecov
