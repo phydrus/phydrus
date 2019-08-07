@@ -123,7 +123,7 @@ class Model:
         ----------
         material: pandas.DataFrame
             Pandas Dataframe with the parameter names as columns and the
-            values for each material as one row.
+        values for each material as one row.
 
         Examples
         --------
@@ -176,10 +176,10 @@ class Model:
             Soil hydraulic properties model:
             0 = van Genuchten's [1980] model with 6 parameters.
             1 = modified van Genuchten's model  with 10 parameters [Vogel
-                and Císlerová, 1988].
+            and Císlerová, 1988].
             2 = Brooks and Corey's [1964] model with 6 parameters.
             3 = van Genuchten's [1980] model with air-entry value of -2 cm
-                and with 6 parameters.
+            and with 6 parameters.
             4 = Kosugi’s [1996] model with 6 parameters.
             5 = dual porosity model of Durner [1994] with 9 parameters.
             6 = dual-porosity system with transfer proportional to the

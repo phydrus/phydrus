@@ -14,7 +14,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../pydrus'))
+sys.path.insert(0, os.path.abspath('../pydrus'))
 
 
 # -- Project information -----------------------------------------------------
@@ -42,12 +42,22 @@ release = __version__
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
+    'sphinxcontrib.apidoc',
 ]
+
+
+apidoc_module_dir = '../pydrus'
+apidoc_output_dir = 'reference'
+apidoc_excluded_paths = ['tests']
+apidoc_separate_modules = True
+
+napoleon_numpy_docstring = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
