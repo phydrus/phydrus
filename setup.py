@@ -16,8 +16,9 @@ setup(
     long_description_content_type="text/markdown",
     url='https://github.com/raoulcollenteur/pydrus',
     license='GNU General public version 3.0',
-    author='Raoul Collenteur, Giuseppe Brunetti',
-    author_email='raoul.collenteur@uni-graz.at, giuseppe.brunetti@boku.ac.at',
+    author='Raoul Collenteur, Giuseppe Brunetti' 'Matevz Vremec',
+    author_email='raoul.collenteur@uni-graz.at, giuseppe.brunetti@boku.ac.at, '
+                 'matevz.vremec@uni-graz.at',
     project_urls={
         'Source': 'https://github.com/raoulcollenteur/pydrus',
         'Tracker': 'https://github.com/raoulcollenteur/pydrus/issues',

@@ -6,7 +6,7 @@ import os
 import pydrus as ps
 import pandas as pd
 
-ws = "seep"
+ws = "example2"
 exe = os.path.join(os.getcwd(), "hydrus")
 
 # Create the basic model
@@ -29,6 +29,7 @@ m = pd.DataFrame(columns=["thr", "ths", "Alfa", "n", "Ks", "l"],
                  data=[[0.0001, 0.399, 0.0174, 1.3757, 29.75, 0.5],
                        [0.0001, 0.339, 0.0139, 1.6024, 45.34, 0.5]],
                  index=[1, 2])
+
 ml.add_material(m)
 
 profile = ps.create_profile(0, -230, h=-200, dx=10)
@@ -38,7 +39,7 @@ ml.add_profile(profile)
 atm = pd.read_csv("data/ex2.csv", index_col=0)
 ml.add_atmosphere(atm)
 
-ml.add_observations([10, 20, 30])
+ml.add_observations([10, 20])
 
 ml.write_files()
 rs = ml.simulate()

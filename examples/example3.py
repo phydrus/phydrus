@@ -4,10 +4,9 @@ Example script of how to setup a basic HYDRUS-1D model using Pydrus.
 
 import os
 import pydrus as ps
-import numpy as np
 import pandas as pd
 
-ws = "example2"
+ws = "example3"
 exe = os.path.join(os.getcwd(), "hydrus")
 
 # Create the basic model
