@@ -2,7 +2,7 @@
 
 # Pydrus: Python implementation of the HYDRUS-1D
 
-<a href="http://www.gnu.org/licenses/gpl-3.0.txt"><img src=https://img.shields.io/pypi/l/pydrus.svg> </a>
+<a href="http://www.gnu.org/licenses/gpl-3.0.txt"><img src=https://img.shields.io/github/license/raoulcollenteur/pydrus> </a>
 <a href="https://pypi.python.org/pypi/pydrus"> <img src=https://img.shields.io/pypi/pyversions/pydrus> </a>
 <a href="https://github.com/pastas/pydrus/releases"> <img src=https://img.shields.io/github/release-pre/raoulcollenteur/pydrus> </a>
 <a href="https://pydrus.readthedocs.io/en/latest/?badge=latest"> <img src="https://readthedocs.org/projects/pydrus/badge/?version=latest"></a>
