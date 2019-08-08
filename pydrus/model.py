@@ -446,7 +446,7 @@ class Model:
 
         self.basic_information["lSink"] = True
 
-    def simulate(self):
+    def simulate(self, tmin=None, tmax=None):
         """Method to call the Hydrus-1D executable.
 
         """
@@ -462,6 +462,15 @@ class Model:
         self.read_output()
 
         return result
+
+    def set_print_times(self):
+        """
+
+        Returns
+        -------
+
+        """
+        pass
 
     def write_files(self):
         self.write_selector()
@@ -773,7 +782,7 @@ class Model:
         return data
 
     def read_tlevel(self, fname="T_LEVEL.OUT"):
-        """
+        """Method to read the T_LEVEL.OUT output file.
 
         Parameters
         ----------
@@ -801,8 +810,57 @@ class Model:
                                skipinitialspace=True, delim_whitespace=True,
                                engine="python")
             # Fix the header
-            data.columns = [col + str(col1) for col, col1 in
-                            data.iloc[0].items()]
             data = data.drop(data.index[0]).apply(pd.to_numeric)
             data.index = pd.to_numeric(data.index)
+
+        return data
+
+    def read_nod_inf(self, fname="NOD_INF.OUT"):
+        """Method to read the NOD_INF.OUT output file.
+
+        Parameters
+        ----------
+        fname: str, optional
+            String with the name of the NOD_INF out file. default is
+            "NOD_INF.OUT".
+
+        Returns
+        -------
+        data: dict
+            Dictionary with the time as a key and a Pandas DataFrame as a
+            value.
+
+        """
+        path = os.path.join(self.ws_name, fname)
+        os.path.exists(path)
+
+        times = []
+        start = []
+        end = []
+        data = {}
+
+        with open(path) as file:
+            # Find the starting times to read the information
+            for i, line in enumerate(file.readlines()):
+                if "Time" in line and not "Date" in line:
+                    times.append(line.replace(" ", "").split(":")[
+                                     1].replace("\n", ""))
+                elif "Node" in line:
+                    start.append(i)
+                elif "end" in line:
+                    end.append(i)
+
+            # Read the profile data into a Pandas DataFrame
+            for start, end, time in zip(start, end, times):
+                file.seek(0)  # Go back to start of file
+                df = pd.read_csv(file, skiprows=start, index_col=0,
+                               skipinitialspace=True, delim_whitespace=True,
+                               nrows=end-start-2)
+                #
+                # # Fix the header
+                df = df.drop(df.index[0]).apply(pd.to_numeric)
+                df.index = pd.to_numeric(df.index)
+
+                data[time] = df
+
         return data
