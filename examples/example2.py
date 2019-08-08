@@ -23,16 +23,14 @@ ml.add_waterflow(kodbot=-1, linitw=False, free_drainage=True, ha=1e-6, hb=1e4)
 
 m = pd.DataFrame(columns=["thr", "ths", "Alfa", "n", "Ks", "l"],
                  data=[[0.0001, 0.399, 0.0174, 1.3757, 29.75, 0.5],
-                       [0.0001, 0.339, 0.0139, 1.6024, 45.34, 0.5]],
+                       [0.01, 0.339, 0.0139, 1.6024, 405.34, 0.5]],
                  index=[1, 2])
 
 ml.add_material(m)
 
-profile = ps.create_profile(0, -230, h=-200, dx=10)
-profile.loc[11:, ["Mat", "Lay"]] = 2
+profile = ps.create_profile(0, [-100, -230], h=-200, dx=10, mat=m.index)
 ml.add_profile(profile)
 ml.add_observations([10, 20])
-
 
 atm = pd.read_csv("data/ex2.csv", index_col=0)
 ml.add_atmosphere(atm)
@@ -43,4 +41,4 @@ ml.write_files()
 rs = ml.simulate()
 
 df = ml.read_tlevel()
-df['vBot[L/T]'].plot()
+df.plot(subplots=True)

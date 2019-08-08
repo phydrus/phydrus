@@ -42,17 +42,19 @@ def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1,
             "Conc", "SConc"]
     data = DataFrame(columns=cols)
     data["x"] = grid
+    variables = [h, mat, lay, beta, ah, ak, ath, temp, conc, sconc]
 
     if len(bot) == 1:
-        data[["h", "Lay", "Mat", "Beta", "Axz", "Bxz", "Dxz", "Temp", "Conc",
-              "SConc"]] = [h, lay, mat, beta, ah, ak, ath, temp, conc, sconc]
+        data[cols[1:]] = variables
     else:
         # If there are multiple layers
-        for arg in [h, lay, mat, beta, ah, ak, ath, temp, conc, sconc]:
-            arg
+        for i, arg in enumerate(variables):
+            if isinstance(arg, int) or isinstance(arg, float) or arg is None:
+                variables[i] = [arg]*len(bot)
 
-        for b in bot:
-            data.loc[top < data.loc["x"] < b]
+        for i, b in enumerate(bot):
+            layer = ((data.loc[:, "x"] <= top) & (data.loc[:, "x"] > (b - dx)))
+            data.loc[layer, cols[1:]] = [var[i] for var in variables]
             top = b
     data = data.fillna("")
     data.index = data.index + 1
