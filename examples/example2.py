@@ -1,5 +1,8 @@
 """
 Example script of how to setup a basic HYDRUS-1D model using Pydrus.
+
+Author: R.A. Collenteur, University of Graz, 2019
+
 """
 
 import os
