@@ -320,7 +320,9 @@ class Model:
 
     def add_atmosphere(self, atmosphere, ldailyvar=False, lsinusvar=False,
                        llai=False, lbccycles=False, linterc=False,
-                       rextinct=0.463, hcrits=1e+30):
+                       rextinct=0.463, hcrits=1e30, tatm=0, prec=0, rsoil=0,
+                       rroot=0, hcrita=1e5, rb=0, hb=0, ht=0, ttop=0, tbot=0,
+                       ampl=0):
         """Method to add the atmospheric boundary condition to the model.
 
         Parameters
@@ -370,11 +372,17 @@ class Model:
                           "Please delete the old information first through "
                           "ml.del_atmosphere().")
 
+        data = {"tAtm": tatm, 'Prec': prec, 'rSoil': rsoil, 'rRoot': rroot,
+                'hCritA': hcrita, 'rB': rb, 'hB': hb, 'ht': ht, 'tTop': ttop,
+                'tBot': tbot, 'Ampl': ampl}
+
+        self.atmosphere = pd.DataFrame(data=data, index=atmosphere.index)
+        self.atmosphere.update(atmosphere)
+
         # Enable atmosphere module
         self.basic_information["AtmInf"] = True
         self.water_flow["TopInf"] = True
         self.water_flow["KodTop"] = -1
-        self.atmosphere = atmosphere
 
     def add_rootwater_uptake(self, model=0, crootmax=0, omegac=0.5, p0=-10,
                              p2h=-200, p2l=-800, p3=-8000, r2h=0.5, r2l=0.1,
@@ -597,6 +605,15 @@ class Model:
                     values.append(str(val))
             values.append("\n")
             lines.append(" ".join(values))
+
+        # if self.time_information["TPrint(MPL)"] < self.time_information[
+        #     "tInit"]:
+        #     raise Warning("Final print time is before start time!")
+        # if self.time_information["TPrint(1)"] < self.time_information["tInit"]:
+        #     raise Warning("First print time is before start time!")
+        if self.time_information["TPrint(MPL)"] < self.time_information[
+            "TPrint(1)"]:
+            raise Warning("Final print time is before the first print time!")
 
         lines.append("TPrint(1),TPrint(2),...,TPrint(MPL)\n")
         times = logspace(log10(self.time_information["TPrint(1)"]),
@@ -854,8 +871,8 @@ class Model:
             for start, end, time in zip(start, end, times):
                 file.seek(0)  # Go back to start of file
                 df = pd.read_csv(file, skiprows=start, index_col=0,
-                               skipinitialspace=True, delim_whitespace=True,
-                               nrows=end-start-2)
+                                 skipinitialspace=True, delim_whitespace=True,
+                                 nrows=end - start - 2)
                 #
                 # # Fix the header
                 df = df.drop(df.index[0]).apply(pd.to_numeric)
