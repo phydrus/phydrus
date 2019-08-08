@@ -16,10 +16,8 @@ ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
               mass_units="mmol", time_unit="days", length_unit="cm")
 
 # Time info
-ml.time_information["tInit"] = 0
+ml.time_information["tInit"] = 1
 ml.time_information["tMax"] = 214
-ml.time_information["dtMax"] = 1
-ml.time_information["MPL"] = 1
 
 # Add materials
 m = pd.DataFrame(columns=["thr", "ths", "Alfa", "n", "Ks", "l"], index=[1],
@@ -39,7 +37,7 @@ atm = pd.read_csv("data/ex3.csv")
 ml.add_atmosphere(atm)
 
 # Root uptake: does not work yet!
-# ml.add_rootwater_uptake(model=0, poptm=[-25] * m.index.size)
+ml.add_rootwater_uptake(model=0, poptm=[-25])
 
 ml.write_files()
 ml.simulate()

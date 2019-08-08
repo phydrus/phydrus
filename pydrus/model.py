@@ -321,7 +321,7 @@ class Model:
     def add_atmosphere(self, atmosphere, ldailyvar=False, lsinusvar=False,
                        llai=False, lbccycles=False, linterc=False,
                        rextinct=0.463, hcrits=1e+30):
-        """Method to add the atmosphere boundary_condition to the model.
+        """Method to add the atmospheric boundary condition to the model.
 
         Parameters
         ----------
@@ -330,10 +330,10 @@ class Model:
             Prec, rSoil, rRoot, hCritA, rB, hB, hT, tTop, tBot, and Ampl.
         ldailyvar: bool, optional
             True if HYDRUS-1D is to generate daily variations in evaporation
-            and transpiration (see section 2.7.2.). False otherwise.
+            and transpiration. False otherwise.
         lsinusvar: bool, optional
             True if HYDRUS-1D is to generate sinusoidal variations in
-            precipitation (see section 2.7.2.). False otherwise.
+            precipitation. False otherwise.
         llai: bool, optional
             Boolean indicating that potential evapotranspiration is
             to be divided into potential evaporation and potential
@@ -367,7 +367,7 @@ class Model:
             }
         else:
             raise Warning("Atmospheric information was already provided. "
-                          "Please delete the old information firt through "
+                          "Please delete the old information first through "
                           "ml.del_atmosphere().")
 
         # Enable atmosphere module
@@ -376,7 +376,7 @@ class Model:
         self.water_flow["KodTop"] = -1
         self.atmosphere = atmosphere
 
-    def add_rootwater_uptake(self, model=0, crootmax=None, omegac=1, p0=-10,
+    def add_rootwater_uptake(self, model=0, crootmax=0, omegac=0.5, p0=-10,
                              p2h=-200, p2l=-800, p3=-8000, r2h=0.5, r2l=0.1,
                              poptm=None):
         """Method to add rootwater update modeule to the model.
@@ -395,8 +395,8 @@ class Model:
             Maximum allowed concentration in the root solute uptake term for
             the last solute [ML-3].
         p0: float, optional
-            Only used if model=0. Value of the pressure head, h1 (Fig. 2.1),
-            below which roots start to extract water from the soil.
+            Only used if model=0. Value of the pressure head, h1, below
+            which roots start to extract water from the soil.
         p2h: float, optional
             Only used if model=0. Value of the limiting pressure head, h3,
             below which the roots cannot extract water at the maximum rate
@@ -413,16 +413,10 @@ class Model:
         r2l: float, optional
             Only used if model=0. Potential transpiration rate [LT-1]
             (currently set at 0.1 cm/day).
-        poptm: iterable, optional
+        poptm: list, optional
             Value of the pressure head, h2, below which roots start to extract
             water at the maximum possible rate. The length of poptm should
             equal the No. of materials.
-
-        Notes
-        -----
-        This method creates the information necessary to write "Block G -
-        Root water uptake information."
-
 
         """
         if model == 1:
@@ -431,7 +425,7 @@ class Model:
 
         if self.rootwater_uptake is None:
             self.rootwater_uptake = {
-                "Model (0 - Feddes, 1 - S shape)": model,
+                "iMoSink": model,
                 "cRootMax": crootmax,
                 "OmegaC": omegac,
                 "P0": p0,
@@ -483,11 +477,11 @@ class Model:
 
         """
         # Create Header string
-        string = "***{:{fill}{align}{width}}\n"
+        string = "*** {:{fill}{align}{width}}\n"
 
         lines = ["Pcp_File_Version={}\n".format(
             self.basic_information["iVer"]),
-            string.format(" BLOCK A: BASIC INFORMATION ", fill="*",
+            string.format("BLOCK A: BASIC INFORMATION ", fill="*",
                           align="<", width=72),
             "{}\n".format(self.basic_information["Hed"]),
             "{}\n".format(self.description),
@@ -499,70 +493,72 @@ class Model:
 
         # Write block A: BASIC INFORMATION
 
-        vars2 = [['lWat', 'lChem', 'lTemp', 'lSink', 'lRoot', 'lShort',
-                  'lWDep', 'lScreen', 'AtmInf', 'lEquil', 'lInverse', "\n"],
-                 ['lSnow', 'lHP1', 'lMeteo', 'lVapor', 'lActRSU', 'lFlux',
-                  "lIrrig", "\n"]]
+        vars_list = [['lWat', 'lChem', 'lTemp', 'lSink', 'lRoot', 'lShort',
+                      'lWDep', 'lScreen', 'AtmInf', 'lEquil', 'lInverse',
+                      "\n"],
+                     ['lSnow', 'lHP1', 'lMeteo', 'lVapor', 'lActRSU', 'lFlux',
+                      "lIrrig", "\n"]]
 
-        for vars in vars2:
-            lines.append("  ".join(vars))
-            vals = []
-            for var in vars[:-1]:
+        for variables in vars_list:
+            lines.append("  ".join(variables))
+            values = []
+            for var in variables[:-1]:
                 val = self.basic_information[var]
                 if val is True:
-                    vals.append("t")
+                    values.append("t")
                 elif val is False:
-                    vals.append("f")
+                    values.append("f")
                 else:
-                    vals.append(str(val))
-            vals.append("\n")
-            lines.append("     ".join(vals))
+                    values.append(str(val))
+            values.append("\n")
+            lines.append("     ".join(values))
 
-        vars = ['NMat', 'NLay', 'CosAlfa', "\n"]
-        lines.append("  ".join(vars))
+        variables = ['NMat', 'NLay', 'CosAlfa', "\n"]
+        lines.append("  ".join(variables))
         lines.append("   ".join([str(self.basic_information[var]) for var in
-                                 vars[:-1]]))
+                                 variables[:-1]]))
         lines.append("\n")
 
         # Write block B: WATER FLOW INFORMATION
-        lines.append(string.format(" BLOCK B: WATER FLOW INFORMATION ",
+        lines.append(string.format("BLOCK B: WATER FLOW INFORMATION ",
                                    fill="*", align="<", width=72))
         lines.append("MaxIt  TolTh  TolH   (maximum number of iterations and "
                      "tolerances)\n")
-        vars = ["MaxIt", "TolTh", "TolH"]
-        lines.append("   ".join([str(self.water_flow[var]) for var in vars]))
+        variables = ["MaxIt", "TolTh", "TolH"]
+        lines.append(
+            "   ".join([str(self.water_flow[var]) for var in variables]))
         lines.append("\n")
 
-        vars2 = [["TopInf", "WLayer", "KodTop", "lInitW", "\n"],
-                 ["BotInf", "qGWLF", "FreeD", "SeepF", "KodBot", "qDrain",
-                  "hSeep", "\n"]]
+        vars_list = [["TopInf", "WLayer", "KodTop", "lInitW", "\n"],
+                     ["BotInf", "qGWLF", "FreeD", "SeepF", "KodBot", "qDrain",
+                      "hSeep", "\n"]]
 
         if (self.water_flow["KodTop"] >= 0) or \
                 (self.water_flow["KodBot"] >= 0):
-            vars2.append(["rTop", "rBot", "rRoot", "\n"])
+            vars_list.append(["rTop", "rBot", "rRoot", "\n"])
 
         if self.water_flow["qGWLF"]:
-            vars2.append(["GWL0L", "Aqh", "Bqh", "\n"])
+            vars_list.append(["GWL0L", "Aqh", "Bqh", "\n"])
 
-        vars2.append(["ha", "hb", "\n"])
-        vars2.append(["iModel", "iHyst", "\n"])
+        vars_list.append(["ha", "hb", "\n"])
+        vars_list.append(["iModel", "iHyst", "\n"])
 
         if self.water_flow["iHyst"] > 0:
-            vars2.append(["iKappa", "\n"])
+            vars_list.append(["iKappa", "\n"])
 
-        for vars in vars2:
-            lines.append("  ".join(vars))
-            vals = []
-            for var in vars[:-1]:
+        for variables in vars_list:
+            lines.append("  ".join(variables))
+            values = []
+            for var in variables[:-1]:
                 val = self.water_flow[var]
                 if val is True:
-                    vals.append("t")
+                    values.append("t")
                 elif val is False:
-                    vals.append("f")
+                    values.append("f")
                 else:
-                    vals.append(str(val))
-            vals.append("\n")
-            lines.append("     ".join(vals))
+                    values.append(str(val))
+            values.append("\n")
+            lines.append("     ".join(values))
 
         if self.drains:
             raise NotImplementedError
@@ -572,25 +568,26 @@ class Model:
         lines.append("\n")
 
         # Write BLOCK C: TIME INFORMATION
-        lines.append(string.format(" BLOCK C: TIME INFORMATION ", fill="*",
+        lines.append(string.format("BLOCK C: TIME INFORMATION ", fill="*",
                                    align="<", width=72))
 
-        vars3 = [['dt', 'dtMin', 'dtMax', 'dMul', 'dMul2', 'ItMin', 'ItMax',
-                  'MPL', "\n"], ["tInit", "tMax", "\n"],
-                 ['lPrint', 'nPrintSteps', 'tPrintInterval', 'lEnter', "\n"]]
-        for vars in vars3:
-            lines.append(" ".join(vars))
-            vals = []
-            for var in vars[:-1]:
+        vars_list = [
+            ['dt', 'dtMin', 'dtMax', 'dMul', 'dMul2', 'ItMin', 'ItMax',
+             'MPL', "\n"], ["tInit", "tMax", "\n"],
+            ['lPrint', 'nPrintSteps', 'tPrintInterval', 'lEnter', "\n"]]
+        for variables in vars_list:
+            lines.append(" ".join(variables))
+            values = []
+            for var in variables[:-1]:
                 val = self.time_information[var]
                 if val is True:
-                    vals.append("t")
+                    values.append("t")
                 elif val is False:
-                    vals.append("f")
+                    values.append("f")
                 else:
-                    vals.append(str(val))
-            vals.append("\n")
-            lines.append(" ".join(vals))
+                    values.append(str(val))
+            values.append("\n")
+            lines.append(" ".join(values))
 
         lines.append("TPrint(1),TPrint(2),...,TPrint(MPL)\n")
         times = logspace(log10(self.time_information["TPrint(1)"]),
@@ -613,61 +610,52 @@ class Model:
 
         # Write Block G - Root water uptake information
         if self.basic_information["lSink"]:
-            lines.append(string.format(" Block G: Root water uptake "
-                                       "information ", fill="*", align="<",
-                                       width=72))
-            vars4 = [["Model (0 - Feddes, 1 - S shape)", "cRootMax", "OmegaC",
-                      "\n"],
-                     ["P0", "P2H", "P2L", "P3", "r2H", "r2L", "\n"],
-                     ["POptm", "\n"]]
-            for vars in vars4:
-                lines.append(" ".join(vars))
-                vals = []
-                for var in vars[:-1]:
+            lines.append(
+                string.format("BLOCK G: ROOT WATER UPTAKE INFORMATION ",
+                              fill="*", align="<", width=72))
+            vars_list = [["iMoSink", "cRootMax", "OmegaC", "\n"]]
+
+            if self.rootwater_uptake["iMoSink"] is 0:
+                vars_list.append(
+                    ["P0", "P2H", "P2L", "P3", "r2H", "r2L", "\n"])
+
+            for variables in vars_list:
+                lines.append(" ".join(variables))
+                values = []
+                for var in variables[:-1]:
                     val = self.rootwater_uptake[var]
                     if var:
                         if val is True:
-                            vals.append("t")
+                            values.append("t")
                         elif val is False:
-                            vals.append("f")
+                            values.append("f")
                         else:
-                            vals.append(str(val))
-                lines.append(" ".join(vals))
+                            values.append(str(val))
+                lines.append(" ".join(values))
                 lines.append("\n")
 
+            lines.append("POptm(1),POptm(2),...,POptm(NMat)\n")
+            lines.append(" ".join(str(p) for p in self.rootwater_uptake[
+                "POptm"]))
+            lines.append("\n")
+
         # Write Block H - Nodal information
-        if False:  # No Idea how to check for this yet
-            raise NotImplementedError
-            lines.append(string.format(" Block H: Nodal information ",
-                                       fill="*", align="<", width=72))
 
         # Write Block J - Inverse solution information
         if self.basic_information["lInverse"]:
-            raise NotImplementedError
-            lines.append(string.format(" Block J: Inverse solution "
-                                       "information ", fill="*", align="<",
-                                       width=72))
+            raise NotImplementedError("The inverse modeling module from "
+                                      "Hydrus-1D will not be supported. "
+                                      "Python packages are used for this.")
 
         # Write Block K – Carbon dioxide transport information
-        if False:
-            raise NotImplementedError
-            lines.append(string.format(" Block K: Carbon dioxide transport "
-                                       "information ", fill="*", align="<",
-                                       width=72))
 
         # Write Block L – Major ion chemistry information
         if self.basic_information["lChem"]:
             raise NotImplementedError
-            lines.append(string.format(" Block L: Major ion chemistry "
-                                       "information ", fill="*", align="<",
-                                       width=72))
 
         # Write Block M – Meteorological information
         if self.basic_information["lMeteo"]:
             raise NotImplementedError
-            lines.append(string.format(" Block M: Meteorological information "
-                                       "information ", fill="*", align="<",
-                                       width=72))
 
         # Write END statement
         lines.append(string.format(" END OF INPUT FILE 'SELECTOR.IN' ",

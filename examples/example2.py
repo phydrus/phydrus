@@ -17,13 +17,9 @@ ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
 
 ml.time_information["tInit"] = 90
 ml.time_information["tMax"] = 273
-ml.time_information["dt"] = 0.1
-ml.time_information["dtMax"] = 1
 
 # Water inflow parameters
 ml.add_waterflow(kodbot=-1, linitw=False, free_drainage=True, ha=1e-6, hb=1e4)
-# ml.add_waterflow(kodbot=-1, linitw=False, qgwlf=True, gw_level=230,
-#                  aqh=-0.1687, bqh=-0.02674)
 
 m = pd.DataFrame(columns=["thr", "ths", "Alfa", "n", "Ks", "l"],
                  data=[[0.0001, 0.399, 0.0174, 1.3757, 29.75, 0.5],
@@ -35,11 +31,13 @@ ml.add_material(m)
 profile = ps.create_profile(0, -230, h=-200, dx=10)
 profile.loc[11:, ["Mat", "Lay"]] = 2
 ml.add_profile(profile)
+ml.add_observations([10, 20])
+
 
 atm = pd.read_csv("data/ex2.csv", index_col=0)
 ml.add_atmosphere(atm)
 
-ml.add_observations([10, 20])
+ml.add_rootwater_uptake(model=0, poptm=[-25, -25])
 
 ml.write_files()
 rs = ml.simulate()

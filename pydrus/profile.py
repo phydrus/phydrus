@@ -5,13 +5,12 @@ from numpy import linspace
 
 def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1,
                    ak=1, ath=1, temp=None, conc=None, sconc=None):
-    """
+    """Method to create a DataFrame describing the soil profile.
 
     Parameters
     ----------
-    data
     top: float, optional
-        Top of the soil column
+        Top of the soil column.
     bot: float or list of float, optional
         Bottom of the soil column. If a list is provided, multiple
         layers are created and other arguments need to be of the same
@@ -19,9 +18,9 @@ def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1,
     dx: float: optional
         Size of each grid cell. Default 0.1 meter.
     lay: int or list of int, optional
-        subregion number (for mass balance calculations)
+        subregion number (for mass balance calculations).
     mat: int or list of int, optional
-        Material number (for heterogeneity)
+        Material number (for heterogeneity).
     beta: float or list of float, optional
 
     ah: float or list of float, optional
