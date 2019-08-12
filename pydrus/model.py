@@ -877,7 +877,7 @@ class Model:
 
         return data
 
-    def read_nod_inf(self, fname="NOD_INF.OUT"):
+    def read_nod_inf(self, fname="NOD_INF.OUT", times=None):
         """Method to read the NOD_INF.OUT output file.
 
         Parameters
@@ -898,7 +898,7 @@ class Model:
             raise FileNotFoundError(
                 "File {} has not been found.".format(path))
 
-        times = []
+        use_times = []
         start = []
         end = []
         data = {}
@@ -907,24 +907,34 @@ class Model:
             # Find the starting times to read the information
             for i, line in enumerate(file.readlines()):
                 if "Time" in line and not "Date" in line:
-                    times.append(line.replace(" ", "").split(":")[
+                    time = float(line.replace(" ", "").split(":")[
                                      1].replace("\n", ""))
+                    use_times.append(time)
                 elif "Node" in line:
                     start.append(i)
                 elif "end" in line:
                     end.append(i)
 
+            if times is None:
+                times = use_times
+            elif not isinstance(times, list):
+                times = [times]
+
             # Read the profile data into a Pandas DataFrame
-            for start, end, time in zip(start, end, times):
-                file.seek(0)  # Go back to start of file
-                df = pd.read_csv(file, skiprows=start, index_col=0,
-                                 skipinitialspace=True, delim_whitespace=True,
-                                 nrows=end - start - 2)
-                #
-                # # Fix the header
-                df = df.drop(df.index[0]).apply(pd.to_numeric)
-                df.index = pd.to_numeric(df.index)
+            for start, end, time in zip(start, end, use_times):
+                if time in times:
+                    file.seek(0)  # Go back to start of file
+                    df = pd.read_csv(file, skiprows=start, index_col=0,
+                                     skipinitialspace=True,
+                                     delim_whitespace=True,
+                                     nrows=end - start - 2)
+                    #
+                    # # Fix the header
+                    df = df.drop(df.index[0]).apply(pd.to_numeric)
+                    df.index = pd.to_numeric(df.index)
 
-                data[time] = df
-
-        return data
+                    data[time] = df
+        if len(data) is 1:
+            return next(iter(data.values()))
+        else:
+            return data
