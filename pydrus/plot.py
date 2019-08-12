@@ -1,50 +1,53 @@
 import matplotlib.pyplot as plt
+from matplotlib import cm
 
 
 class Plots:
     def __init__(self, ml):
         self.ml = ml
 
-    def profile(self, figsize=(3, 10), title="Soil Profile", **kwargs):
+    def profile(self, figsize=(4, 10), title="Soil Profile", cmap="YlOrBr",
+                color_by="Ks", **kwargs):
         """Method to plot the soil profile.
 
         Parameters
         ----------
-        figsize
-        title
-        kwargs
+        figsize: tuple, optional
+        title: str, optional
+        cmap: str, optional
+            String with a named Matplotlib colormap.
+        color_by: str, optional
+            Column from the material properties sed to color the materials.
+            Default is "Ks".
 
         Returns
         -------
         ax: matplotlib axes instance
-
-        Notes
-        -----
-        TODO:
-            - Implement subplots to show water content or pressure head profile
-            - Replace colors by yellow-brown based on the conductivity
-            - Show initial pressure head profile
 
         """
         fig, ax = plt.subplots(figsize=figsize, **kwargs)
 
         top = self.ml.profile.loc[:, "x"].max()
         w = self.ml.profile.loc[:, "h"].max()
-        w = w + 0.1 * w
+        w = w + 0.2 * w
 
-        c = ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8"]
+        # Set colors by color_by
+        col = self.ml.materials[color_by]
+        col = (col - col.min()) / (col.max() - col.min())
+        colors = cm.get_cmap(cmap, 7)(col.values)
 
         for i in self.ml.profile.index[1:]:
             bot = self.ml.profile.loc[i, "x"]
             h = bot - top
-            color = c[self.ml.profile.loc[i, "Mat"]]
+            color = colors[self.ml.profile.loc[i, "Mat"] - 1]
             patch = plt.Rectangle(xy=(0, top), width=w, height=h, linewidth=1,
                                   edgecolor="darkgray", facecolor=color)
             ax.add_patch(patch)
             top = bot
 
-        ax.plot(self.ml.profile.loc[:, ["h"]].values,
-                self.ml.profile.loc[:, ["x"]].values)
+        line = ax.plot(self.ml.profile.loc[:, ["h"]].values,
+                       self.ml.profile.loc[:, ["x"]].values,
+                       label="Initial head")
 
         ax.set_xlim(0, w)
         ax.set_ylim(self.ml.profile.loc[:, "x"].min(),
@@ -53,7 +56,13 @@ class Plots:
         ax.set_ylabel("depth [{}]".format(self.ml.basic_information["LUnit"]))
         ax.set_title(title)
 
-        plt.legend(["Pressure head"])
+        legend_elements = [line[0]]
+        for i, color in enumerate(colors):
+            legend_elements.append(plt.Rectangle((0, 0), 0, 0, color=color,
+                                                 label="material {}".format(
+                                                     i)))
+
+        plt.legend(handles=legend_elements, loc="best")
 
         plt.tight_layout()
         return ax
