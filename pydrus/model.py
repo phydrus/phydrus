@@ -176,11 +176,11 @@ class Model:
         ----------
         model: int, optional
             Soil hydraulic properties model:
-            0 = van Genuchten's [1980] model with 6 parameters.
-            1 = modified van Genuchten's model  with 10 parameters [Vogel
+            0 = van Genuchten"s [1980] model with 6 parameters.
+            1 = modified van Genuchten"s model  with 10 parameters [Vogel
             and Císlerová, 1988].
-            2 = Brooks and Corey's [1964] model with 6 parameters.
-            3 = van Genuchten's [1980] model with air-entry value of -2 cm
+            2 = Brooks and Corey"s [1964] model with 6 parameters.
+            3 = van Genuchten"s [1980] model with air-entry value of -2 cm
             and with 6 parameters.
             4 = Kosugi’s [1996] model with 6 parameters.
             5 = dual porosity model of Durner [1994] with 9 parameters.
@@ -374,9 +374,9 @@ class Model:
                           "Please delete the old information first through "
                           "ml.del_atmosphere().")
 
-        data = {"tAtm": tatm, 'Prec': prec, 'rSoil': rsoil, 'rRoot': rroot,
-                'hCritA': hcrita, 'rB': rb, 'hB': hb, 'ht': ht, 'tTop': ttop,
-                'tBot': tbot, 'Ampl': ampl}
+        data = {"tAtm": tatm, "Prec": prec, "rSoil": rsoil, "rRoot": rroot,
+                "hCritA": hcrita, "rB": rb, "hB": hb, "ht": ht, "tTop": ttop,
+                "tBot": tbot, "Ampl": ampl}
 
         self.atmosphere = pd.DataFrame(data=data, index=atmosphere.index)
         self.atmosphere.update(atmosphere)
@@ -466,6 +466,28 @@ class Model:
 
         return result
 
+    def residuals(self):
+
+        # 1. Simulate the model
+        self.simulate()
+
+        # 2. Read the necessary model output
+        sim = self.read_output()
+
+        # 3. Calculate the residuals
+        residuals = sim - obs
+
+        return residuals
+
+    def solve(self):
+        """
+
+        Returns
+        -------
+
+        """
+        pass
+
     def get_print_times(self):
         """Method to get the print times for the simulation.
 
@@ -517,10 +539,10 @@ class Model:
 
         # Write block A: BASIC INFORMATION
 
-        vars_list = [['lWat', 'lChem', 'lTemp', 'lSink', 'lRoot', 'lShort',
-                      'lWDep', 'lScreen', 'AtmInf', 'lEquil', 'lInverse',
+        vars_list = [["lWat", "lChem", "lTemp", "lSink", "lRoot", "lShort",
+                      "lWDep", "lScreen", "AtmInf", "lEquil", "lInverse",
                       "\n"],
-                     ['lSnow', 'lHP1', 'lMeteo', 'lVapor', 'lActRSU', 'lFlux',
+                     ["lSnow", "lHP1", "lMeteo", "lVapor", "lActRSU", "lFlux",
                       "lIrrig", "\n"]]
 
         for variables in vars_list:
@@ -537,7 +559,7 @@ class Model:
             values.append("\n")
             lines.append("     ".join(values))
 
-        variables = ['NMat', 'NLay', 'CosAlfa', "\n"]
+        variables = ["NMat", "NLay", "CosAlfa", "\n"]
         lines.append("  ".join(variables))
         lines.append("   ".join([str(self.basic_information[var]) for var in
                                  variables[:-1]]))
@@ -600,9 +622,9 @@ class Model:
         self.time_information["MPL"] = len(times)
 
         vars_list = [
-            ['dt', 'dtMin', 'dtMax', 'dMul', 'dMul2', 'ItMin', 'ItMax',
-             'MPL', "\n"], ["tInit", "tMax", "\n"],
-            ['lPrint', 'nPrintSteps', 'tPrintInterval', 'lEnter', "\n"]]
+            ["dt", "dtMin", "dtMax", "dMul", "dMul2", "ItMin", "ItMax",
+             "MPL", "\n"], ["tInit", "tMax", "\n"],
+            ["lPrint", "nPrintSteps", "tPrintInterval", "lEnter", "\n"]]
         for variables in vars_list:
             lines.append(" ".join(variables))
             values = []
@@ -685,7 +707,7 @@ class Model:
             raise NotImplementedError
 
         # Write END statement
-        lines.append(string.format(" END OF INPUT FILE 'SELECTOR.IN' ",
+        lines.append(string.format(" END OF INPUT FILE SELECTOR.IN ",
                                    fill="*", align="<", width=72))
 
         # Write the actual file
@@ -731,7 +753,7 @@ class Model:
 
         lines.append(self.atmosphere.to_string(index=False))
         lines.append("\n")
-        lines.append("end*** END OF INPUT FILE 'ATMOSPH.IN' "
+        lines.append("end*** END OF INPUT FILE ATMOSPH.IN "
                      "**********************************\n")
         # Write the actual file
         fname = os.path.join(self.ws_name, fname)
@@ -786,7 +808,9 @@ class Model:
 
         """
         path = os.path.join(self.ws_name, fname)
-        os.path.exists(path)
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                "File {} has not been found.".format(path))
 
         with open(path) as file:
             # Find the starting line to read the profile
@@ -799,7 +823,7 @@ class Model:
                                skipinitialspace=True, delim_whitespace=True)
         return data
 
-    def read_tlevel(self, fname="T_LEVEL.OUT"):
+    def read_tlevel(self, fname="T_LEVEL.OUT", use_cols=None):
         """Method to read the T_LEVEL.OUT output file.
 
         Parameters
@@ -807,6 +831,13 @@ class Model:
         fname: str, optional
             String with the name of the t_level out file. default is
             "T_LEVEL.OUT".
+        use_cols: list of str optional
+            List with the names of the columns to import. By default
+            only the real fluxes are imported and not the cumulative
+            fluxes. Options are: "rTop", "rRoot", "vTop", "vRoot", "vBot",
+            "sum(rTop)", "sum(rRoot)", "sum(vTop)", "sum(vRoot)", "sum(vBot)",
+            "hTop", "hRoot", "hBot", "RunOff", "sum(RunOff)", "Volume",
+            "sum(Infil)", "sum(Evap)", "TLevel", "Cum(WTrans)", "SnowLayer".
 
         Returns
         -------
@@ -815,7 +846,18 @@ class Model:
 
         """
         path = os.path.join(self.ws_name, fname)
-        os.path.exists(path)
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                "File {} has not been found.".format(path))
+
+        if use_cols is None:
+            use_cols = ["Time", "rTop", "rRoot", "vTop", "vRoot", "vBot",
+                        "hTop", "hRoot", "hBot", "RunOff", "Volume", ]
+
+            if self.water_flow["iModel"] > 4:
+                use_cols.append("Cum(WTrans)")
+            if self.basic_information["lSnow"]:
+                use_cols.append("SnowLayer")
 
         with open(path) as file:
             # Find the starting line to read the profile
@@ -823,13 +865,15 @@ class Model:
                 if "rTop" in line:
                     break
             file.seek(0)  # Go back to start of file
+
+            skiprows = list(range(start))
+            skiprows.append(start + 1)
+
             # Read the profile data into a Pandas DataFrame
-            data = pd.read_csv(file, skiprows=start, skipfooter=2, index_col=0,
-                               skipinitialspace=True, delim_whitespace=True,
+            data = pd.read_csv(file, skiprows=skiprows, skipfooter=2,
+                               index_col="Time", skipinitialspace=True,
+                               delim_whitespace=True, usecols=use_cols,
                                engine="python")
-            # Fix the header
-            data = data.drop(data.index[0]).apply(pd.to_numeric)
-            data.index = pd.to_numeric(data.index)
 
         return data
 
@@ -850,7 +894,9 @@ class Model:
 
         """
         path = os.path.join(self.ws_name, fname)
-        os.path.exists(path)
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                "File {} has not been found.".format(path))
 
         times = []
         start = []
