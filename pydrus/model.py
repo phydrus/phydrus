@@ -5,14 +5,15 @@ This file contains the model class.
 import pandas as pd
 import os
 import subprocess
-from numpy import logspace, log10
 
 from .plot import Plots
+from .version import __version__
 
 
 class Model:
     def __init__(self, exe_name, ws_name, name="model", description=None,
-                 length_unit="m", time_unit="days", mass_units="mmol"):
+                 length_unit="m", time_unit="days", mass_units="mmol",
+                 print_screen=False):
         """Basic Hydrus model container.
 
         Parameters
@@ -30,6 +31,8 @@ class Model:
         mass_units: str, optional
             Mass units to use in the simulation, Options are "mmol".
             Defaults to "mmol". Only used when transport process is added.
+        print_screen: bool, optional
+            Print the results to the screen during code execution.
 
         """
         # Store the hydrus executable and the project workspace
@@ -46,7 +49,7 @@ class Model:
 
         self.basic_information = {
             "iVer": "4",
-            "Hed": "Heading",
+            "Hed": "Created with Pydrus version {}".format(__version__),
             "LUnit": length_unit,
             "TUnit": time_unit,
             "MUnit": mass_units,
@@ -55,9 +58,9 @@ class Model:
             "lTemp": False,
             "lSink": False,
             "lRoot": False,
-            "lShort": False,
+            "lShort": True,
             "lWDep": False,
-            "lScreen": True,
+            "lScreen": print_screen,
             "AtmInf": False,
             "lEquil": True,
             "lInverse": False,
@@ -81,16 +84,15 @@ class Model:
             "dMul2": 0.7,
             "ItMin": 3,
             "ItMax": 7,
-            "MPL": 4,
-            "tInit": 0,
+            "MPL": None,  # Calculate automatically
+            "tInit": 0.1,
             "tMax": 1,
-            "lPrint": False,
-            "nPrintSteps": 1,
-            "tPrintInterval": 1,
+            "lPrint": True,
+            "nPrintSteps": 10,
+            "tPrintInterval": 10,
             "lEnter": False,  # This should not be changed!
-            "TPrint(1)": 0,
-            "TPrint(2)": 1,
-            "TPrint(MPL)": 1,
+            "TPrint(1)": None,
+            "TPrint(MPL)": None,
         }
 
         # The main processes to describe the simulation
@@ -454,31 +456,36 @@ class Model:
 
         self.basic_information["lSink"] = True
 
-    def simulate(self, tmin=None, tmax=None):
+    def simulate(self):
         """Method to call the Hydrus-1D executable.
 
         """
-        # 1. Check model
-        # 2. Write files
-        # self.write_files()
-
-        # 3. Run Hydrus executable.
+        # Run Hydrus executable.
         cmd = [self.exe_name, self.ws_name, "-1"]
         result = subprocess.run(cmd)
 
-        # 4. Read output and check for success.
-        self.read_output()
-
         return result
 
-    def set_print_times(self):
-        """
+    def get_print_times(self):
+        """Method to get the print times for the simulation.
 
         Returns
         -------
 
         """
-        pass
+        if self.time_information["TPrint(1)"] is None:
+            tmin = self.time_information["tInit"] + 1
+        else:
+            tmin = self.time_information["TPrint(1)"]
+
+        if self.time_information["TPrint(MPL)"] is None:
+            tmax = self.time_information["tMax"]
+        else:
+            tmax = self.time_information["TPrint(MPL)"]
+
+        times = range(tmin, tmax)
+
+        return times
 
     def write_files(self):
         self.write_selector()
@@ -588,6 +595,10 @@ class Model:
         lines.append(string.format("BLOCK C: TIME INFORMATION ", fill="*",
                                    align="<", width=72))
 
+        times = self.get_print_times()
+
+        self.time_information["MPL"] = len(times)
+
         vars_list = [
             ['dt', 'dtMin', 'dtMax', 'dMul', 'dMul2', 'ItMin', 'ItMax',
              'MPL', "\n"], ["tInit", "tMax", "\n"],
@@ -606,21 +617,11 @@ class Model:
             values.append("\n")
             lines.append(" ".join(values))
 
-        # if self.time_information["TPrint(MPL)"] < self.time_information[
-        #     "tInit"]:
-        #     raise Warning("Final print time is before start time!")
-        # if self.time_information["TPrint(1)"] < self.time_information["tInit"]:
-        #     raise Warning("First print time is before start time!")
-        if self.time_information["TPrint(MPL)"] < self.time_information[
-            "TPrint(1)"]:
-            raise Warning("Final print time is before the first print time!")
-
         lines.append("TPrint(1),TPrint(2),...,TPrint(MPL)\n")
-        times = logspace(log10(self.time_information["TPrint(1)"]),
-                         log10(self.time_information["TPrint(MPL)"]),
-                         self.time_information["MPL"]).round(2)
-        lines.append(" ".join([str(time) for time in times]))
-        lines.append("\n")
+        for i in range(int(len(times) / 6) + 1):
+            lines.append(
+                " ".join([str(time) for time in times[i * 6:i * 6 + 6]]))
+            lines.append("\n")
 
         # Write BLOCK D: Root Growth Information
         if self.basic_information["lRoot"]:

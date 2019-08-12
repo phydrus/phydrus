@@ -5,7 +5,7 @@ following the example from the following link:
 https://www.pc-progress.com/Downloads/Tutorials/Tutorial_H1D_4.pdf
 
 A steady state simulation is performed and the pressure heads are used as the
-initial condition for a transiet model.
+initial condition for a transient model.
 
 Author: R.A. Collenteur, University of Graz, 2019
 
@@ -25,12 +25,10 @@ ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
               mass_units="-", time_unit="days", length_unit="cm")
 
 # Time info
+ml.time_information["tInit"] = 0
 ml.time_information["tMax"] = 100
 ml.time_information["dtMin"] = 0.000001
 ml.time_information["dt"] = 0.001
-# Store the output for the steady state model
-ml.time_information["TPrint(1)"] = 1
-ml.time_information["TPrint(MPL)"] = 100
 
 # Water flow info
 ml.add_waterflow(linitw=False, free_drainage=True, ha=1e-6, hb=1e4, rtop=-0.12)
@@ -53,8 +51,6 @@ profile = ps.create_profile(bot=[-7, -19, -24, -28, -50, -75, -100], dx=1,
 ml.add_profile(profile)
 ml.add_observations([50, 100])
 
-ml.plots.profile()
-
 # run steady state simulation
 ml.write_files()
 ml.simulate()
@@ -71,7 +67,7 @@ ml.water_flow["KodBot"] = -1
 ml.time_information["tMax"] = 360
 
 # Root uptake
-ml.add_rootwater_uptake(model=0, poptm=[-25]*7)
+ml.add_rootwater_uptake(model=0, poptm=[-25] * m.index.size)
 
 ml.write_files()
 ml.simulate()
