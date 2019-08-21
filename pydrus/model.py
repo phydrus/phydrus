@@ -946,11 +946,10 @@ class Model:
         ----------
         fname: str, optional
             String with the name of the run_inf out file. default is
-            "T_LEVEL.OUT".
+            "RUN_INF.OUT".
         use_cols: list of str optional
-            List with the names of the columns to import. By default
-            only the real fluxes are imported and not the cumulative
-            fluxes. Options are: "TLevel", "Time", "dt", "Iter", "ItCum",
+            List with the names of the columns to import. By default:
+			"TLevel", "Time", "dt", "Iter", "ItCum",
             "KodT", "KodB", "Convergency".
 
         Returns
