@@ -938,3 +938,52 @@ class Model:
             return next(iter(data.values()))
         else:
             return data
+        
+    def read_run_inf(self, fname="RUN_INF.OUT", use_cols=None):
+        """Method to read the RUN_INF.OUT output file.
+
+        Parameters
+        ----------
+        fname: str, optional
+            String with the name of the run_inf out file. default is
+            "T_LEVEL.OUT".
+        use_cols: list of str optional
+            List with the names of the columns to import. By default
+            only the real fluxes are imported and not the cumulative
+            fluxes. Options are: "TLevel", "Time", "dt", "Iter", "ItCum",
+            "KodT", "KodB", "Convergency".
+
+        Returns
+        -------
+        data: pandas.DataFrame
+            Pandas with the run_inf data
+
+        """
+        path = os.path.join(self.ws_name, fname)
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                "File {} has not been found.".format(path))
+
+        if use_cols is None:
+            use_cols = ["TLevel", "Time", "dt", "Iter", "ItCum", "KodT",
+                        "KodB", "Convergency", ]
+            if not self.solute_transport == None:
+                use_cols.append("IterC")
+
+        with open(path) as file:
+            # Find the starting line to read the profile
+            for start, line in enumerate(file.readlines(1000)):
+                if "TLevel" in line:
+                    break
+            file.seek(0)  # Go back to start of file
+
+            skiprows = list(range(start))
+            skiprows.append(start + 1)
+
+            # Read the profile data into a Pandas DataFrame
+            data = pd.read_csv(file, skiprows=skiprows, skipfooter=1,
+                               index_col="TLevel", skipinitialspace=True,
+                               delim_whitespace=True, usecols=use_cols,
+                               engine="python")
+
+        return data
