@@ -119,3 +119,21 @@ class Plots:
             ax.grid(linestyle='--')
             plt.tight_layout()
         return ax
+    def mass_balance(self, figsize=(6, 10), title="Mass_Balance_Information",
+                        **kwargs):
+        """Method to show the Soil Hydraulic Properties.
+
+        Parameters
+        ----------
+        figsize: tuple, optional
+        title: str, optional
+
+        Returns
+        -------
+        balance: opens BALANCE.OUT in notepad
+        """
+        folder = self.ml.ws_name
+        import sys
+        import subprocess
+        balance = subprocess.Popen(["notepad.exe",folder + "\\BALANCE.OUT"])
+        return balance
