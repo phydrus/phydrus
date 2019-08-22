@@ -121,7 +121,7 @@ class Plots:
         return ax
     def mass_balance(self, figsize=(6, 10), title="Mass_Balance_Information",
                         **kwargs):
-        """Method to show the Soil Hydraulic Properties.
+        """Method to show the Mass balance information.
 
         Parameters
         ----------
