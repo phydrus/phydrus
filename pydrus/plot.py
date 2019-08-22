@@ -66,3 +66,56 @@ class Plots:
 
         plt.tight_layout()
         return ax
+    
+    def profile_information(self, figsize=(6, 6), title="Profile Information",
+                            cmap="YlOrBr", **kwargs):
+        """Method to plot the soil profile.
+
+        Parameters
+        ----------
+        figsize: tuple, optional
+        title: str, optional
+        cmap: str, optional
+            String with a named Matplotlib colormap.
+        color_by: str, optional
+            Column from the material properties sed to color the materials.
+            Default is "Ks".
+
+        Returns
+        -------
+        ax: matplotlib axes instance
+
+        """        
+        df = self.ml.read_nod_inf()[self.ml.time_information["tMax"]]
+        df1 = self.ml.read_nod_inf()[self.ml.time_information["tInit"]]
+        l_unit = self.ml.basic_information["LUnit"]
+        t_unit = self.ml.basic_information["TUnit"]
+        use_cols = ("Head","Moisture","K", "C", "Flux", "Sink")
+        col_names = ("Pressure Head", "Water Content", "Hydraulic Conductivity", 
+                 "Hydraulic Capacity", "Water Flux", "Root Uptake")
+        units = ["h [{}]".format(l_unit),
+                  "Theta [-]","K [{}/days]".format(l_unit),
+                  "C [1/{}]".format(l_unit), 
+                  "v [{}/{}]".format(l_unit, t_unit),
+                  "S [1/{}]".format(t_unit)]
+        
+        for cols,names,unit in zip(use_cols, col_names,units):
+            fig, ax = plt.subplots(figsize=figsize, **kwargs)
+            if cols == "Moisture":
+                plt.axvline(df1[cols][1],color = 'k')                          
+            if cols == "K":
+                plt.axvline(df1[cols][1],color='k')
+            if cols == "C":
+                plt.axvline(df1[cols][1],color='k')
+            if cols == "Flux" and t_unit == "min":
+                df[cols] = df[cols]*60
+                unit = "v [{}/days]".format(l_unit)
+
+            line = ax.plot(df[cols], self.ml.profile.loc[:, ["x"]].values, "b")   
+            ax.set_ylim(self.ml.profile.loc[:, "x"].min(),self.ml.profile.loc[:, "x"].max())
+            ax.set_xlabel(unit)
+            ax.set_ylabel("Depth [{}]".format(self.ml.basic_information["LUnit"]))
+            ax.set_title("Profile Information: " + names)
+            ax.grid(linestyle='--')
+            plt.tight_layout()
+        return ax
