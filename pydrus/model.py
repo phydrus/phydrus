@@ -108,6 +108,8 @@ class Model:
         self.root_growth = None
         self.atmosphere_information = None
         self.atmosphere = None
+        self.CO2Transport = None
+        self.dual_porosity = None
 
         self.plots = Plots(ml=self)
 
@@ -984,5 +986,78 @@ class Model:
                                index_col="TLevel", skipinitialspace=True,
                                delim_whitespace=True, usecols=use_cols,
                                engine="python")
+
+        return data   
+    
+    def read_balance(self, fname="BALANCE.OUT", use_cols=None):
+        """Method to read the BALANCE.OUT output file.
+
+        Parameters
+        ----------
+        fname: str, optional
+            String with the name of the run_inf out file. default is
+            "BALANCE.OUT".
+        use_cols: list of str optional
+            List with the names of the columns to import. By default:
+            "Area","W-volume","In-flow","h Mean","Top Flux", 
+            "Bot Flux","WatBalT","WatBalR".
+
+        Returns
+        -------
+        data: pandas.DataFrame
+            Pandas with the balance data
+
+        """
+        path = os.path.join(self.ws_name, fname)
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                "File {} has not been found.".format(path))
+
+        if use_cols is None:
+            use_cols = ["Area","W-volume","In-flow","h Mean","Top Flux",
+                        "Bot Flux","WatBalT","WatBalR"] 
+            if not self.solute_transport == None:
+               use_cols.append("ConcVol", "ConcVolIm","cMean","CncBalT","CncBalR")
+        
+            if not self.heat_transport == None:
+               use_cols.append("TVol", "TMean")
+             
+            if not self.CO2Transport == None:
+               use_cols.append("COVol", "COMean","CO2BalT","CncBalT")
+            
+            if not self.dual_porosity == None:
+               use_cols.append("W-VolumeI", "cMeanIm")
+
+        List = open(path).readlines()
+        List_copy = List.copy()
+        use_times = []
+        start = []
+        end = [16]
+        for i, line in enumerate(List_copy):
+            for x in use_cols:
+                if x in line:
+                    line1 = x
+                    line2 = line.replace("\n","").split(" ")[-1]
+                    line3=line.replace("  "," ").split(" ")[-2]
+                    List_copy[i] = [line1,line2,line3]
+
+            if "Time" in line and not "Date" in line:
+                time = float(line.replace(" ", "").split("]")[1].replace("\n", ""))
+                use_times.append(time)
+            if "Area" in line:
+                start.append(i)     
+            if "WatBalR" in line:
+                end.append(i+1)
+            if "Sub-region" in line:
+                subregions = line.replace("  ", " ").replace("\n", "").split(" ")[-1]
+        data = {}
+        for s, e, time in zip(start,end,use_times):
+            List_copy1 = List_copy[s:e]
+            df = pd.DataFrame(List_copy1).set_index(0).T
+            indexc = {}
+            for x in range(int(subregions)+1):
+                indexc[x+1] = x 
+                df = df.rename(index=indexc)
+            data[time] = df
 
         return data
