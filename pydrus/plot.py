@@ -119,6 +119,7 @@ class Plots:
             ax.grid(linestyle='--')
             plt.tight_layout()
         return ax
+   
     def mass_balance(self, figsize=(6, 10), title="Mass_Balance_Information",
                         **kwargs):
         """Method to show the Mass balance information.
@@ -136,4 +137,53 @@ class Plots:
         import sys
         import subprocess
         balance = subprocess.Popen(["notepad.exe",folder + "\\BALANCE.OUT"])
+        
         return balance
+    
+    
+    def water_flow(self, figsize=(10, 4), title="Water Flow", cmap="YlOrBr",
+                   **kwargs):
+        """Method to plot the water flow.
+
+        Parameters
+        ----------
+        figsize: tuple, optional
+        title: str, optional
+        cmap: str, optional
+            String with a named Matplotlib colormap.
+        color_by: str, optional
+
+        Returns
+        -------
+        ax: matplotlib axes instance
+
+        """
+        col_names = ("Potential Surface Flux", "Potential Root Water Uptake",
+                     "Actual Surface Flux", "Actual Root Water Uptake",
+                     "Bottom Flux", "Pressure head at the soil surface",
+                     "Mean value of the pressure head over the region",
+                     "Pressure head at the Bottom of the soil profile",
+                     "Surface runoff", "Volume of water in the entire flow domain")
+
+        df = self.ml.read_tlevel()
+        l_unit = self.ml.basic_information["LUnit"]
+        t_unit = self.ml.basic_information["TUnit"]
+        
+        for col,name in zip(df,col_names):
+            
+            fig, ax = plt.subplots(figsize=figsize, nrows = 1, ncols =2, **kwargs)
+            fig.suptitle(name, fontsize=16, y=0.99)
+            ax[0].plot(df.index, df[col])
+            ax[0].set_title(col)   
+            ax[0].grid()
+            
+            #Cumulative sum
+            df["sum("+col+")"] =df[col].cumsum()
+            ax[1].plot(df.index, df["sum("+col+")"])
+            ax[1].set_title("sum("+col+")")
+            ax[1].grid()
+
+
+        return df
+
+        
