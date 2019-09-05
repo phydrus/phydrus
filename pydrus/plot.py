@@ -111,7 +111,7 @@ class Plots:
                 df[cols] = df[cols]*60
                 unit = "v [{}/days]".format(l_unit)
 
-            line = ax.plot(df[cols], self.ml.profile.loc[:, ["x"]].values, "b")   
+            ax.plot(df[cols], self.ml.profile.loc[:, ["x"]].values, "b")   
             ax.set_ylim(self.ml.profile.loc[:, "x"].min(),self.ml.profile.loc[:, "x"].max())
             ax.set_xlabel(unit)
             ax.set_ylabel("Depth [{}]".format(self.ml.basic_information["LUnit"]))
@@ -134,12 +134,9 @@ class Plots:
         balance: opens BALANCE.OUT in notepad
         """
         folder = self.ml.ws_name
-        import sys
         import subprocess
-        balance = subprocess.Popen(["notepad.exe",folder + "\\BALANCE.OUT"])
-        
+        balance = subprocess.Popen(["notepad.exe",folder + "\\BALANCE.OUT"])        
         return balance
-    
     
     def water_flow(self, figsize=(10, 4), title="Water Flow", cmap="YlOrBr",
                    **kwargs):
@@ -164,26 +161,19 @@ class Plots:
                      "Mean value of the pressure head over the region",
                      "Pressure head at the Bottom of the soil profile",
                      "Surface runoff", "Volume of water in the entire flow domain")
-
         df = self.ml.read_tlevel()
-        l_unit = self.ml.basic_information["LUnit"]
-        t_unit = self.ml.basic_information["TUnit"]
         
-        for col,name in zip(df,col_names):
-            
+        for col,name in zip(df,col_names):        
             fig, ax = plt.subplots(figsize=figsize, nrows = 1, ncols =2, **kwargs)
             fig.suptitle(name, fontsize=16, y=0.99)
             ax[0].plot(df.index, df[col])
             ax[0].set_title(col)   
-            ax[0].grid()
-            
+            ax[0].grid()            
             #Cumulative sum
             df["sum("+col+")"] =df[col].cumsum()
             ax[1].plot(df.index, df["sum("+col+")"])
             ax[1].set_title("sum("+col+")")
             ax[1].grid()
-
-
-        return df
+        return ax
 
         
