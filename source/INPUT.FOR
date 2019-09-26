@@ -1456,13 +1456,13 @@ c        if(lActRSU) then              ! Active uptake only for the last solute
       do 11 i=1,NS
         if(i.le.9) then
           write(ch1,'(i1)') i
-          cName = '\solutex.out'
+          cName = '/solutex.out'
           cName(8:8) = ch1
           cFileName = cDataPath(1:iLengthPath)//cName
         else
           write(ch1,'(i1)') 1
           write(ch2,'(i1)') i-10
-          cName1 = '\solutexx.out'
+          cName1 = '/solutexx.out'
           cName1(8:8) = ch1
           cName1(9:9) = ch2
           cFileName = cDataPath(1:iLengthPath)//cName1
