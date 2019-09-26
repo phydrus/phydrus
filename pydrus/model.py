@@ -854,6 +854,8 @@ class Model:
 
         if use_cols is None:
             use_cols = ["Time", "rTop", "rRoot", "vTop", "vRoot", "vBot",
+                        "sum(rTop)", "sum(rRoot)", "sum(vTop)", "sum(vRoot)",
+                        "sum(vBot)",
                         "hTop", "hRoot", "hBot", "RunOff", "Volume", ]
 
             if self.water_flow["iModel"] > 4:
