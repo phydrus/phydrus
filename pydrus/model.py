@@ -853,10 +853,10 @@ class Model:
                 "File {} has not been found.".format(path))
 
         if use_cols is None:
-            use_cols = ["Time", "rTop", "rRoot", "vTop", "vRoot", "vBot",
-                        "sum(rTop)", "sum(rRoot)", "sum(vTop)", "sum(vRoot)",
-                        "sum(vBot)",
-                        "hTop", "hRoot", "hBot", "RunOff", "Volume", ]
+            use_cols = ["Time", "rTop", "rRoot", "vTop", "vRoot",
+                        "vBot","sum(rTop)", "sum(rRoot)", "sum(vTop)",
+                        "sum(vRoot)","sum(vBot)","hTop", "hRoot", "hBot",
+                        "RunOff", "Volume", ]
 
             if self.water_flow["iModel"] > 4:
                 use_cols.append("Cum(WTrans)")
@@ -1062,4 +1062,49 @@ class Model:
                 df = df.rename(index=indexc)
             data[time] = df
 
+        return data
+    
+    def read_obs_node(self, fname="OBS_NODE.OUT", times=None):
+        """Method to read the OBS_NODE.OUT output file.
+
+        Parameters
+        ----------
+        fname: str, optional
+            String with the name of the OBS_NODE out file. default is
+            "OBS_NODE.OUT".
+
+        Returns
+        -------
+        data: dict
+            Dictionary with the node as a key and a Pandas DataFrame as a
+            value.
+
+        """
+        path = os.path.join(self.ws_name, fname)
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                "File {} has not been found.".format(path))
+
+        data = {}       
+        with open(path) as file:
+            # Find the starting times to read the information
+            for i, line in enumerate(file.readlines()):
+                if "time" in line:
+                    start = i
+                elif "end" in line:
+                    end = i
+            for i, nod in enumerate(self.observations):
+                file.seek(0)
+                if i == 0:
+                    usecols = ["time","h","theta","Temp"]
+                else:
+                    usecols = ["time","h."+ str(1),"theta."+str(1),"Temp."+str(1)]                       
+                df = pd.read_csv(file, skiprows=start, index_col=0, 
+                             skipinitialspace=True, 
+                             delim_whitespace=True, 
+                             nrows=end - start - 1, 
+                             usecols = usecols)
+                df.columns = ["h","theta","Temp"]
+                data[nod] = df
+                
         return data
