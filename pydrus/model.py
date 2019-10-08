@@ -1108,3 +1108,40 @@ class Model:
                 data[nod] = df
                 
         return data
+    
+    def read_I_check(self, fname="I_CHECK.OUT", times=None):
+        """Method to read the I_CHECK.OUT output file.
+
+        Parameters
+        ----------
+        fname: str, optional
+            String with the name of the I_Check out file. default is
+            "I_Check.OUT".
+
+        Returns
+        -------
+        data: dict
+            Dictionary with the node as a key and a Pandas DataFrame as a
+            value.
+
+        """
+        path = os.path.join(self.ws_name, fname)
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                "File {} has not been found.".format(path))
+
+        with open(path) as file:
+            # Find the starting times to read the information
+            for i, line in enumerate(file.readlines()):
+                if "theta" in line:
+                    start=i
+                elif "end" in line:
+                    end=i
+
+            # Read the profile data into a Pandas DataFrame
+            file.seek(0)
+            df = pd.read_csv(file, skiprows=start, index_col=None,
+                                     skipinitialspace=True,
+                                     delim_whitespace=True,
+                                     nrows=int(end) - int(start) - 2)            
+        return df
