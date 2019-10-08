@@ -1125,6 +1125,7 @@ class Model:
             value.
 
         """
+        usecols = ["theta","h","log_h","C","K","log_K","S","Kv"]
         path = os.path.join(self.ws_name, fname)
         if not os.path.exists(path):
             raise FileNotFoundError(
@@ -1140,7 +1141,8 @@ class Model:
 
             # Read the profile data into a Pandas DataFrame
             file.seek(0)
-            df = pd.read_csv(file, skiprows=start, index_col=None,
+            df = pd.read_csv(file, skiprows=start+1, index_col=None,
+                                     header = None, names = usecols,
                                      skipinitialspace=True,
                                      delim_whitespace=True,
                                      nrows=int(end) - int(start) - 2)            
