@@ -67,59 +67,64 @@ class Plots:
         plt.tight_layout()
         return ax
     
-    def profile_information(self, figsize=(6, 6), title="Profile Information",
+    def profile_information(self, data="Pressure Head", figsize=(6, 6), 
+                            title="Profile Information", 
                             cmap="YlOrBr", **kwargs):
-        """Method to plot the soil profile.
+        """Method to plot the soil profile information.
 
         Parameters
         ----------
+        data: str, optional
+            String with the variable of the profile information to plot. 
+            You can choose between: "Pressure Head", "Water Content", 
+            "Hydraulic Conductivity","Hydraulic Capacity", "Water Flux", 
+            "Root Uptake".
+            Default is "Pressure Head".
         figsize: tuple, optional
         title: str, optional
         cmap: str, optional
             String with a named Matplotlib colormap.
-        color_by: str, optional
-            Column from the material properties sed to color the materials.
-            Default is "Ks".
 
         Returns
         -------
         ax: matplotlib axes instance
 
         """        
-        df = self.ml.read_nod_inf()[self.ml.time_information["tMax"]]
-        df1 = self.ml.read_nod_inf()[self.ml.time_information["tInit"]]
+        df = self.ml.read_nod_inf(times = self.ml.time_information["tMax"])
+        df1 = self.ml.read_nod_inf(times = self.ml.time_information["tInit"])
         l_unit = self.ml.basic_information["LUnit"]
         t_unit = self.ml.basic_information["TUnit"]
         use_cols = ("Head","Moisture","K", "C", "Flux", "Sink")
-        col_names = ("Pressure Head", "Water Content", "Hydraulic Conductivity", 
-                 "Hydraulic Capacity", "Water Flux", "Root Uptake")
+        col_names = ("Pressure Head", "Water Content", 
+                     "Hydraulic Conductivity", "Hydraulic Capacity", 
+                     "Water Flux", "Root Uptake")
         units = ["h [{}]".format(l_unit),
                   "Theta [-]","K [{}/days]".format(l_unit),
                   "C [1/{}]".format(l_unit), 
                   "v [{}/{}]".format(l_unit, t_unit),
                   "S [1/{}]".format(t_unit)]
+        col = col_names.index(data)        
+        fig, ax = plt.subplots(figsize=figsize, **kwargs)
         
-        for cols,names,unit in zip(use_cols, col_names,units):
-            fig, ax = plt.subplots(figsize=figsize, **kwargs)
-            if cols == "Moisture":
-                plt.axvline(df1[cols][1],color = 'k')                          
-            if cols == "K":
-                plt.axvline(df1[cols][1],color='k')
-            if cols == "C":
-                plt.axvline(df1[cols][1],color='k')
-            if cols == "Flux" and t_unit == "min":
-                df[cols] = df[cols]*60
-                unit = "v [{}/days]".format(l_unit)
+        if data == "Water Content":
+            plt.axvline(df1[use_cols[col]][1],color = 'k')                          
+        if data == "Hydraulic Conductivity":
+            plt.axvline(df1[use_cols[col]][1],color='k')
+        if data == "Hydraulic Capacity":
+            plt.axvline(df1[use_cols[col]][1],color='k')
+        if data == "Water Flux" and t_unit == "min":
+            df[use_cols[col]] = df[use_cols[col]]*60
 
-            ax.plot(df[cols], self.ml.profile.loc[:, ["x"]].values, "b")   
-            ax.set_ylim(self.ml.profile.loc[:, "x"].min(),self.ml.profile.loc[:, "x"].max())
-            ax.set_xlabel(unit)
-            ax.set_ylabel("Depth [{}]".format(self.ml.basic_information["LUnit"]))
-            ax.set_title("Profile Information: " + names)
-            ax.grid(linestyle='--')
-            plt.tight_layout()
+        ax.plot(df[use_cols[col]], self.ml.profile.loc[:, ["x"]].values, "b")   
+        ax.set_ylim(self.ml.profile.loc[:, "x"].min(),
+                    self.ml.profile.loc[:, "x"].max())
+        ax.set_xlabel(units[col])
+        ax.set_ylabel("Depth [{}]".format(self.ml.basic_information["LUnit"]))
+        ax.set_title("Profile Information: " + data)
+        ax.grid(linestyle='--')
+        plt.tight_layout()               
         return ax
-   
+    
     def mass_balance(self, figsize=(6, 10), title="Mass_Balance_Information",
                         **kwargs):
         """Method to show the Mass balance information.
@@ -133,22 +138,32 @@ class Plots:
         -------
         balance: opens BALANCE.OUT in notepad
         """
-        folder = self.ml.ws_name
         import subprocess
+        
+        folder = self.ml.ws_name
         balance = subprocess.Popen(["notepad.exe",folder + "\\BALANCE.OUT"])        
         return balance
     
-    def water_flow(self, figsize=(10, 4), title="Water Flow", cmap="YlOrBr",
-                   **kwargs):
-        """Method to plot the water flow.
+    def water_flow(self, data="Potential Surface Flux", figsize=(10, 3), 
+                   title="Water Flow", cmap="YlOrBr", **kwargs):
+        """Method to plot the water flow information.
 
         Parameters
         ----------
+        data: str, optional
+            String with the variable of the water flow information to plot. 
+            You can choose between: "Potential Surface Flux", 
+            "Potential Root Water Uptake", "Actual Surface Flux", 
+            "Actual Root Water Uptake", "Bottom Flux", 
+            "Pressure head at the soil surface", 
+            "Mean value of the pressure head over the region",
+            "Pressure head at the Bottom of the soil profile",
+            "Surface runoff", "Volume of water in the entire flow domain".
+            Default is "Potential Surface Flux".
         figsize: tuple, optional
         title: str, optional
         cmap: str, optional
             String with a named Matplotlib colormap.
-        color_by: str, optional
 
         Returns
         -------
@@ -160,20 +175,74 @@ class Plots:
                      "Bottom Flux", "Pressure head at the soil surface",
                      "Mean value of the pressure head over the region",
                      "Pressure head at the Bottom of the soil profile",
-                     "Surface runoff", "Volume of water in the entire flow domain")
-        df = self.ml.read_tlevel()
+                     "Surface runoff", 
+                     "Volume of water in the entire flow domain")
         
-        for col,name in zip(df,col_names):        
-            fig, ax = plt.subplots(figsize=figsize, nrows = 1, ncols =2, **kwargs)
-            fig.suptitle(name, fontsize=16, y=0.99)
-            ax[0].plot(df.index, df[col])
-            ax[0].set_title(col)   
+        cols = ("rTop", "rRoot", "vTop", "vRoot", "vBot", "hTop","hRoot", 
+                "hBot", "RunOff", "Volume")
+        df = self.ml.read_tlevel()
+        col = col_names.index(data)
+        if col < 5:
+            fig, ax = plt.subplots(figsize=figsize, nrows = 1, ncols =2
+                                   , **kwargs)
+            ax[0].plot(df.index, df[cols[col]])
+            ax[0].set_title(data)   
             ax[0].grid()            
             #Cumulative sum
-            df["sum("+col+")"] =df[col].cumsum()
-            ax[1].plot(df.index, df["sum("+col+")"])
-            ax[1].set_title("sum("+col+")")
+            ax[1].plot(df.index, df["sum("+cols[col]+")"])
+            ax[1].set_title("sum("+data+")")
             ax[1].grid()
+        else:
+            fig, ax = plt.subplots(figsize=figsize, nrows = 1, ncols =1, 
+                                   **kwargs)
+            ax.plot(df.index, df[cols[col]])
+            ax.set_title(data)   
+            ax.grid() 
         return ax
 
-        
+    def shp(self, data="Water Content", figsize=(10, 3), 
+            title="Soil hydraulic properties", cmap="YlOrBr", **kwargs):
+        """Method to plot the soil hydraulic properties.
+
+        Parameters
+        ----------
+        data: str, optional
+            String with the variable of the water flow information to plot. 
+            You can choose between: "Water Content", "Pressure head",
+                     "log Pressure head", "Hydraulic Capacity",
+                     "Hydraulic Conductivity", "log Hydraulic Conductivity",
+                     "Effective Water Content".
+            Default is "Water Content".        
+        figsize: tuple, optional
+        title: str, optional
+        cmap: str, optional
+            String with a named Matplotlib colormap.
+
+        Returns
+        -------
+        ax: matplotlib axes instance
+
+        """
+        col_names = ("Water Content", "Pressure head",
+                     "log Pressure head", "Hydraulic Capacity",
+                     "Hydraulic Conductivity", "log Hydraulic Conductivity",
+                     "Effective Water Content")
+        cols = ("theta", "h", "log_h", "C", "K", "log_K", "S", "Kv")
+
+        df = self.ml.read_I_check()
+        col = col_names.index(data)
+
+        fig, ax = plt.subplots(figsize=figsize, nrows = 1, ncols =3, **kwargs)
+        fig.suptitle(data, fontsize=16, y=0.99)
+        ax[0].plot(df["h"], df[cols[col]])  
+        ax[0].grid()  
+        ax[0].set_xlabel("h")         
+
+        ax[1].plot(df["log_h"], df[cols[col]])  
+        ax[1].grid()
+        ax[1].set_xlabel("log_h")
+
+        ax[2].plot(df["theta"], df[cols[col]])  
+        ax[2].grid()
+        ax[2].set_xlabel(r"$\dot{\Theta}$")
+        return ax

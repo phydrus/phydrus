@@ -889,7 +889,10 @@ class Model:
         fname: str, optional
             String with the name of the NOD_INF out file. default is
             "NOD_INF.OUT".
-
+        times = int, optional
+            Create a DataFrame with nodal values of the pressure head, 
+            the water content, the solution and sorbed concentrations, and 
+            temperature, etc, at the time "times". default is None.
         Returns
         -------
         data: dict
@@ -921,23 +924,31 @@ class Model:
 
             if times is None:
                 times = use_times
+                # Read the profile data into a Pandas DataFrame
+                for start, end, time in zip(start, end, use_times):
+                    if time in times:
+                        file.seek(0)  # Go back to start of file
+                        df = pd.read_csv(file, skiprows=start, index_col=0,
+                                         skipinitialspace=True,
+                                         delim_whitespace=True,
+                                         nrows=end - start - 2)
+                        #
+                        # # Fix the header
+                        df = df.drop(df.index[0]).apply(pd.to_numeric)
+                        df.index = pd.to_numeric(df.index)
+    
+                        data[time] = df
             elif not isinstance(times, list):
-                times = [times]
-
-            # Read the profile data into a Pandas DataFrame
-            for start, end, time in zip(start, end, use_times):
-                if time in times:
-                    file.seek(0)  # Go back to start of file
-                    df = pd.read_csv(file, skiprows=start, index_col=0,
-                                     skipinitialspace=True,
-                                     delim_whitespace=True,
-                                     nrows=end - start - 2)
-                    #
-                    # # Fix the header
-                    df = df.drop(df.index[0]).apply(pd.to_numeric)
-                    df.index = pd.to_numeric(df.index)
-
-                    data[time] = df
+                time = use_times.index(times)
+                file.seek(0)  # Go back to start of file
+                df = pd.read_csv(file, skiprows=start[time], index_col=0,
+                                         skipinitialspace=True,
+                                         delim_whitespace=True,
+                                         nrows=end[time] - start[time] - 2)
+                # # Fix the header
+                df = df.drop(df.index[0]).apply(pd.to_numeric)
+                df.index = pd.to_numeric(df.index)
+                data = df
         if len(data) is 1:
             return next(iter(data.values()))
         else:
