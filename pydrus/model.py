@@ -983,8 +983,8 @@ class Model:
             String with the name of the NOD_INF out file. default is
             "NOD_INF.OUT".
         times = int, optional
-            Create a DataFrame with nodal values of the pressure head, 
-            the water content, the solution and sorbed concentrations, and 
+            Create a DataFrame with nodal values of the pressure head,
+            the water content, the solution and sorbed concentrations, and
             temperature, etc, at the time "times". default is None.
         Returns
         -------
@@ -1105,7 +1105,7 @@ class Model:
             "BALANCE.OUT".
         use_cols: list of str optional
             List with the names of the columns to import. By default:
-            "Area","W-volume","In-flow","h Mean","Top Flux", 
+            "Area","W-volume","In-flow","h Mean","Top Flux",
             "Bot Flux","WatBalT","WatBalR".
 
         Returns
