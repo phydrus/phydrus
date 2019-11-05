@@ -2,10 +2,11 @@
 This file contains the model class.
 """
 
-import pandas as pd
-import numpy as np
 import os
 import subprocess
+
+import numpy as np
+import pandas as pd
 
 from .plot import Plots
 from .version import __version__
@@ -163,9 +164,10 @@ class Model:
             List of integers denoting the nodes to add a observation point
             to.
 
-        """        
+        """
         for obs in observations:
-            nodes = self.profile.iloc[(self.profile['x']-obs).abs().argsort()[:1]]
+            nodes = self.profile.iloc[
+                (self.profile['x'] - obs).abs().argsort()[:1]]
             node = nodes.index.item()
             self.observations.append(node)
 
@@ -291,15 +293,15 @@ class Model:
                                     "{} needs to be provided".format(var))
         if self.water_flow is None:
             if topinf:
-                #In thecase of 'Atmospheric BC' set KodTop=-1.
+                # In thecase of 'Atmospheric BC' set KodTop=-1.
                 kodtop = -1
             if free_drainage:
-                #In case of a seepage face or free drainage BC set KodBot=-1.
+                # In case of a seepage face or free drainage BC set KodBot=-1.
                 kodbot = -1
             if seepage_face:
-                #In case of a seepage face or free drainage BC set KodBot=-1.
+                # In case of a seepage face or free drainage BC set KodBot=-1.
                 kodbot = -1
-                
+
             self.water_flow = {
                 "MaxIt": maxit,  # Maximum No. of Iterations
                 "TolTh": tolth,  # [-]
@@ -326,7 +328,7 @@ class Model:
                 "iModel": model,
                 "iHyst": hysteresis,
                 "iKappa": ikappa,
-            }           
+            }
         else:
             raise Warning("Water flow was already provided. Please delete "
                           "the old information first.")
@@ -446,11 +448,18 @@ class Model:
             raise NotImplementedError("Sorry, the S-shaped model has not been "
                                       "implemented yet!")
 
+            # Number of pressure heads should equal the number of materials.
+        if poptm:
+            if len(poptm) != self.basic_information["NMat"]:
+                raise KeyError("Length of pressure heads poptm does not "
+                               "equal the number of materials!")
+
         if self.rootwater_uptake is None:
             self.rootwater_uptake = {
                 "iMoSink": model,
                 "cRootMax": crootmax,
                 "OmegaC": omegac,
+                "POptm": poptm,
                 "P0": p0,
                 "P2H": p2h,
                 "P2L": p2l,
@@ -458,16 +467,102 @@ class Model:
                 "r2H": r2h,
                 "r2L": r2l,
             }
+            self.basic_information["lSink"] = True
+        else:
+            msg = "Root water uptake model is already present in the model." \
+                  " Remove the old root water uptake model first using " \
+                  "ml.del_root_water_uptake()"
+            raise InterruptedError(msg)
 
-            # Number of pressure heads should equal the number of materials.
-            if poptm:
-                if len(poptm) != self.basic_information["NMat"]:
-                    raise Warning("Length of pressure heads poptm does not "
-                                  "equal the number of materials!")
-                else:
-                    self.rootwater_uptake["POptm"] = poptm
+    def add_root_growth(self, irootin=0, ngrowth=None, tgrowth=None,
+                        rootdepth=None, irfak=None, trmin=None, trmed=None,
+                        trharv=None, xrmin=None, xrmed=None, xrmax=None,
+                        trperiod=None):
+        """Method to add root growth to the model.
 
-        self.basic_information["lSink"] = True
+        Parameters
+        ----------
+        irootin: int
+            0 = (default) The root depth is specified together with other
+            time-variable boundary condition, such as atmospheric fluxes.
+            1 = the root depth is given in a table
+            2 = the root depth is calculated using the growth function.
+        ngrowth: int
+            Number of data points in the root depth table. Only used when
+            irootin = 1.
+        tgrowth: float, optional
+            Days. Only used when irootin = 1.
+        rootdepth: list of float, optional
+            Rooting depth [L]. List has a length of ngrowth. Only used when
+            irootin = 1.
+        irfak: int, optional
+            Method to calculate the root growth factor, r. Only used when
+            irootin = 2.
+            0= the root growth factor is calculated from given data [xRMed,
+            tRMed].
+            1 = the root growth factor is calculated based on the assumption
+            that 50% of the rooting depth, (xRMax+xRMin)/2., is reached at
+            the midpoint of the growing season, (tRMin+tRHarv)/2.
+        trmin: float, optional
+            Initial time of the root growth period [T]. Only used when
+            irootin = 2.
+        trmed: float, optional
+            Time of known rooting depth (set equal to zero if iRFak=1) [T].
+            Only used when irootin = 2.
+        trharv: float, optional
+            Time at the end of the root water uptake period [T]. Only used when
+            irootin = 2.
+        xrmin: float, optional
+            Initial value of the rooting depth at the beginning of the
+            growth period (recommended value = 1 cm) [L]. Only used when
+            irootin = 2.
+        xrmed: float, optional
+            Value of known rooting depth (set equal to zero if iRFak=1) [L].
+            Only used when irootin = 2.
+        xrmax: float, optional
+            Maximum rooting depth, which may be reached at infinite time [L].
+            Only used when irootin = 2.
+        trperiod: float, optional
+            Time period at which the growth function repeats itself. Only
+            used when irootin = 2.
+
+        """
+
+        # Store the root growth information depending on the model.
+        if irootin is 0:
+            root_growth = {
+                "iRootIn": irootin
+            }
+        elif irootin is 1:
+            root_growth = {
+                "iRootIn": irootin,
+                "nGrowht": ngrowth,
+                "tGrwoth": tgrowth,
+                "RootDepth": rootdepth
+            }
+        elif irootin is 2:
+            root_growth = {
+                "iRootIn": irootin,
+                "iRFak": irfak,
+                "tRMin": trmin,
+                "tRMed": trmed,
+                "tRHarv": trharv,
+                "xRMin": xrmin,
+                "xRMed": xrmed,
+                "xRMax": xrmax,
+                "tRPeriod": trperiod
+            }
+        else:
+            raise Warning("Option %s for irootin is not support in Hydrus."
+                          % irootin)
+
+        if self.root_growth is None:
+            self.root_growth = root_growth
+            self.basic_information["lRoot"] = True
+        else:
+            raise Warning("Root growth model already exists. Please delete "
+                          "the old root growth model first using "
+                          "ml.del_root_growth().")
 
     def simulate(self):
         """Method to call the Hydrus-1D executable.
@@ -478,28 +573,6 @@ class Model:
         result = subprocess.run(cmd)
 
         return result
-
-    def residuals(self):
-
-        # 1. Simulate the model
-        self.simulate()
-
-        # 2. Read the necessary model output
-        sim = self.read_output()
-
-        # 3. Calculate the residuals
-        residuals = sim - obs
-
-        return residuals
-
-    def solve(self):
-        """
-
-        Returns
-        -------
-
-        """
-        pass
 
     def get_print_times(self):
         """Method to get the print times for the simulation.
@@ -592,9 +665,9 @@ class Model:
                      ["BotInf", "qGWLF", "FreeD", "SeepF", "KodBot", "qDrain",
                       "hSeep", "\n"]]
 
-#        if (self.water_flow["KodTop"] >= 0) or \
-#                (self.water_flow["KodBot"] >= 0):
-#            vars_list.append(["rTop", "rBot", "rRoot", "\n"])
+        #        if (self.water_flow["KodTop"] >= 0) or \
+        #                (self.water_flow["KodBot"] >= 0):
+        #            vars_list.append(["rTop", "rBot", "rRoot", "\n"])
         # Records 8a and 9a are provided only when lower or upper boundary
         # conditions are independent of time and at least one of them is a 
         # Neumann BC.
@@ -635,7 +708,7 @@ class Model:
 
         times = self.get_print_times()
 
-#        self.time_information["MPL"] = len(times)
+        #        self.time_information["MPL"] = len(times)
 
         vars_list = [
             ["dt", "dtMin", "dtMax", "dMul", "dMul2", "ItMin", "ItMax",
@@ -656,19 +729,18 @@ class Model:
             lines.append(" ".join(values))
 
         lines.append("TPrint(1),TPrint(2),...,TPrint(MPL)\n")
-#        for i in range(int(len(times) / 6) + 1):
-#            lines.append(
-#                " ".join([str(time) for time in times[i * 6:i * 6 + 6]]))
-#            lines.append("\n")
-        printtimes = np.linspace(start = self.time_information["tInit"],
-                                 stop = self.time_information["tMax"], 
-                                 num = self.time_information["MPL"]+1)[1:]
+        #        for i in range(int(len(times) / 6) + 1):
+        #            lines.append(
+        #                " ".join([str(time) for time in times[i * 6:i * 6 + 6]]))
+        #            lines.append("\n")
+        printtimes = np.linspace(start=self.time_information["tInit"],
+                                 stop=self.time_information["tMax"],
+                                 num=self.time_information["MPL"] + 1)[1:]
         roundtimes = printtimes.round(6)
         strtimes = "  ".join(str(e) for e in roundtimes)
         self.strtimes = strtimes
         lines.append(strtimes)
         lines.append("\n")
-            
 
         # Write BLOCK D: Root Growth Information
         if self.basic_information["lRoot"]:
@@ -877,8 +949,8 @@ class Model:
 
         if use_cols is None:
             use_cols = ["Time", "rTop", "rRoot", "vTop", "vRoot",
-                        "vBot","sum(rTop)", "sum(rRoot)", "sum(vTop)",
-                        "sum(vRoot)","sum(vBot)","hTop", "hRoot", "hBot",
+                        "vBot", "sum(rTop)", "sum(rRoot)", "sum(vTop)",
+                        "sum(vRoot)", "sum(vBot)", "hTop", "hRoot", "hBot",
                         "RunOff", "Volume", ]
 
             if self.water_flow["iModel"] > 4:
@@ -959,15 +1031,15 @@ class Model:
                         # # Fix the header
                         df = df.drop(df.index[0]).apply(pd.to_numeric)
                         df.index = pd.to_numeric(df.index)
-    
+
                         data[time] = df
             elif not isinstance(times, list):
                 time = use_times.index(times)
                 file.seek(0)  # Go back to start of file
                 df = pd.read_csv(file, skiprows=start[time], index_col=0,
-                                         skipinitialspace=True,
-                                         delim_whitespace=True,
-                                         nrows=end[time] - start[time] - 2)
+                                 skipinitialspace=True,
+                                 delim_whitespace=True,
+                                 nrows=end[time] - start[time] - 2)
                 # # Fix the header
                 df = df.drop(df.index[0]).apply(pd.to_numeric)
                 df.index = pd.to_numeric(df.index)
@@ -976,7 +1048,7 @@ class Model:
             return next(iter(data.values()))
         else:
             return data
-        
+
     def read_run_inf(self, fname="RUN_INF.OUT", use_cols=None):
         """Method to read the RUN_INF.OUT output file.
 
@@ -1023,8 +1095,8 @@ class Model:
                                delim_whitespace=True, usecols=use_cols,
                                engine="python")
 
-        return data   
-    
+        return data
+
     def read_balance(self, fname="BALANCE.OUT", use_cols=None):
         """Method to read the BALANCE.OUT output file.
 
@@ -1050,19 +1122,20 @@ class Model:
                 "File {} has not been found.".format(path))
 
         if use_cols is None:
-            use_cols = ["Area","W-volume","In-flow","h Mean","Top Flux",
-                        "Bot Flux","WatBalT","WatBalR"] 
+            use_cols = ["Area", "W-volume", "In-flow", "h Mean", "Top Flux",
+                        "Bot Flux", "WatBalT", "WatBalR"]
             if not self.solute_transport == None:
-               use_cols.append("ConcVol", "ConcVolIm","cMean","CncBalT","CncBalR")
-        
+                use_cols.append("ConcVol", "ConcVolIm", "cMean", "CncBalT",
+                                "CncBalR")
+
             if not self.heat_transport == None:
-               use_cols.append("TVol", "TMean")
-             
+                use_cols.append("TVol", "TMean")
+
             if not self.CO2Transport == None:
-               use_cols.append("COVol", "COMean","CO2BalT","CncBalT")
-            
+                use_cols.append("COVol", "COMean", "CO2BalT", "CncBalT")
+
             if not self.dual_porosity == None:
-               use_cols.append("W-VolumeI", "cMeanIm")
+                use_cols.append("W-VolumeI", "cMeanIm")
 
         List = open(path).readlines()
         List_copy = List.copy()
@@ -1073,31 +1146,33 @@ class Model:
             for x in use_cols:
                 if x in line:
                     line1 = x
-                    line2 = line.replace("\n","").split(" ")[-1]
-                    line3=line.replace("  "," ").split(" ")[-2]
-                    List_copy[i] = [line1,line2,line3]
+                    line2 = line.replace("\n", "").split(" ")[-1]
+                    line3 = line.replace("  ", " ").split(" ")[-2]
+                    List_copy[i] = [line1, line2, line3]
 
             if "Time" in line and not "Date" in line:
-                time = float(line.replace(" ", "").split("]")[1].replace("\n", ""))
+                time = float(
+                    line.replace(" ", "").split("]")[1].replace("\n", ""))
                 use_times.append(time)
             if "Area" in line:
-                start.append(i)     
+                start.append(i)
             if "WatBalR" in line:
-                end.append(i+1)
+                end.append(i + 1)
             if "Sub-region" in line:
-                subregions = line.replace("  ", " ").replace("\n", "").split(" ")[-1]
+                subregions = \
+                    line.replace("  ", " ").replace("\n", "").split(" ")[-1]
         data = {}
-        for s, e, time in zip(start,end,use_times):
+        for s, e, time in zip(start, end, use_times):
             List_copy1 = List_copy[s:e]
             df = pd.DataFrame(List_copy1).set_index(0).T
             indexc = {}
-            for x in range(int(subregions)+1):
-                indexc[x+1] = x 
+            for x in range(int(subregions) + 1):
+                indexc[x + 1] = x
                 df = df.rename(index=indexc)
             data[time] = df
 
         return data
-    
+
     def read_obs_node(self, fname="OBS_NODE.OUT", times=None):
         """Method to read the OBS_NODE.OUT output file.
 
@@ -1119,7 +1194,7 @@ class Model:
             raise FileNotFoundError(
                 "File {} has not been found.".format(path))
 
-        data = {}       
+        data = {}
         with open(path) as file:
             # Find the starting times to read the information
             for i, line in enumerate(file.readlines()):
@@ -1130,19 +1205,20 @@ class Model:
             for i, nod in enumerate(self.observations):
                 file.seek(0)
                 if i == 0:
-                    usecols = ["time","h","theta","Temp"]
+                    usecols = ["time", "h", "theta", "Temp"]
                 else:
-                    usecols = ["time","h."+ str(1),"theta."+str(1),"Temp."+str(1)]                       
-                df = pd.read_csv(file, skiprows=start, index_col=0, 
-                             skipinitialspace=True, 
-                             delim_whitespace=True, 
-                             nrows=end - start - 1, 
-                             usecols = usecols)
-                df.columns = ["h","theta","Temp"]
+                    usecols = ["time", "h." + str(1), "theta." + str(1),
+                               "Temp." + str(1)]
+                df = pd.read_csv(file, skiprows=start, index_col=0,
+                                 skipinitialspace=True,
+                                 delim_whitespace=True,
+                                 nrows=end - start - 1,
+                                 usecols=usecols)
+                df.columns = ["h", "theta", "Temp"]
                 data[nod] = df
-                
+
         return data
-    
+
     def read_I_check(self, fname="I_CHECK.OUT", times=None):
         """Method to read the I_CHECK.OUT output file.
 
@@ -1159,7 +1235,7 @@ class Model:
             value.
 
         """
-        usecols = ["theta","h","log_h","C","K","log_K","S","Kv"]
+        usecols = ["theta", "h", "log_h", "C", "K", "log_K", "S", "Kv"]
         path = os.path.join(self.ws_name, fname)
         if not os.path.exists(path):
             raise FileNotFoundError(
@@ -1169,15 +1245,15 @@ class Model:
             # Find the starting times to read the information
             for i, line in enumerate(file.readlines()):
                 if "theta" in line:
-                    start=i
+                    start = i
                 elif "end" in line:
-                    end=i
+                    end = i
 
             # Read the profile data into a Pandas DataFrame
             file.seek(0)
-            df = pd.read_csv(file, skiprows=start+1, index_col=None,
-                                     header = None, names = usecols,
-                                     skipinitialspace=True,
-                                     delim_whitespace=True,
-                                     nrows=int(end) - int(start) - 2)            
+            df = pd.read_csv(file, skiprows=start + 1, index_col=None,
+                             header=None, names=usecols,
+                             skipinitialspace=True,
+                             delim_whitespace=True,
+                             nrows=int(end) - int(start) - 2)
         return df
