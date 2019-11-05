@@ -3,6 +3,7 @@ This file contains the model class.
 """
 
 import pandas as pd
+import numpy as np
 import os
 import subprocess
 
@@ -162,9 +163,11 @@ class Model:
             List of integers denoting the nodes to add a observation point
             to.
 
-        """
+        """        
         for obs in observations:
-            self.observations.append(obs)
+            nodes = self.profile.iloc[(self.profile['x']-obs).abs().argsort()[:1]]
+            node = nodes.index.item()
+            self.observations.append(node)
 
     def add_waterflow(self, model=0, maxit=20, tolth=1e-4, tolh=0.1, ha=1e-3,
                       hb=1e3, topinf=False, botinf=False, kodtop=-1, kodbot=1,
@@ -279,7 +282,6 @@ class Model:
             surface runoff.
 
         """
-
         # If qgwlf is user as bottom boundary condition
         if qgwlf:
             for var in [gw_level, aqh, bqh]:
@@ -287,8 +289,17 @@ class Model:
                     raise TypeError("When the groundwater level is used as "
                                     "bottom boundary condition, the keyword "
                                     "{} needs to be provided".format(var))
-
         if self.water_flow is None:
+            if topinf:
+                #In thecase of 'Atmospheric BC' set KodTop=-1.
+                kodtop = -1
+            if free_drainage:
+                #In case of a seepage face or free drainage BC set KodBot=-1.
+                kodbot = -1
+            if seepage_face:
+                #In case of a seepage face or free drainage BC set KodBot=-1.
+                kodbot = -1
+                
             self.water_flow = {
                 "MaxIt": maxit,  # Maximum No. of Iterations
                 "TolTh": tolth,  # [-]
@@ -315,7 +326,7 @@ class Model:
                 "iModel": model,
                 "iHyst": hysteresis,
                 "iKappa": ikappa,
-            }
+            }           
         else:
             raise Warning("Water flow was already provided. Please delete "
                           "the old information first.")
@@ -581,9 +592,12 @@ class Model:
                      ["BotInf", "qGWLF", "FreeD", "SeepF", "KodBot", "qDrain",
                       "hSeep", "\n"]]
 
-        if (self.water_flow["KodTop"] >= 0) or \
-                (self.water_flow["KodBot"] >= 0):
-            vars_list.append(["rTop", "rBot", "rRoot", "\n"])
+#        if (self.water_flow["KodTop"] >= 0) or \
+#                (self.water_flow["KodBot"] >= 0):
+#            vars_list.append(["rTop", "rBot", "rRoot", "\n"])
+        # Records 8a and 9a are provided only when lower or upper boundary
+        # conditions are independent of time and at least one of them is a 
+        # Neumann BC.
 
         if self.water_flow["qGWLF"]:
             vars_list.append(["GWL0L", "Aqh", "Bqh", "\n"])
@@ -621,7 +635,7 @@ class Model:
 
         times = self.get_print_times()
 
-        self.time_information["MPL"] = len(times)
+#        self.time_information["MPL"] = len(times)
 
         vars_list = [
             ["dt", "dtMin", "dtMax", "dMul", "dMul2", "ItMin", "ItMax",
@@ -642,10 +656,19 @@ class Model:
             lines.append(" ".join(values))
 
         lines.append("TPrint(1),TPrint(2),...,TPrint(MPL)\n")
-        for i in range(int(len(times) / 6) + 1):
-            lines.append(
-                " ".join([str(time) for time in times[i * 6:i * 6 + 6]]))
-            lines.append("\n")
+#        for i in range(int(len(times) / 6) + 1):
+#            lines.append(
+#                " ".join([str(time) for time in times[i * 6:i * 6 + 6]]))
+#            lines.append("\n")
+        printtimes = np.linspace(start = self.time_information["tInit"],
+                                 stop = self.time_information["tMax"], 
+                                 num = self.time_information["MPL"]+1)[1:]
+        roundtimes = printtimes.round(6)
+        strtimes = "  ".join(str(e) for e in roundtimes)
+        self.strtimes = strtimes
+        lines.append(strtimes)
+        lines.append("\n")
+            
 
         # Write BLOCK D: Root Growth Information
         if self.basic_information["lRoot"]:

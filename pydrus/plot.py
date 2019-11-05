@@ -67,9 +67,10 @@ class Plots:
         plt.tight_layout()
         return ax
     
-    def profile_information(self, data="Pressure Head", figsize=(6, 6), 
-                            title="Profile Information", 
-                            cmap="YlOrBr", **kwargs):
+    def profile_information(self, data="Pressure Head", times = None, 
+                             legend = True, figsize=(7, 5), 
+                             title="Profile Information", 
+                             nodes = "all", cmap="YlOrBr", **kwargs):
         """Method to plot the soil profile information.
 
         Parameters
@@ -80,6 +81,8 @@ class Plots:
             "Hydraulic Conductivity","Hydraulic Capacity", "Water Flux", 
             "Root Uptake".
             Default is "Pressure Head".
+        times: list of int
+            List of integers of the time step to plot.       
         figsize: tuple, optional
         title: str, optional
         cmap: str, optional
@@ -89,11 +92,11 @@ class Plots:
         -------
         ax: matplotlib axes instance
 
-        """        
-        df = self.ml.read_nod_inf(times = self.ml.time_information["tMax"])
-        df1 = self.ml.read_nod_inf(times = self.ml.time_information["tInit"])
+        """
         l_unit = self.ml.basic_information["LUnit"]
-        t_unit = self.ml.basic_information["TUnit"]
+        t_unit = self.ml.basic_information["TUnit"]  
+        dfini = self.ml.read_nod_inf(times = 0)
+      
         use_cols = ("Head","Moisture","K", "C", "Flux", "Sink")
         col_names = ("Pressure Head", "Water Content", 
                      "Hydraulic Conductivity", "Hydraulic Capacity", 
@@ -103,26 +106,48 @@ class Plots:
                   "C [1/{}]".format(l_unit), 
                   "v [{}/{}]".format(l_unit, t_unit),
                   "S [1/{}]".format(t_unit)]
+        
         col = col_names.index(data)        
         fig, ax = plt.subplots(figsize=figsize, **kwargs)
+               
+        if times is None:
+            df = self.ml.read_nod_inf()
+            for key, dataframe in df.items():
+                ax.plot(dataframe[use_cols[col]], dataframe["Depth"],
+                        label = "T" + str(key))
+        else:  
+            for time in times:
+                df = self.ml.read_nod_inf(times = time)
+                ax.plot(df[use_cols[col]], df["Depth"])
         
+        space = (abs(dfini[use_cols[col]].min())-
+                    abs(dfini[use_cols[col]].max()))        
+        
+        if data == "Pressure Head":
+            ax.set_xlim(dfini[use_cols[col]].min(),
+                        dfini[use_cols[col]].max()+space*0.2)
         if data == "Water Content":
-            plt.axvline(df1[use_cols[col]][1],color = 'k')                          
+            ax.set_xlim(dfini[use_cols[col]].min()+space*0.2,
+                        dfini[use_cols[col]].max()-space*0.1)                      
         if data == "Hydraulic Conductivity":
-            plt.axvline(df1[use_cols[col]][1],color='k')
+            ax.set_xlim(0, dfini[use_cols[col]].max())            
         if data == "Hydraulic Capacity":
-            plt.axvline(df1[use_cols[col]][1],color='k')
-        if data == "Water Flux" and t_unit == "min":
-            df[use_cols[col]] = df[use_cols[col]]*60
+            ax.set_xlim(0)
+        
+        ax.plot(dfini[use_cols[col]], dfini["Depth"],
+                    label = "T0", color = 'k')
 
-        ax.plot(df[use_cols[col]], self.ml.profile.loc[:, ["x"]].values, "b")   
         ax.set_ylim(self.ml.profile.loc[:, "x"].min(),
                     self.ml.profile.loc[:, "x"].max())
         ax.set_xlabel(units[col])
         ax.set_ylabel("Depth [{}]".format(self.ml.basic_information["LUnit"]))
         ax.set_title("Profile Information: " + data)
         ax.grid(linestyle='--')
-        plt.tight_layout()               
+        
+        if legend:
+            ax.legend(bbox_to_anchor=(1.04,1), loc="upper left")    
+        
+        plt.tight_layout() 
         return ax
     
     def mass_balance(self, figsize=(6, 10), title="Mass_Balance_Information",
@@ -182,6 +207,7 @@ class Plots:
                 "hBot", "RunOff", "Volume")
         df = self.ml.read_tlevel()
         col = col_names.index(data)
+        
         if col < 5:
             fig, ax = plt.subplots(figsize=figsize, nrows = 1, ncols =2
                                    , **kwargs)
@@ -193,7 +219,7 @@ class Plots:
             ax[1].set_title("sum("+data+")")
             ax[1].grid()
         else:
-            fig, ax = plt.subplots(figsize=figsize, nrows = 1, ncols =1, 
+            fig, ax = plt.subplots(figsize=(5,3), nrows = 1, ncols =1, 
                                    **kwargs)
             ax.plot(df.index, df[cols[col]])
             ax.set_title(data)   
@@ -228,13 +254,13 @@ class Plots:
                      "Hydraulic Conductivity", "log Hydraulic Conductivity",
                      "Effective Water Content")
         cols = ("theta", "h", "log_h", "C", "K", "log_K", "S", "Kv")
-
         df = self.ml.read_I_check()
         col = col_names.index(data)
 
         fig, ax = plt.subplots(figsize=figsize, nrows = 1, ncols =3, **kwargs)
         fig.suptitle(data, fontsize=16, y=0.99)
-        ax[0].plot(df["h"], df[cols[col]])  
+        
+        ax[0].plot(abs(df["h"]), df[cols[col]])  
         ax[0].grid()  
         ax[0].set_xlabel("h")         
 
