@@ -5,7 +5,6 @@ This file contains the model class.
 import os
 import subprocess
 
-import numpy as np
 import pandas as pd
 
 from .plot import Plots
@@ -552,6 +551,9 @@ class Model:
                 "xRMax": xrmax,
                 "tRPeriod": trperiod
             }
+            if irfak is 1:
+                root_growth["tRMed"] = 0
+                root_growth["xRMed"] = 0
         else:
             raise Warning("Option %s for irootin is not support in Hydrus."
                           % irootin)
@@ -708,7 +710,7 @@ class Model:
 
         times = self.get_print_times()
 
-        #        self.time_information["MPL"] = len(times)
+        self.time_information["MPL"] = len(times)
 
         vars_list = [
             ["dt", "dtMin", "dtMax", "dMul", "dMul2", "ItMin", "ItMax",
@@ -729,22 +731,18 @@ class Model:
             lines.append(" ".join(values))
 
         lines.append("TPrint(1),TPrint(2),...,TPrint(MPL)\n")
-        #        for i in range(int(len(times) / 6) + 1):
-        #            lines.append(
-        #                " ".join([str(time) for time in times[i * 6:i * 6 + 6]]))
-        #            lines.append("\n")
-        printtimes = np.linspace(start=self.time_information["tInit"],
-                                 stop=self.time_information["tMax"],
-                                 num=self.time_information["MPL"] + 1)[1:]
-        roundtimes = printtimes.round(6)
-        strtimes = "  ".join(str(e) for e in roundtimes)
-        self.strtimes = strtimes
-        lines.append(strtimes)
-        lines.append("\n")
+        for i in range(int(len(times) / 6) + 1):
+            lines.append(
+                " ".join([str(time) for time in times[i * 6:i * 6 + 6]]))
+            lines.append("\n")
 
         # Write BLOCK D: Root Growth Information
         if self.basic_information["lRoot"]:
-            raise NotImplementedError
+            lines.append(
+                string.format("BLOCK G: ROOT WATER UPTAKE INFORMATION ",
+                              fill="*", align="<", width=72))
+            lines.append("iRootDepthEntry\n{}".format(self.root_growth[
+                                                          "iRootIn"]))
 
         # Write Block E - Heat transport information
         if self.basic_information["lTemp"]:
