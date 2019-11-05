@@ -160,8 +160,9 @@ class Model:
         Parameters
         ----------
         observations: list of ints
-            List of integers denoting the nodes to add a observation point
-            to.
+            List of floats denoting the depth of the nodes. The depth is
+            defined in the same length unit as selected in ml.model function.
+            The function defines the closest node to the desired depth.
 
         """
         for obs in observations:
@@ -291,9 +292,6 @@ class Model:
                                     "bottom boundary condition, the keyword "
                                     "{} needs to be provided".format(var))
         if self.water_flow is None:
-            if topinf:
-                # In thecase of 'Atmospheric BC' set KodTop=-1.
-                kodtop = -1
             if free_drainage:
                 # In case of a seepage face or free drainage BC set KodBot=-1.
                 kodbot = -1
@@ -667,12 +665,9 @@ class Model:
                      ["BotInf", "qGWLF", "FreeD", "SeepF", "KodBot", "qDrain",
                       "hSeep", "\n"]]
 
-        #        if (self.water_flow["KodTop"] >= 0) or \
-        #                (self.water_flow["KodBot"] >= 0):
-        #            vars_list.append(["rTop", "rBot", "rRoot", "\n"])
-        # Records 8a and 9a are provided only when lower or upper boundary
-        # conditions are independent of time and at least one of them is a 
-        # Neumann BC.
+        if (self.water_flow["KodTop"] >= 0) or \
+                (self.water_flow["KodBot"] >= 0):
+            vars_list.append(["rTop", "rBot", "rRoot", "\n"])
 
         if self.water_flow["qGWLF"]:
             vars_list.append(["GWL0L", "Aqh", "Bqh", "\n"])
