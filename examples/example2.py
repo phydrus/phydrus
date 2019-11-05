@@ -39,7 +39,8 @@ atm = pd.read_csv("data/ex2.csv", index_col=0)
 ml.add_atmosphere(atm)
 
 ml.add_rootwater_uptake(model=0, poptm=[-25, -25])
-
+ml.add_root_growth(2, irfak=1, trmin=0, trmed=0, trmax=2143, xrmin=10,
+                   xrmed=0, xrmax=50, trperiod=365)
 ml.write_files()
 rs = ml.simulate()
 

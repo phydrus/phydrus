@@ -475,7 +475,7 @@ class Model:
 
     def add_root_growth(self, irootin=0, ngrowth=None, tgrowth=None,
                         rootdepth=None, irfak=None, trmin=None, trmed=None,
-                        trharv=None, xrmin=None, xrmed=None, xrmax=None,
+                        trmax=None, xrmin=None, xrmed=None, xrmax=None,
                         trperiod=None):
         """Method to add root growth to the model.
 
@@ -508,7 +508,7 @@ class Model:
         trmed: float, optional
             Time of known rooting depth (set equal to zero if iRFak=1) [T].
             Only used when irootin = 2.
-        trharv: float, optional
+        trmax: float, optional
             Time at the end of the root water uptake period [T]. Only used when
             irootin = 2.
         xrmin: float, optional
@@ -545,7 +545,7 @@ class Model:
                 "iRFak": irfak,
                 "tRMin": trmin,
                 "tRMed": trmed,
-                "tRHarv": trharv,
+                "tRMax": trmax,
                 "xRMin": xrmin,
                 "xRMed": xrmed,
                 "xRMax": xrmax,
@@ -739,10 +739,15 @@ class Model:
         # Write BLOCK D: Root Growth Information
         if self.basic_information["lRoot"]:
             lines.append(
-                string.format("BLOCK G: ROOT WATER UPTAKE INFORMATION ",
+                string.format("BLOCK D: ROOT GROWTH INFORMATION ",
                               fill="*", align="<", width=72))
-            lines.append("iRootDepthEntry\n{}".format(self.root_growth[
+            lines.append("iRootDepthEntry\n{}\n".format(self.root_growth[
                                                           "iRootIn"]))
+            d = self.root_growth.copy()
+            d.pop("iRootIn")
+            d["\n"] = "\n"
+            lines.append("    ".join(d.keys()))
+            lines.append("    ".join(str(p) for p in d.values()))
 
         # Write Block E - Heat transport information
         if self.basic_information["lTemp"]:
@@ -775,11 +780,11 @@ class Model:
                             values.append("f")
                         else:
                             values.append(str(val))
-                lines.append(" ".join(values))
+                lines.append("    ".join(values))
                 lines.append("\n")
 
             lines.append("POptm(1),POptm(2),...,POptm(NMat)\n")
-            lines.append(" ".join(str(p) for p in self.rootwater_uptake[
+            lines.append("    ".join(str(p) for p in self.rootwater_uptake[
                 "POptm"]))
             lines.append("\n")
 
