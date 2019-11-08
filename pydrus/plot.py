@@ -246,7 +246,7 @@ class Plots:
 
         Returns
         -------
-        ax: matplotlib axes instance
+        axes: matplotlib axes instance
 
         """
         col_names = ("Water Content", "Pressure head",
@@ -254,21 +254,22 @@ class Plots:
                      "Hydraulic Conductivity", "log Hydraulic Conductivity",
                      "Effective Water Content")
         cols = ("theta", "h", "log_h", "C", "K", "log_K", "S", "Kv")
-        df = self.ml.read_I_check()
+        df = self.ml.read_i_check()
         col = col_names.index(data)
 
-        fig, ax = plt.subplots(figsize=figsize, nrows = 1, ncols =3, **kwargs)
+        fig, axes = plt.subplots(figsize=figsize, nrows = 1, ncols =3,
+                                 **kwargs)
         fig.suptitle(data, fontsize=16, y=0.99)
         
-        ax[0].plot(abs(df["h"]), df[cols[col]])  
-        ax[0].grid()  
-        ax[0].set_xlabel("h")         
+        axes[0].plot(abs(df["h"]), df[cols[col]])
+        axes[0].grid()
+        axes[0].set_xlabel("h")
 
-        ax[1].plot(df["log_h"], df[cols[col]])  
-        ax[1].grid()
-        ax[1].set_xlabel("log_h")
+        axes[1].plot(df["log_h"], df[cols[col]])
+        axes[1].grid()
+        axes[1].set_xlabel("log_h")
 
-        ax[2].plot(df["theta"], df[cols[col]])  
-        ax[2].grid()
-        ax[2].set_xlabel(r"$\dot{\Theta}$")
-        return ax
+        axes[2].plot(df["theta"], df[cols[col]])
+        axes[2].grid()
+        axes[2].set_xlabel(r"$\dot{\Theta}$")
+        return axes

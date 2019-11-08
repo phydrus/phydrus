@@ -56,18 +56,18 @@ ml.write_files()
 ml.simulate()
 
 # Update the initial head for the transient simulation with the steady state
-df = ml.read_nod_inf()
-ml.profile["h"] = df["100.0000"]["Head"].values
+df = ml.read_nod_inf(times=100)
+ml.profile["h"] = df["Head"].values
 
 # Atmospheric data
 atm = pd.read_csv("data/ex4.csv", decimal=",", sep=";")
-ml.add_atmosphere(atm)
+ml.add_atmospheric_bc(atm)
 ml.water_flow["KodBot"] = -1
 
 ml.time_information["tMax"] = 360
 
 # Root uptake
-ml.add_rootwater_uptake(model=0, poptm=[-25] * m.index.size)
+ml.add_root_uptake(model=0, poptm=[-125] * m.index.size)
 
 ml.write_files()
 ml.simulate()

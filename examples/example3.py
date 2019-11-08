@@ -39,10 +39,10 @@ ml.add_waterflow(maxit=20, tolh=1, linitw=False, kodbot=-1,
 # Atmospheric data
 atm = pd.read_csv("data/ex3.csv", index_col=0)
 atm = atm.drop("RootDepth", 1)
-ml.add_atmosphere(atm)
+ml.add_atmospheric_bc(atm)
 
 # Root uptake
-ml.add_rootwater_uptake(model=0, poptm=[-25])
+ml.add_root_uptake(model=0, poptm=[-25])
 
 ml.write_files()
 ml.simulate()

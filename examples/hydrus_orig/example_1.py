@@ -27,7 +27,7 @@ import pandas as pd
 import numpy as np
 
 ws = "example_1"
-exe = os.path.join(os.getcwd(), "hydrus")
+exe = os.path.join(os.getcwd(), "../../source/hydrus")
 
 # Create the basic model
 desc = "Infiltration of Water into a Single-Layered Soil Profile"

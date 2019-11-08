@@ -104,9 +104,12 @@ class Model:
 
         self.water_flow = None
         self.solute_transport = None
+        self.solutes = None
         self.heat_transport = None
+
         self.rootwater_uptake = None
         self.root_growth = None
+
         self.atmosphere_information = None
         self.atmosphere = None
         self.CO2Transport = None
@@ -332,11 +335,11 @@ class Model:
 
         self.basic_information["lWat"] = True
 
-    def add_atmosphere(self, atmosphere, ldailyvar=False, lsinusvar=False,
-                       llai=False, lbccycles=False, linterc=False,
-                       rextinct=0.463, hcrits=1e30, tatm=0, prec=0, rsoil=0,
-                       rroot=0, hcrita=1e5, rb=0, hb=0, ht=0, ttop=0, tbot=0,
-                       ampl=0):
+    def add_atmospheric_bc(self, atmosphere, ldailyvar=False, lsinusvar=False,
+                           llai=False, lbccycles=False, linterc=False,
+                           rextinct=0.463, hcrits=1e30, tatm=0, prec=0,
+                           rsoil=0, rroot=0, hcrita=1e5, rb=0, hb=0, ht=0,
+                           ttop=0, tbot=0, ampl=0):
         """Method to add the atmospheric boundary condition to the model.
 
         Parameters
@@ -398,9 +401,9 @@ class Model:
         self.water_flow["TopInf"] = True
         self.water_flow["KodTop"] = -1
 
-    def add_rootwater_uptake(self, model=0, crootmax=0, omegac=0.5, p0=-10,
-                             p2h=-200, p2l=-800, p3=-8000, r2h=0.5, r2l=0.1,
-                             poptm=None):
+    def add_root_uptake(self, model=0, crootmax=0, omegac=0.5, p0=-10,
+                        p2h=-200, p2l=-800, p3=-8000, r2h=0.5, r2l=0.1,
+                        poptm=None):
         """Method to add rootwater update modeule to the model.
 
         Parameters
@@ -563,6 +566,134 @@ class Model:
             raise Warning("Root growth model already exists. Please delete "
                           "the old root growth model first using "
                           "ml.del_root_growth().")
+
+    def add_solute_transport(self, epsi=0.5, lupw=False, lartd=False,
+                             ltdep=False, ctola=0.0, ctolr=0.0, maxitc=20,
+                             pecr=0.0, ltort=True, ibacter=0, lfiltr=False,
+                             inonequal=0, lwatdep=False, ktopch=None,
+                             kbotch=None, dsurf=None, catm=None, tpulse=1):
+        """Method to add solute transport to the model.
+
+        Parameters
+        ----------
+        epsi: float, optional
+            Temporal weighing coefficient. 0.0 for an explicit scheme (
+            Default). 0.5 for a Crank-Nicholson implicit scheme. =1.0 for
+            a fully implicit scheme.
+        lupw: bool, optional
+            True if upstream weighing formulation is to be used. False if
+            the original Galerkin formulation is to be used.
+        lartd: bool, optional
+            True if artificial dispersion is to be added in order to fulfill
+            the stability criterion PeCr (see Section 8.4.4), else False.
+        ltdep: bool, optional
+            True if at least one transport or reaction coefficient (ChPar) is
+            temperature dependent, else False. If ltdep=True, then all
+            values of ChPar(i,M) should be specified at a reference
+            temperature Tr=20 degrees celsius.
+        ctola:float, optional
+            Absolute concentration tolerance [ML-3], the value is dependent
+            on the units used (set equal to zero if nonlinear adsorption is
+            not considered).
+        ctolr: float, optional
+            Relative concentration tolerance [-] (set equal to zero if
+            nonlinear adsorption is not considered).
+        maxitc: int, optional
+            Maximum number of iterations allowed during any time step for
+            solute transport - usually 20 (set equal to zero if nonlinear
+            adsorption is not considered).
+        pecr: float optional
+            Stability criteria (see Section 8.4.4). Set equal to zero when
+            lUpW is equal to True.
+        ltort: bool, optional
+            True if the tortuosity factor [Millington and Quirk, 1961] is to be
+            used. False if the tortuosity factor is assumed to be equal to one.
+        ibacter: int, optional
+            Set equal to 1 if attachment/detachment approach is to be used
+            to calculate nonequilibrium transport of viruses, colloids,
+            or bacteria. Set equal to 0 if original formulations, i.e.,
+            physical nonequilibrium or two-site sorption is to be used to
+            describe nonequilibrium solute transport.
+        lfiltr: bool, optional
+            Set this logical variable equal to True. if the attachment
+            coefficient is to be evaluated using the filtration theory.
+        inonequal: int, optional
+            Code describing type of nonequilibrium for solute transport:
+            0 = equilibrium solute transport
+            1 = one-site sorption model (chemical nonequilibrium)
+            2 = two-site sorption model (chemical nonequilibrium)
+            3 = two kinetic sorption sites model (attachment/detachment;
+            chemical nonequilibrium). This model is often used for particle
+            (viruses, colloids, bacteria) transport.
+            4 = two kinetic sorption sites model (attachment/detachment) (
+            chemical nonequilibrium). Attachment coefficients are calculated
+            using filtration theory.
+            5 = dual-porosity model (mobile-immobile regions; physical
+            nonequilibrium).
+            6 = dual-porosity model (mobile-immobile regions) with two-site
+            sorption in the mobile zone (physical and chemical nonequilibrium).
+            7 = dual-permeability model (physical nonequilibrium).
+            8 = dual-permeability model with either an immobile region in the
+            matrix domain (physical nonequilibrium) or with two-site
+            sorption in both domains (physical and chemical nonequilibrium).
+        lwatdep: bool, optional
+            True if at least one degradation coefficient (ChPar) is water
+            content dependent.
+        ktopch: int, optional
+            Code which specifies the type of upper boundary condition
+            1 = Dirichlet boundary condition,
+            -1 = Cauchy boundary condition.
+            -2 = a special type of boundary condition for volatile solutes
+            as described by equation (3.46).
+        kbotch: int, optional
+            Code which specifies the type of lower boundary condition:
+            1 = Dirichlet boundary condition,
+            0 = continuous concentration profile,
+            -1 = Cauchy boundary condition.
+        dsurf: float, optional
+            Thickness of the stagnant boundary layer, d [L]. Only when
+            kTopCh=-2.
+        catm: float, optional
+            Concentration above the stagnant boundary layer, g_atm [ML-3].
+            Only when kTopCh=-2.
+        tpulse: float, optional
+            Time duration of the concentration pulse [T].
+
+        """
+
+        transport = {
+            "Epsi": epsi,
+            "lUpW": lupw,
+            "lArtD": lartd,
+            "ltDep": ltdep,
+            "cTolA": ctola,
+            "cTolR": ctolr,
+            "MaxItC": maxitc,
+            "PeCr": pecr,
+            "lTort": ltort,
+            "iBacter": ibacter,
+            "lFiltr": lfiltr,
+            "iNonEqual": inonequal,
+            "lWatDep": lwatdep,
+            "lDualEq": True if inonequal == 6 else False,
+            "kTopCh": ktopch,
+            "kBotCh": kbotch,
+            "dSurf": dsurf,
+            "cAtm": catm,
+            "tPulse": tpulse
+        }
+
+        if self.solute_transport is None:
+            self.solute_transport = transport
+            self.basic_information["lChem"] = True
+        else:
+            raise Warning("Solute transport model already exists. Please "
+                          "delete the old solute transport model first using "
+                          "ml.del_solute_transport().")
+
+    def add_solutes(self, data, ):
+        if self.solutes is None:
+            self.solutes = data
 
     def simulate(self):
         """Method to call the Hydrus-1D executable.
@@ -737,7 +868,7 @@ class Model:
                 string.format("BLOCK D: ROOT GROWTH INFORMATION ",
                               fill="*", align="<", width=72))
             lines.append("iRootDepthEntry\n{}\n".format(self.root_growth[
-                                                          "iRootIn"]))
+                                                            "iRootIn"]))
             d = self.root_growth.copy()
             d.pop("iRootIn")
             d["\n"] = "\n"
@@ -857,12 +988,11 @@ class Model:
         print("Succesfully wrote {}".format(fname))
 
     def write_profile(self, fname="PROFILE.DAT", ws=""):
-        """Method to write the profile.dat file
+        """Method to write the profile.dat file.
 
         """
         # 1 Write Header information
-        lines = ["Pcp_File_Version=4\n"]
-        lines.append("0\n")  # TODO Figure out what these lines do.
+        lines = ["Pcp_File_Version=4\n", "0\n"]
 
         # Print some values
         nrow = self.profile.index.size
@@ -982,10 +1112,11 @@ class Model:
         fname: str, optional
             String with the name of the NOD_INF out file. default is
             "NOD_INF.OUT".
-        times = int, optional
+        times: int, optional
             Create a DataFrame with nodal values of the pressure head,
             the water content, the solution and sorbed concentrations, and
             temperature, etc, at the time "times". default is None.
+
         Returns
         -------
         data: dict
@@ -1179,6 +1310,7 @@ class Model:
         fname: str, optional
             String with the name of the OBS_NODE out file. default is
             "OBS_NODE.OUT".
+        times
 
         Returns
         -------
@@ -1217,7 +1349,7 @@ class Model:
 
         return data
 
-    def read_I_check(self, fname="I_CHECK.OUT", times=None):
+    def read_i_check(self, fname="I_CHECK.OUT", times=None):
         """Method to read the I_CHECK.OUT output file.
 
         Parameters
@@ -1225,6 +1357,7 @@ class Model:
         fname: str, optional
             String with the name of the I_Check out file. default is
             "I_Check.OUT".
+        times
 
         Returns
         -------
