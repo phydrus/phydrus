@@ -8,6 +8,8 @@ import subprocess
 import pandas as pd
 
 from .plot import Plots
+from .read import read_profile, read_nod_inf, read_run_inf, read_tlevel, \
+    read_balance, read_i_check, read_obs_node
 from .version import __version__
 
 
@@ -1033,19 +1035,7 @@ class Model:
 
         """
         path = os.path.join(self.ws_name, fname)
-        if not os.path.exists(path):
-            raise FileNotFoundError(
-                "File {} has not been found.".format(path))
-
-        with open(path) as file:
-            # Find the starting line to read the profile
-            for start, line in enumerate(file.readlines(1000)):
-                if "depth" in line:
-                    break
-            file.seek(0)  # Go back to start of file
-            # Read the profile data into a Pandas DataFrame
-            data = pd.read_csv(file, skiprows=start, skipfooter=2, index_col=0,
-                               skipinitialspace=True, delim_whitespace=True)
+        data = read_profile(path=path)
         return data
 
     def read_tlevel(self, fname="T_LEVEL.OUT", use_cols=None):
@@ -1071,9 +1061,6 @@ class Model:
 
         """
         path = os.path.join(self.ws_name, fname)
-        if not os.path.exists(path):
-            raise FileNotFoundError(
-                "File {} has not been found.".format(path))
 
         if use_cols is None:
             use_cols = ["Time", "rTop", "rRoot", "vTop", "vRoot",
@@ -1086,21 +1073,7 @@ class Model:
             if self.basic_information["lSnow"]:
                 use_cols.append("SnowLayer")
 
-        with open(path) as file:
-            # Find the starting line to read the profile
-            for start, line in enumerate(file.readlines(1000)):
-                if "rTop" in line:
-                    break
-            file.seek(0)  # Go back to start of file
-
-            skiprows = list(range(start))
-            skiprows.append(start + 1)
-
-            # Read the profile data into a Pandas DataFrame
-            data = pd.read_csv(file, skiprows=skiprows, skipfooter=2,
-                               index_col="Time", skipinitialspace=True,
-                               delim_whitespace=True, usecols=use_cols,
-                               engine="python")
+        data = read_tlevel(path=path, use_cols=use_cols)
 
         return data
 
@@ -1125,58 +1098,8 @@ class Model:
 
         """
         path = os.path.join(self.ws_name, fname)
-        if not os.path.exists(path):
-            raise FileNotFoundError(
-                "File {} has not been found.".format(path))
-
-        use_times = []
-        start = []
-        end = []
-        data = {}
-
-        with open(path) as file:
-            # Find the starting times to read the information
-            for i, line in enumerate(file.readlines()):
-                if "Time" in line and not "Date" in line:
-                    time = float(line.replace(" ", "").split(":")[
-                                     1].replace("\n", ""))
-                    use_times.append(time)
-                elif "Node" in line:
-                    start.append(i)
-                elif "end" in line:
-                    end.append(i)
-
-            if times is None:
-                times = use_times
-                # Read the profile data into a Pandas DataFrame
-                for start, end, time in zip(start, end, use_times):
-                    if time in times:
-                        file.seek(0)  # Go back to start of file
-                        df = pd.read_csv(file, skiprows=start, index_col=0,
-                                         skipinitialspace=True,
-                                         delim_whitespace=True,
-                                         nrows=end - start - 2)
-                        #
-                        # # Fix the header
-                        df = df.drop(df.index[0]).apply(pd.to_numeric)
-                        df.index = pd.to_numeric(df.index)
-
-                        data[time] = df
-            elif not isinstance(times, list):
-                time = use_times.index(times)
-                file.seek(0)  # Go back to start of file
-                df = pd.read_csv(file, skiprows=start[time], index_col=0,
-                                 skipinitialspace=True,
-                                 delim_whitespace=True,
-                                 nrows=end[time] - start[time] - 2)
-                # # Fix the header
-                df = df.drop(df.index[0]).apply(pd.to_numeric)
-                df.index = pd.to_numeric(df.index)
-                data = df
-        if len(data) is 1:
-            return next(iter(data.values()))
-        else:
-            return data
+        data = read_nod_inf(path=path, times=times)
+        return data
 
     def read_run_inf(self, fname="RUN_INF.OUT", use_cols=None):
         """Method to read the RUN_INF.OUT output file.
@@ -1188,8 +1111,8 @@ class Model:
             "RUN_INF.OUT".
         use_cols: list of str optional
             List with the names of the columns to import. By default:
-			"TLevel", "Time", "dt", "Iter", "ItCum",
-            "KodT", "KodB", "Convergency".
+            "TLevel", "Time", "dt", "Iter", "ItCum", "KodT", "KodB",
+            "Convergency".
 
         Returns
         -------
@@ -1198,32 +1121,14 @@ class Model:
 
         """
         path = os.path.join(self.ws_name, fname)
-        if not os.path.exists(path):
-            raise FileNotFoundError(
-                "File {} has not been found.".format(path))
 
         if use_cols is None:
             use_cols = ["TLevel", "Time", "dt", "Iter", "ItCum", "KodT",
                         "KodB", "Convergency", ]
-            if not self.solute_transport == None:
+            if self.solute_transport is not None:
                 use_cols.append("IterC")
 
-        with open(path) as file:
-            # Find the starting line to read the profile
-            for start, line in enumerate(file.readlines(1000)):
-                if "TLevel" in line:
-                    break
-            file.seek(0)  # Go back to start of file
-
-            skiprows = list(range(start))
-            skiprows.append(start + 1)
-
-            # Read the profile data into a Pandas DataFrame
-            data = pd.read_csv(file, skiprows=skiprows, skipfooter=1,
-                               index_col="TLevel", skipinitialspace=True,
-                               delim_whitespace=True, usecols=use_cols,
-                               engine="python")
-
+        data = read_run_inf(path, use_cols=use_cols)
         return data
 
     def read_balance(self, fname="BALANCE.OUT", use_cols=None):
@@ -1266,43 +1171,11 @@ class Model:
             if not self.dual_porosity == None:
                 use_cols.append("W-VolumeI", "cMeanIm")
 
-        List = open(path).readlines()
-        List_copy = List.copy()
-        use_times = []
-        start = []
-        end = [16]
-        for i, line in enumerate(List_copy):
-            for x in use_cols:
-                if x in line:
-                    line1 = x
-                    line2 = line.replace("\n", "").split(" ")[-1]
-                    line3 = line.replace("  ", " ").split(" ")[-2]
-                    List_copy[i] = [line1, line2, line3]
-
-            if "Time" in line and not "Date" in line:
-                time = float(
-                    line.replace(" ", "").split("]")[1].replace("\n", ""))
-                use_times.append(time)
-            if "Area" in line:
-                start.append(i)
-            if "WatBalR" in line:
-                end.append(i + 1)
-            if "Sub-region" in line:
-                subregions = \
-                    line.replace("  ", " ").replace("\n", "").split(" ")[-1]
-        data = {}
-        for s, e, time in zip(start, end, use_times):
-            List_copy1 = List_copy[s:e]
-            df = pd.DataFrame(List_copy1).set_index(0).T
-            indexc = {}
-            for x in range(int(subregions) + 1):
-                indexc[x + 1] = x
-                df = df.rename(index=indexc)
-            data[time] = df
+        data = read_balance(path=path, use_cols=use_cols)
 
         return data
 
-    def read_obs_node(self, fname="OBS_NODE.OUT", times=None):
+    def read_obs_node(self, fname="OBS_NODE.OUT", nodes=None, times=None):
         """Method to read the OBS_NODE.OUT output file.
 
         Parameters
@@ -1320,33 +1193,10 @@ class Model:
 
         """
         path = os.path.join(self.ws_name, fname)
-        if not os.path.exists(path):
-            raise FileNotFoundError(
-                "File {} has not been found.".format(path))
+        if nodes is None:
+            nodes = self.observations
 
-        data = {}
-        with open(path) as file:
-            # Find the starting times to read the information
-            for i, line in enumerate(file.readlines()):
-                if "time" in line:
-                    start = i
-                elif "end" in line:
-                    end = i
-            for i, nod in enumerate(self.observations):
-                file.seek(0)
-                if i == 0:
-                    usecols = ["time", "h", "theta", "Temp"]
-                else:
-                    usecols = ["time", "h." + str(1), "theta." + str(1),
-                               "Temp." + str(1)]
-                df = pd.read_csv(file, skiprows=start, index_col=0,
-                                 skipinitialspace=True,
-                                 delim_whitespace=True,
-                                 nrows=end - start - 1,
-                                 usecols=usecols)
-                df.columns = ["h", "theta", "Temp"]
-                data[nod] = df
-
+        data = read_obs_node(path=path, nodes=nodes, times=times)
         return data
 
     def read_i_check(self, fname="I_CHECK.OUT", times=None):
@@ -1366,25 +1216,9 @@ class Model:
             value.
 
         """
-        usecols = ["theta", "h", "log_h", "C", "K", "log_K", "S", "Kv"]
         path = os.path.join(self.ws_name, fname)
-        if not os.path.exists(path):
-            raise FileNotFoundError(
-                "File {} has not been found.".format(path))
 
-        with open(path) as file:
-            # Find the starting times to read the information
-            for i, line in enumerate(file.readlines()):
-                if "theta" in line:
-                    start = i
-                elif "end" in line:
-                    end = i
+        use_cols = ["theta", "h", "log_h", "C", "K", "log_K", "S", "Kv"]
 
-            # Read the profile data into a Pandas DataFrame
-            file.seek(0)
-            df = pd.read_csv(file, skiprows=start + 1, index_col=None,
-                             header=None, names=usecols,
-                             skipinitialspace=True,
-                             delim_whitespace=True,
-                             nrows=int(end) - int(start) - 2)
-        return df
+        data = read_i_check(path=path, use_cols=use_cols, times=times)
+        return data
