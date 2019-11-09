@@ -9,7 +9,7 @@ import pandas as pd
 
 from .plot import Plots
 from .read import read_profile, read_nod_inf, read_run_inf, read_tlevel, \
-    read_balance, read_i_check, read_obs_node
+    read_balance, read_i_check, read_obs_node, read_solute, read_alevel
 from .version import __version__
 
 
@@ -1020,142 +1020,54 @@ class Model:
         pass
 
     def read_profile(self, fname="PROFILE.OUT"):
-        """
-
-        Parameters
-        ----------
-        fname: str, optional
-            String with the name of the profile out file. default is
-            "PROFILE.OUT".
-
-        Returns
-        -------
-        data: pandas.DataFrame
-            Pandas with the profile data
-
-        """
         path = os.path.join(self.ws_name, fname)
         data = read_profile(path=path)
         return data
 
     def read_nod_inf(self, fname="NOD_INF.OUT", times=None):
-        """Method to read the NOD_INF.OUT output file.
-
-        Parameters
-        ----------
-        fname: str, optional
-            String with the name of the NOD_INF out file. default is
-            "NOD_INF.OUT".
-        times: int, optional
-            Create a DataFrame with nodal values of the pressure head,
-            the water content, the solution and sorbed concentrations, and
-            temperature, etc, at the time "times". default is None.
-
-        Returns
-        -------
-        data: dict
-            Dictionary with the time as a key and a Pandas DataFrame as a
-            value.
-
-        """
         path = os.path.join(self.ws_name, fname)
         data = read_nod_inf(path=path, times=times)
         return data
 
-    def read_run_inf(self, fname="RUN_INF.OUT", use_cols=None):
-        """Method to read the RUN_INF.OUT output file.
-
-        Parameters
-        ----------
-        fname: str, optional
-            String with the name of the run_inf out file. default is
-            "RUN_INF.OUT".
-        use_cols: list of str optional
-            List with the names of the columns to import. By default:
-            "TLevel", "Time", "dt", "Iter", "ItCum", "KodT", "KodB",
-            "Convergency".
-
-        Returns
-        -------
-        data: pandas.DataFrame
-            Pandas with the run_inf data
-
-        """
+    def read_run_inf(self, fname="RUN_INF.OUT", usecols=None):
         path = os.path.join(self.ws_name, fname)
 
-        if use_cols is None:
-            use_cols = ["TLevel", "Time", "dt", "Iter", "ItCum", "KodT",
-                        "KodB", "Convergency", ]
+        if usecols is None:
+            usecols = ["TLevel", "Time", "dt", "Iter", "ItCum", "KodT",
+                       "KodB", "Convergency", ]
             if self.solute_transport is not None:
-                use_cols.append("IterC")
+                usecols.append("IterC")
 
-        data = read_run_inf(path, use_cols=use_cols)
+        data = read_run_inf(path, usecols=usecols)
         return data
 
-    def read_balance(self, fname="BALANCE.OUT", use_cols=None):
-        """Method to read the BALANCE.OUT output file.
-
-        Parameters
-        ----------
-        fname: str, optional
-            String with the name of the run_inf out file. default is
-            "BALANCE.OUT".
-        use_cols: list of str optional
-            List with the names of the columns to import. By default:
-            "Area","W-volume","In-flow","h Mean","Top Flux",
-            "Bot Flux","WatBalT","WatBalR".
-
-        Returns
-        -------
-        data: pandas.DataFrame
-            Pandas with the balance data
-
-        """
+    def read_balance(self, fname="BALANCE.OUT", usecols=None):
         path = os.path.join(self.ws_name, fname)
         if not os.path.exists(path):
             raise FileNotFoundError(
                 "File {} has not been found.".format(path))
 
-        if use_cols is None:
-            use_cols = ["Area", "W-volume", "In-flow", "h Mean", "Top Flux",
-                        "Bot Flux", "WatBalT", "WatBalR"]
+        if usecols is None:
+            usecols = ["Area", "W-volume", "In-flow", "h Mean", "Top Flux",
+                       "Bot Flux", "WatBalT", "WatBalR"]
             if not self.solute_transport == None:
-                use_cols.append("ConcVol", "ConcVolIm", "cMean", "CncBalT",
-                                "CncBalR")
+                usecols.append("ConcVol", "ConcVolIm", "cMean", "CncBalT",
+                               "CncBalR")
 
             if not self.heat_transport == None:
-                use_cols.append("TVol", "TMean")
+                usecols.append("TVol", "TMean")
 
             if not self.CO2Transport == None:
-                use_cols.append("COVol", "COMean", "CO2BalT", "CncBalT")
+                usecols.append("COVol", "COMean", "CO2BalT", "CncBalT")
 
             if not self.dual_porosity == None:
-                use_cols.append("W-VolumeI", "cMeanIm")
+                usecols.append("W-VolumeI", "cMeanIm")
 
-        data = read_balance(path=path, use_cols=use_cols)
+        data = read_balance(path=path, usecols=usecols)
 
         return data
 
     def read_obs_node(self, fname="OBS_NODE.OUT", nodes=None, times=None):
-        """Method to read the OBS_NODE.OUT output file.
-
-        Parameters
-        ----------
-        fname: str, optional
-            String with the name of the OBS_NODE out file. default is
-            "OBS_NODE.OUT".
-        nodes: list, optional
-            List with the nodes. If None (default) the nodes from the model
-            are used.
-        times: list, optional
-
-        Returns
-        -------
-        data: dict
-            Dictionary with the node as a key and a Pandas DataFrame as a
-            value.
-
-        """
         path = os.path.join(self.ws_name, fname)
         if nodes is None:
             nodes = self.observations
@@ -1164,70 +1076,44 @@ class Model:
         return data
 
     def read_i_check(self, fname="I_CHECK.OUT", times=None):
-        """Method to read the I_CHECK.OUT output file.
+        raise NotImplementedError
 
-        Parameters
-        ----------
-        fname: str, optional
-            String with the name of the I_Check out file. default is
-            "I_Check.OUT".
-        times
-
-        Returns
-        -------
-        data: dict
-            Dictionary with the node as a key and a Pandas DataFrame as a
-            value.
-
-        """
+    def read_tlevel(self, fname="T_LEVEL.OUT", usecols=None):
         path = os.path.join(self.ws_name, fname)
 
-        use_cols = ["theta", "h", "log_h", "C", "K", "log_K", "S", "Kv"]
-
-        data = read_i_check(path=path, use_cols=use_cols, times=times)
-        return data
-
-    def read_tlevel(self, fname="T_LEVEL.OUT", use_cols=None):
-        """Method to read the T_LEVEL.OUT output file.
-
-        Parameters
-        ----------
-        fname: str, optional
-            String with the name of the t_level out file. default is
-            "T_LEVEL.OUT".
-        use_cols: list of str optional
-            List with the names of the columns to import. By default
-            only the real fluxes are imported and not the cumulative
-            fluxes. Options are: "rTop", "rRoot", "vTop", "vRoot", "vBot",
-            "sum(rTop)", "sum(rRoot)", "sum(vTop)", "sum(vRoot)", "sum(vBot)",
-            "hTop", "hRoot", "hBot", "RunOff", "sum(RunOff)", "Volume",
-            "sum(Infil)", "sum(Evap)", "TLevel", "Cum(WTrans)", "SnowLayer".
-
-        Returns
-        -------
-        data: pandas.DataFrame
-            Pandas with the t_level data
-
-        """
-        path = os.path.join(self.ws_name, fname)
-
-        if use_cols is None:
-            use_cols = ["Time", "rTop", "rRoot", "vTop", "vRoot",
-                        "vBot", "sum(rTop)", "sum(rRoot)", "sum(vTop)",
-                        "sum(vRoot)", "sum(vBot)", "hTop", "hRoot", "hBot",
-                        "RunOff", "Volume", ]
+        if usecols is None:
+            usecols = ["Time", "rTop", "rRoot", "vTop", "vRoot",
+                       "vBot", "sum(rTop)", "sum(rRoot)", "sum(vTop)",
+                       "sum(vRoot)", "sum(vBot)", "hTop", "hRoot", "hBot",
+                       "RunOff", "Volume", ]
 
             if self.water_flow["iModel"] > 4:
-                use_cols.append("Cum(WTrans)")
+                usecols.append("Cum(WTrans)")
             if self.basic_information["lSnow"]:
-                use_cols.append("SnowLayer")
+                usecols.append("SnowLayer")
 
-        data = read_tlevel(path=path, use_cols=use_cols)
+        data = read_tlevel(path=path, usecols=usecols)
 
         return data
 
-    def read_alevel(self, fname="A_LEVEL.OUT"):
-        pass
+    def read_alevel(self, fname="A_LEVEL.OUT", usecols=None):
+        path = os.path.join(self.ws_name, fname)
+        data = read_alevel(path=path, usecols=usecols)
+        return data
 
     def read_solutes(self, fname="SOLUTE.OUT"):
-        pass
+        path = os.path.join(self.ws_name, fname)
+        data = read_solute(path=path)
+        return data
+
+
+# Copy all the docstrings from the read methods
+Model.read_profile.__doc__ = "{}".format(read_profile.__doc__)
+Model.read_nod_inf.__doc__ = "{}".format(read_nod_inf.__doc__)
+Model.read_run_inf.__doc__ = "{}".format(read_run_inf.__doc__)
+Model.read_balance.__doc__ = "{}".format(read_balance.__doc__)
+Model.read_obs_node.__doc__ = "{}".format(read_obs_node.__doc__)
+Model.read_i_check.__doc__ = "{}".format(read_i_check.__doc__)
+Model.read_tlevel.__doc__ = "{}".format(read_tlevel.__doc__)
+Model.read_alevel.__doc__ = "{}".format(read_alevel.__doc__)
+Model.read_solutes.__doc__ = "{}".format(read_solute.__doc__)
