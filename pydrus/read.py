@@ -7,7 +7,6 @@ import pandas as pd
 from .decorators import check_file_path
 
 
-@check_file_path
 def read_profile(path="PROFILE.OUT"):
     """
 
@@ -23,16 +22,196 @@ def read_profile(path="PROFILE.OUT"):
         Pandas with the profile data
 
     """
+    data = _read_file(path=path, start="depth", idx_col="n")
+    return data
+
+
+def read_run_inf(path="RUN_INF.OUT", usecols=None):
+    """Method to read the RUN_INF.OUT output file.
+
+    Parameters
+    ----------
+    path: str, optional
+        String with the name of the run_inf out file. default is
+        "RUN_INF.OUT".
+    usecols: list of str optional
+        List with the names of the columns to import. By default:
+        "TLevel", "Time", "dt", "Iter", "ItCum",
+        "KodT", "KodB", "Convergency".
+
+    Returns
+    -------
+    data: pandas.DataFrame
+        Pandas with the run_inf data
+
+    """
+    data = _read_file(path=path, start="TLevel", idx_col="TLevel")
+    return data
+
+
+def read_i_check(path="I_CHECK.OUT", usecols=None, times=None):
+    """Method to read the I_CHECK.OUT output file.
+
+    Parameters
+    ----------
+    path: str, optional
+        String with the name of the I_Check out file. default is
+        "I_Check.OUT".
+    usecols: list, optional
+    times
+
+    Returns
+    -------
+    data: dict
+        Dictionary with the node as a key and a Pandas DataFrame as a
+        value.
+
+    """
+    raise NotImplementedError
+
+
+def read_tlevel(path="T_LEVEL.OUT", usecols=None):
+    """Method to read the T_LEVEL.OUT output file.
+
+    Parameters
+    ----------
+    path: str, optional
+        String with the name of the t_level out file. default is
+        "T_LEVEL.OUT".
+    usecols: list of str optional
+        List with the names of the columns to import. By default
+        only the real fluxes are imported and not the cumulative
+        fluxes. Options are: "rTop", "rRoot", "vTop", "vRoot", "vBot",
+        "sum(rTop)", "sum(rRoot)", "sum(vTop)", "sum(vRoot)", "sum(vBot)",
+        "hTop", "hRoot", "hBot", "RunOff", "sum(RunOff)", "Volume",
+        "sum(Infil)", "sum(Evap)", "TLevel", "Cum(WTrans)", "SnowLayer".
+
+    Returns
+    -------
+    data: pandas.DataFrame
+        Pandas with the t_level data
+
+    """
+    data = _read_file(path=path, start="rTop", idx_col="Time",
+                      remove_first_row=True)
+    return data
+
+def read_alevel(path="A_LEVEL.OUT", usecols=None):
+    """Method to read the A_LEVEL.OUT output file.
+
+    Parameters
+    ----------
+    path: str, optional
+        String with the name of the t_level out file. default is
+        "A_LEVEL.OUT".
+    usecols: list of str optional
+        List with the names of the columns to import.
+
+    Returns
+    -------
+    data: pandas.DataFrame
+        Pandas with the a_level data
+
+    """
+    data = _read_file(path=path, start="Time", idx_col="Time",
+                      remove_first_row=True)
+    return data
+
+def read_solute(path="SOLUTE1.OUT"):
+    data = _read_file(path=path, start="Time", idx_col="Time",
+                      remove_first_row=True)
+    return data
+
+@check_file_path
+def _read_file(path, start, end="end", usecols=None, idx_col=None,
+               remove_first_row=False):
+    """Internal method to read Hydrus output files.
+
+    Parameters
+    ----------
+    path: str
+        String with the filepath.
+    start: str
+        String that determines the start of the data to be imported.
+    end: str, optional
+        String that determines the end of the data to be imported.
+    usecols: list, optional
+        List with the names of the columns to import. Default is all
+        columns.
+    idx_col: str, optional
+        String with the name used for the index column.
+    remove_first_row: bool, optional
+        Remove the first row if True. Default is False.
+
+    Returns
+    -------
+    data: pandas.DataFrame
+        Pandas DataFrame with the imported data.
+
+    """
     with open(path) as file:
-        # Find the starting line to read the profile
-        for start, line in enumerate(file.readlines(1000)):
-            if "depth" in line:
+        # Find the starting line
+        for i, line in enumerate(file.readlines()):
+            if start in line:
+                s = i
+            elif end in line:
+                e = i
                 break
         file.seek(0)  # Go back to start of file
-        # Read the profile data into a Pandas DataFrame
-        data = pd.read_csv(file, skiprows=start, skipfooter=2, index_col=0,
-                           skipinitialspace=True, delim_whitespace=True,
-                           engine="python")
+
+        # Read data into a Pandas DataFrame
+        data = pd.read_csv(file, skiprows=s, nrows=e - s - 2,
+                           index_col=idx_col, skipinitialspace=True,
+                           delim_whitespace=True, usecols=usecols)
+
+        if remove_first_row:
+            data = data.drop(index=data.index[0]).apply(pd.to_numeric)
+
+    return data
+
+
+@check_file_path
+def read_obs_node(path="OBS_NODE.OUT", nodes=None, times=None):
+    """Method to read the OBS_NODE.OUT output file.
+
+    Parameters
+    ----------
+    nodes
+    path: str, optional
+        String with the name of the OBS_NODE out file. default is
+        "OBS_NODE.OUT".
+    times
+
+    Returns
+    -------
+    data: dict
+        Dictionary with the node as a key and a Pandas DataFrame as a
+        value.
+
+    """
+    data = {}
+    with open(path) as file:
+        # Find the starting times to read the information
+        for i, line in enumerate(file.readlines()):
+            if "time" in line:
+                start = i
+            elif "end" in line:
+                end = i
+                break
+
+        for i, node in enumerate(nodes):
+            file.seek(0)
+            if i == 0:
+                usecols = ["time", "h", "theta", "Temp"]
+            else:
+                usecols = ["time", "h." + str(i), "theta." + str(i),
+                           "Temp." + str(i)]
+            df = pd.read_csv(file, skiprows=start, index_col=0,
+                             skipinitialspace=True, delim_whitespace=True,
+                             nrows=end - start - 1, usecols=usecols)
+            df.columns = ["h", "theta", "Temp"]
+            data[node] = df
+
     return data
 
 
@@ -92,167 +271,7 @@ def read_nod_inf(path="NOD_INF.OUT", times=None):
 
 
 @check_file_path
-def read_run_inf(path="RUN_INF.OUT", use_cols=None):
-    """Method to read the RUN_INF.OUT output file.
-
-    Parameters
-    ----------
-    path: str, optional
-        String with the name of the run_inf out file. default is
-        "RUN_INF.OUT".
-    use_cols: list of str optional
-        List with the names of the columns to import. By default:
-        "TLevel", "Time", "dt", "Iter", "ItCum",
-        "KodT", "KodB", "Convergency".
-
-    Returns
-    -------
-    data: pandas.DataFrame
-        Pandas with the run_inf data
-
-    """
-    with open(path) as file:
-        # Find the starting line to read the run information
-        for start, line in enumerate(file.readlines(1000)):
-            if "TLevel" in line:
-                break
-        file.seek(0)  # Go back to start of file
-
-        # Read the run information data into a Pandas DataFrame
-        data = pd.read_csv(file, skiprows=start, skipfooter=3, engine="python",
-                           usecols=use_cols, index_col="TLevel",
-                           skipinitialspace=True, delim_whitespace=True)
-
-    return data
-
-
-@check_file_path
-def read_obs_node(path="OBS_NODE.OUT", nodes=None, times=None):
-    """Method to read the OBS_NODE.OUT output file.
-
-    Parameters
-    ----------
-    nodes
-    path: str, optional
-        String with the name of the OBS_NODE out file. default is
-        "OBS_NODE.OUT".
-    times
-
-    Returns
-    -------
-    data: dict
-        Dictionary with the node as a key and a Pandas DataFrame as a
-        value.
-
-    """
-    data = {}
-    with open(path) as file:
-        # Find the starting times to read the information
-        for i, line in enumerate(file.readlines()):
-            if "time" in line:
-                start = i
-            elif "end" in line:
-                end = i
-
-        for i, node in enumerate(nodes):
-            file.seek(0)
-            if i == 0:
-                usecols = ["time", "h", "theta", "Temp"]
-            else:
-                usecols = ["time", "h." + str(i), "theta." + str(i),
-                           "Temp." + str(i)]
-            df = pd.read_csv(file, skiprows=start, index_col=0,
-                             skipinitialspace=True, delim_whitespace=True,
-                             nrows=end - start - 1, usecols=usecols)
-            df.columns = ["h", "theta", "Temp"]
-            data[node] = df
-
-    return data
-
-
-@check_file_path
-def read_i_check(path="I_CHECK.OUT", use_cols=None, times=None):
-    """Method to read the I_CHECK.OUT output file.
-
-    Parameters
-    ----------
-    path: str, optional
-        String with the name of the I_Check out file. default is
-        "I_Check.OUT".
-    use_cols: list, optional
-    times
-
-    Returns
-    -------
-    data: dict
-        Dictionary with the node as a key and a Pandas DataFrame as a
-        value.
-
-    """
-    with open(path) as file:
-        # Find the starting times to read the information
-        for i, line in enumerate(file.readlines()):
-            if "theta" in line:
-                start = i
-            elif "end" in line:
-                end = i
-
-        # Read the profile data into a Pandas DataFrame
-        file.seek(0)
-        df = pd.read_csv(file, skiprows=start + 1, index_col=None,
-                         header=None, names=use_cols, skipinitialspace=True,
-                         delim_whitespace=True,
-                         nrows=int(end) - int(start) - 2)
-    return df
-
-
-@check_file_path
-def read_tlevel(path="T_LEVEL.OUT", use_cols=None):
-    """Method to read the T_LEVEL.OUT output file.
-
-    Parameters
-    ----------
-    path: str, optional
-        String with the name of the t_level out file. default is
-        "T_LEVEL.OUT".
-    use_cols: list of str optional
-        List with the names of the columns to import. By default
-        only the real fluxes are imported and not the cumulative
-        fluxes. Options are: "rTop", "rRoot", "vTop", "vRoot", "vBot",
-        "sum(rTop)", "sum(rRoot)", "sum(vTop)", "sum(vRoot)", "sum(vBot)",
-        "hTop", "hRoot", "hBot", "RunOff", "sum(RunOff)", "Volume",
-        "sum(Infil)", "sum(Evap)", "TLevel", "Cum(WTrans)", "SnowLayer".
-
-    Returns
-    -------
-    data: pandas.DataFrame
-        Pandas with the t_level data
-
-    """
-    with open(path) as file:
-        # Find the starting line to read the profile
-        for start, line in enumerate(file.readlines(1000)):
-            if "rTop" in line:
-                break
-        file.seek(0)  # Go back to start of file
-
-        # Read the profile data into a Pandas DataFrame
-        data = pd.read_csv(file, skiprows=start, skipfooter=2,
-                           index_col="Time", skipinitialspace=True,
-                           delim_whitespace=True, usecols=use_cols,
-                           engine="python")
-        data = data.drop(index=data.index[0]).apply(pd.to_numeric)
-
-    return data
-
-
-@check_file_path
-def read_alevel(path="A_LEVEL.OUT"):
-    raise NotImplementedError
-
-
-@check_file_path
-def read_balance(path="BALANCE.OUT", use_cols=None):
+def read_balance(path="BALANCE.OUT", usecols=None):
     """Method to read the BALANCE.OUT output file.
 
     Parameters
@@ -260,7 +279,7 @@ def read_balance(path="BALANCE.OUT", use_cols=None):
     path: str, optional
         String with the name of the run_inf out file. default is
         "BALANCE.OUT".
-    use_cols: list of str optional
+    usecols: list of str optional
         List with the names of the columns to import. By default:
         "Area","W-volume","In-flow","h Mean","Top Flux",
         "Bot Flux","WatBalT","WatBalR".
@@ -271,16 +290,16 @@ def read_balance(path="BALANCE.OUT", use_cols=None):
         Pandas with the balance data
 
     """
-    if use_cols is None:
-        use_cols = ["Area", "W-volume", "In-flow", "h Mean", "Top Flux",
-                    "Bot Flux", "WatBalT", "WatBalR"]
+    if usecols is None:
+        usecols = ["Area", "W-volume", "In-flow", "h Mean", "Top Flux",
+                   "Bot Flux", "WatBalT", "WatBalR"]
 
     lines = open(path).readlines()
     use_times = []
     start = []
     end = [16]
     for i, line in enumerate(lines):
-        for x in use_cols:
+        for x in usecols:
             if x in line:
                 line1 = x
                 line2 = line.replace("\n", "").split(" ")[-1]
@@ -309,8 +328,3 @@ def read_balance(path="BALANCE.OUT", use_cols=None):
         data[time] = df
 
     return data
-
-
-@check_file_path
-def read_solute(path="SOLUTE1.OUT"):
-    raise NotImplementedError

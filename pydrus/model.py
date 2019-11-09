@@ -1038,45 +1038,6 @@ class Model:
         data = read_profile(path=path)
         return data
 
-    def read_tlevel(self, fname="T_LEVEL.OUT", use_cols=None):
-        """Method to read the T_LEVEL.OUT output file.
-
-        Parameters
-        ----------
-        fname: str, optional
-            String with the name of the t_level out file. default is
-            "T_LEVEL.OUT".
-        use_cols: list of str optional
-            List with the names of the columns to import. By default
-            only the real fluxes are imported and not the cumulative
-            fluxes. Options are: "rTop", "rRoot", "vTop", "vRoot", "vBot",
-            "sum(rTop)", "sum(rRoot)", "sum(vTop)", "sum(vRoot)", "sum(vBot)",
-            "hTop", "hRoot", "hBot", "RunOff", "sum(RunOff)", "Volume",
-            "sum(Infil)", "sum(Evap)", "TLevel", "Cum(WTrans)", "SnowLayer".
-
-        Returns
-        -------
-        data: pandas.DataFrame
-            Pandas with the t_level data
-
-        """
-        path = os.path.join(self.ws_name, fname)
-
-        if use_cols is None:
-            use_cols = ["Time", "rTop", "rRoot", "vTop", "vRoot",
-                        "vBot", "sum(rTop)", "sum(rRoot)", "sum(vTop)",
-                        "sum(vRoot)", "sum(vBot)", "hTop", "hRoot", "hBot",
-                        "RunOff", "Volume", ]
-
-            if self.water_flow["iModel"] > 4:
-                use_cols.append("Cum(WTrans)")
-            if self.basic_information["lSnow"]:
-                use_cols.append("SnowLayer")
-
-        data = read_tlevel(path=path, use_cols=use_cols)
-
-        return data
-
     def read_nod_inf(self, fname="NOD_INF.OUT", times=None):
         """Method to read the NOD_INF.OUT output file.
 
@@ -1183,7 +1144,10 @@ class Model:
         fname: str, optional
             String with the name of the OBS_NODE out file. default is
             "OBS_NODE.OUT".
-        times
+        nodes: list, optional
+            List with the nodes. If None (default) the nodes from the model
+            are used.
+        times: list, optional
 
         Returns
         -------
@@ -1222,3 +1186,48 @@ class Model:
 
         data = read_i_check(path=path, use_cols=use_cols, times=times)
         return data
+
+    def read_tlevel(self, fname="T_LEVEL.OUT", use_cols=None):
+        """Method to read the T_LEVEL.OUT output file.
+
+        Parameters
+        ----------
+        fname: str, optional
+            String with the name of the t_level out file. default is
+            "T_LEVEL.OUT".
+        use_cols: list of str optional
+            List with the names of the columns to import. By default
+            only the real fluxes are imported and not the cumulative
+            fluxes. Options are: "rTop", "rRoot", "vTop", "vRoot", "vBot",
+            "sum(rTop)", "sum(rRoot)", "sum(vTop)", "sum(vRoot)", "sum(vBot)",
+            "hTop", "hRoot", "hBot", "RunOff", "sum(RunOff)", "Volume",
+            "sum(Infil)", "sum(Evap)", "TLevel", "Cum(WTrans)", "SnowLayer".
+
+        Returns
+        -------
+        data: pandas.DataFrame
+            Pandas with the t_level data
+
+        """
+        path = os.path.join(self.ws_name, fname)
+
+        if use_cols is None:
+            use_cols = ["Time", "rTop", "rRoot", "vTop", "vRoot",
+                        "vBot", "sum(rTop)", "sum(rRoot)", "sum(vTop)",
+                        "sum(vRoot)", "sum(vBot)", "hTop", "hRoot", "hBot",
+                        "RunOff", "Volume", ]
+
+            if self.water_flow["iModel"] > 4:
+                use_cols.append("Cum(WTrans)")
+            if self.basic_information["lSnow"]:
+                use_cols.append("SnowLayer")
+
+        data = read_tlevel(path=path, use_cols=use_cols)
+
+        return data
+
+    def read_alevel(self, fname="A_LEVEL.OUT"):
+        pass
+
+    def read_solutes(self, fname="SOLUTE.OUT"):
+        pass
