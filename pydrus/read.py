@@ -93,8 +93,9 @@ def read_tlevel(path="T_LEVEL.OUT", usecols=None):
 
     """
     data = _read_file(path=path, start="rTop", idx_col="Time",
-                      remove_first_row=True)
+                      remove_first_row=True, usecols=usecols)
     return data
+
 
 def read_alevel(path="A_LEVEL.OUT", usecols=None):
     """Method to read the A_LEVEL.OUT output file.
@@ -114,13 +115,15 @@ def read_alevel(path="A_LEVEL.OUT", usecols=None):
 
     """
     data = _read_file(path=path, start="Time", idx_col="Time",
-                      remove_first_row=True)
+                      remove_first_row=True, usecols=usecols)
     return data
+
 
 def read_solute(path="SOLUTE1.OUT"):
     data = _read_file(path=path, start="Time", idx_col="Time",
                       remove_first_row=True)
     return data
+
 
 @check_file_path
 def _read_file(path, start, end="end", usecols=None, idx_col=None,
@@ -239,15 +242,13 @@ def read_nod_inf(path="NOD_INF.OUT", times=None):
     use_times = []
     start = []
     end = []
-    data = {}
 
     with open(path) as file:
         # Find the starting times to read the information
         for i, line in enumerate(file.readlines()):
-            if "Time" in line and not "Date" in line:
-                time = float(line.replace(" ", "").split(":")[
-                                 1].replace("\n", ""))
-                use_times.append(time)
+            if "Time" in line and "Date" not in line:
+                time = line.replace(" ", "").split(":")[1].replace("\n", "")
+                use_times.append(float(time))
             elif "Node" in line:
                 start.append(i)
             elif "end" in line:
@@ -256,13 +257,14 @@ def read_nod_inf(path="NOD_INF.OUT", times=None):
         if times is None:
             times = use_times
 
-        # Read the profile data into a Pandas DataFrame
-        for start, end, time in zip(start, end, use_times):
+        # Read the data into a Pandas DataFrame
+        data = {}
+        for s, e, time in zip(start, end, use_times):
             if time in times:
                 file.seek(0)  # Go back to start of file
-                df = pd.read_csv(file, skiprows=start + 2, header=None,
+                df = pd.read_csv(file, skiprows=s + 2, header=None,
                                  skipinitialspace=True, delim_whitespace=True,
-                                 nrows=end - start - 3)
+                                 nrows=e - s - 3)
                 data[time] = df
     if len(data) is 1:
         return next(iter(data.values()))
@@ -315,14 +317,13 @@ def read_balance(path="BALANCE.OUT", usecols=None):
         if "WatBalR" in line:
             end.append(i + 1)
         if "Sub-region" in line:
-            subregions = \
-                line.replace("  ", " ").replace("\n", "").split(" ")[-1]
-    print(lines)
+            subreg = line.replace("  ", " ").replace("\n", "").split(" ")[-1]
+
     data = {}
     for s, e, time in zip(start, end, use_times):
         df = pd.DataFrame(lines[s:e]).set_index(0).T
         index = {}
-        for x in range(int(subregions) + 1):
+        for x in range(int(subreg) + 1):
             index[x + 1] = x
             df = df.rename(index=index)
         data[time] = df

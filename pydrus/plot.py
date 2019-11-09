@@ -52,8 +52,8 @@ class Plots:
         ax.set_xlim(0, w)
         ax.set_ylim(self.ml.profile.loc[:, "x"].min(),
                     self.ml.profile.loc[:, "x"].max())
-        ax.set_xlabel("h [{}]".format(self.ml.basic_information["LUnit"]))
-        ax.set_ylabel("depth [{}]".format(self.ml.basic_information["LUnit"]))
+        ax.set_xlabel("h [{}]".format(self.ml.basic_info["LUnit"]))
+        ax.set_ylabel("depth [{}]".format(self.ml.basic_info["LUnit"]))
         ax.set_title(title)
 
         legend_elements = [line[0]]
@@ -66,11 +66,12 @@ class Plots:
 
         plt.tight_layout()
         return ax
-    
-    def profile_information(self, data="Pressure Head", times = None, 
-                             legend = True, figsize=(7, 5), 
                              title="Profile Information", 
-                             nodes = "all", cmap="YlOrBr", **kwargs):
+
+    def profile_information(self, data="Pressure Head", times=None,
+                            legend=True, figsize=(7, 5),
+                            title="Profile Information",
+                            nodes="all", cmap="YlOrBr", **kwargs):
         """Method to plot the soil profile information.
 
         Parameters
@@ -93,65 +94,65 @@ class Plots:
         ax: matplotlib axes instance
 
         """
-        l_unit = self.ml.basic_information["LUnit"]
-        t_unit = self.ml.basic_information["TUnit"]  
-        dfini = self.ml.read_nod_inf(times = 0)
-      
-        use_cols = ("Head","Moisture","K", "C", "Flux", "Sink")
-        col_names = ("Pressure Head", "Water Content", 
-                     "Hydraulic Conductivity", "Hydraulic Capacity", 
+        l_unit = self.ml.basic_info["LUnit"]
+        t_unit = self.ml.basic_info["TUnit"]
+        dfini = self.ml.read_nod_inf(times=0)
+
+        use_cols = ("Head", "Moisture", "K", "C", "Flux", "Sink")
+        col_names = ("Pressure Head", "Water Content",
+                     "Hydraulic Conductivity", "Hydraulic Capacity",
                      "Water Flux", "Root Uptake")
         units = ["h [{}]".format(l_unit),
-                  "Theta [-]","K [{}/days]".format(l_unit),
-                  "C [1/{}]".format(l_unit), 
-                  "v [{}/{}]".format(l_unit, t_unit),
-                  "S [1/{}]".format(t_unit)]
-        
-        col = col_names.index(data)        
+                 "Theta [-]", "K [{}/days]".format(l_unit),
+                 "C [1/{}]".format(l_unit),
+                 "v [{}/{}]".format(l_unit, t_unit),
+                 "S [1/{}]".format(t_unit)]
+
+        col = col_names.index(data)
         fig, ax = plt.subplots(figsize=figsize, **kwargs)
-               
+
         if times is None:
             df = self.ml.read_nod_inf()
             for key, dataframe in df.items():
                 ax.plot(dataframe[use_cols[col]], dataframe["Depth"],
-                        label = "T" + str(key))
-        else:  
+                        label="T" + str(key))
+        else:
             for time in times:
-                df = self.ml.read_nod_inf(times = time)
+                df = self.ml.read_nod_inf(times=time)
                 ax.plot(df[use_cols[col]], df["Depth"])
-        
-        space = (abs(dfini[use_cols[col]].min())-
-                    abs(dfini[use_cols[col]].max()))        
-        
+
+        space = (abs(dfini[use_cols[col]].min()) -
+                 abs(dfini[use_cols[col]].max()))
+
         if data == "Pressure Head":
             ax.set_xlim(dfini[use_cols[col]].min(),
-                        dfini[use_cols[col]].max()+space*0.2)
+                        dfini[use_cols[col]].max() + space * 0.2)
         if data == "Water Content":
-            ax.set_xlim(dfini[use_cols[col]].min()+space*0.2,
-                        dfini[use_cols[col]].max()-space*0.1)                      
+            ax.set_xlim(dfini[use_cols[col]].min() + space * 0.2,
+                        dfini[use_cols[col]].max() - space * 0.1)
         if data == "Hydraulic Conductivity":
-            ax.set_xlim(0, dfini[use_cols[col]].max())            
+            ax.set_xlim(0, dfini[use_cols[col]].max())
         if data == "Hydraulic Capacity":
             ax.set_xlim(0)
-        
+
         ax.plot(dfini[use_cols[col]], dfini["Depth"],
-                    label = "T0", color = 'k')
+                label="T0", color='k')
 
         ax.set_ylim(self.ml.profile.loc[:, "x"].min(),
                     self.ml.profile.loc[:, "x"].max())
         ax.set_xlabel(units[col])
-        ax.set_ylabel("Depth [{}]".format(self.ml.basic_information["LUnit"]))
+        ax.set_ylabel("Depth [{}]".format(self.ml.basic_info["LUnit"]))
         ax.set_title("Profile Information: " + data)
         ax.grid(linestyle='--')
-        
+
         if legend:
-            ax.legend(bbox_to_anchor=(1.04,1), loc="upper left")    
-        
-        plt.tight_layout() 
+            ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+
+        plt.tight_layout()
         return ax
-    
+
     def mass_balance(self, figsize=(6, 10), title="Mass_Balance_Information",
-                        **kwargs):
+                     **kwargs):
         """Method to show the Mass balance information.
 
         Parameters
@@ -164,12 +165,12 @@ class Plots:
         balance: opens BALANCE.OUT in notepad
         """
         import subprocess
-        
+
         folder = self.ml.ws_name
-        balance = subprocess.Popen(["notepad.exe",folder + "\\BALANCE.OUT"])        
+        balance = subprocess.Popen(["notepad.exe", folder + "\\BALANCE.OUT"])
         return balance
-    
-    def water_flow(self, data="Potential Surface Flux", figsize=(10, 3), 
+
+    def water_flow(self, data="Potential Surface Flux", figsize=(10, 3),
                    title="Water Flow", cmap="YlOrBr", **kwargs):
         """Method to plot the water flow information.
 
@@ -200,33 +201,33 @@ class Plots:
                      "Bottom Flux", "Pressure head at the soil surface",
                      "Mean value of the pressure head over the region",
                      "Pressure head at the Bottom of the soil profile",
-                     "Surface runoff", 
+                     "Surface runoff",
                      "Volume of water in the entire flow domain")
-        
-        cols = ("rTop", "rRoot", "vTop", "vRoot", "vBot", "hTop","hRoot", 
+
+        cols = ("rTop", "rRoot", "vTop", "vRoot", "vBot", "hTop", "hRoot",
                 "hBot", "RunOff", "Volume")
         df = self.ml.read_tlevel()
         col = col_names.index(data)
-        
+
         if col < 5:
-            fig, ax = plt.subplots(figsize=figsize, nrows = 1, ncols =2
+            fig, ax = plt.subplots(figsize=figsize, nrows=1, ncols=2
                                    , **kwargs)
             ax[0].plot(df.index, df[cols[col]])
-            ax[0].set_title(data)   
-            ax[0].grid()            
-            #Cumulative sum
-            ax[1].plot(df.index, df["sum("+cols[col]+")"])
-            ax[1].set_title("sum("+data+")")
+            ax[0].set_title(data)
+            ax[0].grid()
+            # Cumulative sum
+            ax[1].plot(df.index, df["sum(" + cols[col] + ")"])
+            ax[1].set_title("sum(" + data + ")")
             ax[1].grid()
         else:
-            fig, ax = plt.subplots(figsize=(5,3), nrows = 1, ncols =1, 
+            fig, ax = plt.subplots(figsize=(5, 3), nrows=1, ncols=1,
                                    **kwargs)
             ax.plot(df.index, df[cols[col]])
-            ax.set_title(data)   
-            ax.grid() 
+            ax.set_title(data)
+            ax.grid()
         return ax
 
-    def shp(self, data="Water Content", figsize=(10, 3), 
+    def shp(self, data="Water Content", figsize=(10, 3),
             title="Soil hydraulic properties", cmap="YlOrBr", **kwargs):
         """Method to plot the soil hydraulic properties.
 
@@ -257,10 +258,10 @@ class Plots:
         df = self.ml.read_i_check()
         col = col_names.index(data)
 
-        fig, axes = plt.subplots(figsize=figsize, nrows = 1, ncols =3,
+        fig, axes = plt.subplots(figsize=figsize, nrows=1, ncols=3,
                                  **kwargs)
         fig.suptitle(data, fontsize=16, y=0.99)
-        
+
         axes[0].plot(abs(df["h"]), df[cols[col]])
         axes[0].grid()
         axes[0].set_xlabel("h")

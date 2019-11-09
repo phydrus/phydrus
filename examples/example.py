@@ -18,13 +18,13 @@ desc = "Infiltration and drainage in a large caisson"
 ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
               mass_units="mmol", time_unit="min", length_unit="cm")
 
-ml.time_information["tInit"] = 90
-ml.time_information["tMax"] = 273
-ml.time_information["dt"] = 0.1
-ml.time_information["dtMax"] = 0.5
+ml.time_info["tInit"] = 90
+ml.time_info["tMax"] = 273
+ml.time_info["dt"] = 0.1
+ml.time_info["dtMax"] = 0.5
 
-ml.time_information["TPrint(1)"] = 120
-ml.time_information["TPrint(MPL)"] = 273
+ml.time_info["TPrint(1)"] = 120
+ml.time_info["TPrint(MPL)"] = 273
 
 ml.add_waterflow()
 
@@ -41,7 +41,7 @@ ml.add_profile(profile)
 #                   skipinitialspace=True, delim_whitespace=True)
 # ml.add_atmosphere(atm)
 
-ml.write_files()
+ml.write_input()
 rs = ml.simulate()
 ml.plots.profile()
 

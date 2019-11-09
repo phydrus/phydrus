@@ -19,8 +19,8 @@ ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
               mass_units="mmol", time_unit="days", length_unit="cm")
 
 # Time info
-ml.time_information["tInit"] = 0
-ml.time_information["tMax"] = 213
+ml.time_info["tInit"] = 0
+ml.time_info["tMax"] = 213
 
 # Add materials
 m = pd.DataFrame(columns=["thr", "ths", "Alfa", "n", "Ks", "l"], index=[1],
@@ -44,7 +44,7 @@ ml.add_atmospheric_bc(atm)
 # Root uptake
 ml.add_root_uptake(model=0, poptm=[-25])
 
-ml.write_files()
+ml.write_input()
 ml.simulate()
 
 df = ml.read_tlevel()

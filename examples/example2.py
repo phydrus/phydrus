@@ -18,8 +18,8 @@ desc = "Example 2 - Grass Field Problem (Hupselse Beek 1982)"
 ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
               mass_units="-", time_unit="days", length_unit="cm")
 
-ml.time_information["tInit"] = 90
-ml.time_information["tMax"] = 273
+ml.time_info["tInit"] = 90
+ml.time_info["tMax"] = 273
 
 # Water inflow parameters
 ml.add_waterflow(kodbot=-1, linitw=False, free_drainage=True, ha=1e-6, hb=1e4)
@@ -41,7 +41,7 @@ ml.add_atmospheric_bc(atm)
 ml.add_root_uptake(model=0, poptm=[-25, -25])
 ml.add_root_growth(2, irfak=1, trmin=0, trmed=0, trmax=2143, xrmin=10,
                    xrmed=0, xrmax=50, trperiod=365)
-ml.write_files()
+ml.write_input()
 rs = ml.simulate()
 
 df = ml.read_tlevel()

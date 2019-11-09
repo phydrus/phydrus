@@ -5,7 +5,7 @@ This file contains the model class.
 import os
 import subprocess
 
-import pandas as pd
+from pandas import DataFrame
 
 from .plot import Plots
 from .read import read_profile, read_nod_inf, read_run_inf, read_tlevel, \
@@ -39,18 +39,39 @@ class Model:
 
         """
         # Store the hydrus executable and the project workspace
-        self.exe_name = exe_name
+        if not os.path.exists(exe_name):
+            raise Warning("Path to the Hydrus-1D executable seems incorrect, "
+                          "please check the path to the executable.")
+        else:
+            self.exe_name = exe_name
 
         if not os.path.exists(ws_name):
             os.mkdir(ws_name)
-            print("Directorty {} created".format(ws_name))
+            print("Directory {} created".format(ws_name))
 
         self.ws_name = ws_name
 
         self.name = name
         self.description = description
 
-        self.basic_information = {
+        # The main processes to describe the simulation
+        self.profile = None
+        self.materials = None
+        self.observations = []
+        self.drains = None
+
+        self.water_flow = None
+        self.solute_transport = None
+        self.solutes = None
+        self.heat_transport = None
+
+        self.root_uptake = None
+        self.root_growth = None
+
+        self.atmosphere_info = None
+        self.atmosphere = None
+
+        self.basic_info = {
             "iVer": "4",
             "Hed": "Created with Pydrus version {}".format(__version__),
             "LUnit": length_unit,
@@ -74,12 +95,10 @@ class Model:
             "lActRSU": False,
             "lFlux": False,
             "lIrrig": False,
-            "NMat": 0,
-            "NLay": 1,
             "CosAlfa": 1,
         }
 
-        self.time_information = {
+        self.time_info = {
             "dt": 0.1,
             "dtMin": 0.0001,
             "dtMax": 0.5,
@@ -98,33 +117,34 @@ class Model:
             "TPrint(MPL)": None,
         }
 
-        # The main processes to describe the simulation
-        self.profile = None
-        self.materials = None
-        self.observations = []
-        self.drains = None
-
-        self.water_flow = None
-        self.solute_transport = None
-        self.solutes = None
-        self.heat_transport = None
-
-        self.rootwater_uptake = None
-        self.root_growth = None
-
-        self.atmosphere_information = None
-        self.atmosphere = None
-        self.CO2Transport = None
-        self.dual_porosity = None
-
         self.plots = Plots(ml=self)
+
+    @property
+    def n_materials(self):
+        if self.materials is None:
+            return 0
+        else:
+            return self.materials.index.size
+
+    @property
+    def n_solutes(self):
+        if self.solutes is None:
+            return 0
+        else:
+            return self.solutes.index.size
+
+    @property
+    def n_layers(self):
+        if self.profile is None:
+            return 0
+        else:
+            return len(self.profile.loc[:, "Lay"].unique())
 
     def add_profile(self, profile):
         """Method to add the soil profile to the model.
 
         """
         self.profile = profile
-        self.basic_information["NLay"] = len(profile.loc[:, "Lay"].unique())
 
     def add_material(self, material):
         """Method to add a material to the model.
@@ -132,23 +152,29 @@ class Model:
         Parameters
         ----------
         material: pandas.DataFrame
-            Pandas Dataframe with the parameter names as columns and the
-        values for each material as one row.
+            Pandas DataFrame with the parameter names as columns and the
+            values for each material as one row. The index for each is the
+            reference number for each material and must be unique. The
+            number of columns depends on the water flow model that has been
+            chosen.
 
         Examples
         --------
-        m = pd.DataFrame({1: [0.08, 0.3421, 0.03, 5, 1, -0.5]},
-                 columns=["thr", "ths", "Alfa", "n" "Ks", "l"],
-                 index=[1])
+        m = pd.DataFrame({1: [0.08, 0.3421, 0.03, 5, 1, -0.5]}, index=[1],
+                         columns=["thr", "ths", "Alfa", "n" "Ks", "l"])
         ml.add_material(m)
 
         """
         if self.materials is None:
-            self.materials = material
-            self.basic_information["NMat"] = material.index.size
+            raise Warning("The water flow module has to be chosen before "
+                          "adding the soil materials. Use ml.add_water_flow("
+                          ") to add water flow to the model")
+        elif material.columns.size != self.materials.columns.size:
+            raise TypeError("the number of parameters (columns) describing "
+                            "the material does not match the water flow "
+                            "model. Please check the number of parameters.")
         else:
             self.materials = self.materials.append(material)
-            self.basic_information["NMat"] += 1
 
     def add_drains(self):
         """Method to add a drain to the model.
@@ -195,7 +221,7 @@ class Model:
             3 = van Genuchten"s [1980] model with air-entry value of -2 cm
             and with 6 parameters.
             4 = Kosugi’s [1996] model with 6 parameters.
-            5 = dual porosity model of Durner [1994] with 9 parameters.
+            5 = dual-porosity model of Durner [1994] with 9 parameters.
             6 = dual-porosity system with transfer proportional to the
             effective saturation (9 parameters).
             7 = dual-porosity system with transfer proportional to the
@@ -331,11 +357,11 @@ class Model:
                 "iHyst": hysteresis,
                 "iKappa": ikappa,
             }
+            self.basic_info["lWat"] = True
+            self.materials = self.get_empty_material_df()
         else:
             raise Warning("Water flow was already provided. Please delete "
                           "the old information first.")
-
-        self.basic_information["lWat"] = True
 
     def add_atmospheric_bc(self, atmosphere, ldailyvar=False, lsinusvar=False,
                            llai=False, lbccycles=False, linterc=False,
@@ -376,8 +402,8 @@ class Model:
         integers.
 
         """
-        if self.atmosphere_information is None:
-            self.atmosphere_information = {
+        if self.atmosphere_info is None:
+            self.atmosphere_info = {
                 "lDailyVar": ldailyvar,
                 "lSinusVar": lsinusvar,
                 "lLai": llai,
@@ -395,11 +421,11 @@ class Model:
                 "hCritA": hcrita, "rB": rb, "hB": hb, "ht": ht, "tTop": ttop,
                 "tBot": tbot, "Ampl": ampl}
 
-        self.atmosphere = pd.DataFrame(data=data, index=atmosphere.index)
+        self.atmosphere = DataFrame(data=data, index=atmosphere.index)
         self.atmosphere.update(atmosphere)
 
         # Enable atmosphere module
-        self.basic_information["AtmInf"] = True
+        self.basic_info["AtmInf"] = True
         self.water_flow["TopInf"] = True
         self.water_flow["KodTop"] = -1
 
@@ -452,12 +478,12 @@ class Model:
 
             # Number of pressure heads should equal the number of materials.
         if poptm:
-            if len(poptm) != self.basic_information["NMat"]:
-                raise KeyError("Length of pressure heads poptm does not "
-                               "equal the number of materials!")
+            if len(poptm) != self.n_materials:
+                raise Warning("Length of pressure heads poptm does not "
+                              "equal the number of materials!")
 
-        if self.rootwater_uptake is None:
-            self.rootwater_uptake = {
+        if self.root_uptake is None:
+            self.root_uptake = {
                 "iMoSink": model,
                 "cRootMax": crootmax,
                 "OmegaC": omegac,
@@ -469,7 +495,7 @@ class Model:
                 "r2H": r2h,
                 "r2L": r2l,
             }
-            self.basic_information["lSink"] = True
+            self.basic_info["lSink"] = True
         else:
             msg = "Root water uptake model is already present in the model." \
                   " Remove the old root water uptake model first using " \
@@ -563,7 +589,7 @@ class Model:
 
         if self.root_growth is None:
             self.root_growth = root_growth
-            self.basic_information["lRoot"] = True
+            self.basic_info["lRoot"] = True
         else:
             raise Warning("Root growth model already exists. Please delete "
                           "the old root growth model first using "
@@ -687,7 +713,7 @@ class Model:
 
         if self.solute_transport is None:
             self.solute_transport = transport
-            self.basic_information["lChem"] = True
+            self.basic_info["lChem"] = True
         else:
             raise Warning("Solute transport model already exists. Please "
                           "delete the old solute transport model first using "
@@ -714,50 +740,53 @@ class Model:
         -------
 
         """
-        if self.time_information["TPrint(1)"] is None:
-            tmin = self.time_information["tInit"] + 1
+        if self.time_info["TPrint(1)"] is None:
+            tmin = self.time_info["tInit"] + 1
         else:
-            tmin = self.time_information["TPrint(1)"]
+            tmin = self.time_info["TPrint(1)"]
 
-        if self.time_information["TPrint(MPL)"] is None:
-            tmax = self.time_information["tMax"]
+        if self.time_info["TPrint(MPL)"] is None:
+            tmax = self.time_info["tMax"]
         else:
-            tmax = self.time_information["TPrint(MPL)"]
+            tmax = self.time_info["TPrint(MPL)"]
 
         times = range(tmin, tmax)
 
         return times
 
-    def write_files(self):
+    def write_input(self):
+        """Method to write the input files for the HYDRUS-1D simulation."""
+        # 1. Write SELECTOR.IN
         self.write_selector()
-
-        # Write Block Block I - Atmospheric information
-        if self.basic_information["AtmInf"]:
-            self.write_atmosphere()
-
+        # 2. Write PROFILE.DAT
         self.write_profile()
+
+        # 3. Write ATMOSPH.IN
+        if self.basic_info["AtmInf"]:
+            self.write_atmosphere()
+        # 4. Write METEO.IN
+        if self.basic_info["lMeteo"]:
+            self.write_meteo()
+        # 5. Write FIT.IN
+        if self.basic_info["lInverse"]:
+            self.write_fit()
 
     def write_selector(self, fname="SELECTOR.IN"):
         """Write the selector.in file.
 
         """
         # Create Header string
-        string = "*** {:{fill}{align}{width}}\n"
+        string = "*** BLOCK {:{}{}{}}\n"
 
-        lines = ["Pcp_File_Version={}\n".format(
-            self.basic_information["iVer"]),
-            string.format("BLOCK A: BASIC INFORMATION ", fill="*",
-                          align="<", width=72),
-            "{}\n".format(self.basic_information["Hed"]),
-            "{}\n".format(self.description),
-            "LUnit  TUnit  MUnit  (indicated units are obligatory "
-            "for all input data)\n",
-            "{}\n".format(self.basic_information["LUnit"]),
-            "{}\n".format(self.basic_information["TUnit"]),
-            "{}\n".format(self.basic_information["MUnit"])]
+        lines = [
+            "Pcp_File_Version={}\n{}{}\n{}\nLUnit TUnit MUnit\n{}\n{}\n{}\n"
+                .format(self.basic_info["iVer"],
+                        string.format("A: BASIC INFORMATION ", "*", "<", 72),
+                        self.basic_info["Hed"], self.description,
+                        self.basic_info["LUnit"], self.basic_info["TUnit"],
+                        self.basic_info["MUnit"])]
 
         # Write block A: BASIC INFORMATION
-
         vars_list = [["lWat", "lChem", "lTemp", "lSink", "lRoot", "lShort",
                       "lWDep", "lScreen", "AtmInf", "lEquil", "lInverse",
                       "\n"],
@@ -768,7 +797,7 @@ class Model:
             lines.append("  ".join(variables))
             values = []
             for var in variables[:-1]:
-                val = self.basic_information[var]
+                val = self.basic_info[var]
                 if val is True:
                     values.append("t")
                 elif val is False:
@@ -778,15 +807,12 @@ class Model:
             values.append("\n")
             lines.append("     ".join(values))
 
-        variables = ["NMat", "NLay", "CosAlfa", "\n"]
-        lines.append("  ".join(variables))
-        lines.append("   ".join([str(self.basic_information[var]) for var in
-                                 variables[:-1]]))
-        lines.append("\n")
+        lines.append("NMat NLay CosAlfa \n")
+        lines.append("{} {} {}\n".format(self.n_materials, self.n_layers,
+                                         self.basic_info["CosAlfa"]))
 
         # Write block B: WATER FLOW INFORMATION
-        lines.append(string.format("BLOCK B: WATER FLOW INFORMATION ",
-                                   fill="*", align="<", width=72))
+        lines.append(string.format("B: WATER FLOW INFORMATION ", "*", "<", 72))
         lines.append("MaxIt  TolTh  TolH   (maximum number of iterations and "
                      "tolerances)\n")
         variables = ["MaxIt", "TolTh", "TolH"]
@@ -833,12 +859,11 @@ class Model:
         lines.append("\n")
 
         # Write BLOCK C: TIME INFORMATION
-        lines.append(string.format("BLOCK C: TIME INFORMATION ", fill="*",
-                                   align="<", width=72))
+        lines.append(string.format("C: TIME INFORMATION ", "*", "<", 72))
 
         times = self.get_print_times()
 
-        self.time_information["MPL"] = len(times)
+        self.time_info["MPL"] = len(times)
 
         vars_list = [
             ["dt", "dtMin", "dtMax", "dMul", "dMul2", "ItMin", "ItMax",
@@ -848,7 +873,7 @@ class Model:
             lines.append(" ".join(variables))
             values = []
             for var in variables[:-1]:
-                val = self.time_information[var]
+                val = self.time_info[var]
                 if val is True:
                     values.append("t")
                 elif val is False:
@@ -865,10 +890,9 @@ class Model:
             lines.append("\n")
 
         # Write BLOCK D: Root Growth Information
-        if self.basic_information["lRoot"]:
+        if self.basic_info["lRoot"]:
             lines.append(
-                string.format("BLOCK D: ROOT GROWTH INFORMATION ",
-                              fill="*", align="<", width=72))
+                string.format("D: ROOT GROWTH INFORMATION ", "*", "<", 72))
             lines.append("iRootDepthEntry\n{}\n".format(self.root_growth[
                                                             "iRootIn"]))
             d = self.root_growth.copy()
@@ -878,21 +902,20 @@ class Model:
             lines.append("    ".join(str(p) for p in d.values()))
 
         # Write Block E - Heat transport information
-        if self.basic_information["lTemp"]:
+        if self.basic_info["lTemp"]:
             raise NotImplementedError
 
         # Write Block F - Solute transport information
-        if self.basic_information["lChem"]:
+        if self.basic_info["lChem"]:
             raise NotImplementedError
 
         # Write Block G - Root water uptake information
-        if self.basic_information["lSink"]:
-            lines.append(
-                string.format("BLOCK G: ROOT WATER UPTAKE INFORMATION ",
-                              fill="*", align="<", width=72))
+        if self.basic_info["lSink"]:
+            lines.append(string.format("G: ROOT WATER UPTAKE INFORMATION ",
+                                       "*", "<", 72))
             vars_list = [["iMoSink", "cRootMax", "OmegaC", "\n"]]
 
-            if self.rootwater_uptake["iMoSink"] is 0:
+            if self.root_uptake["iMoSink"] is 0:
                 vars_list.append(
                     ["P0", "P2H", "P2L", "P3", "r2H", "r2L", "\n"])
 
@@ -900,7 +923,7 @@ class Model:
                 lines.append(" ".join(variables))
                 values = []
                 for var in variables[:-1]:
-                    val = self.rootwater_uptake[var]
+                    val = self.root_uptake[var]
                     if var:
                         if val is True:
                             values.append("t")
@@ -912,14 +935,14 @@ class Model:
                 lines.append("\n")
 
             lines.append("POptm(1),POptm(2),...,POptm(NMat)\n")
-            lines.append("    ".join(str(p) for p in self.rootwater_uptake[
+            lines.append("    ".join(str(p) for p in self.root_uptake[
                 "POptm"]))
             lines.append("\n")
 
         # Write Block H - Nodal information
 
         # Write Block J - Inverse solution information
-        if self.basic_information["lInverse"]:
+        if self.basic_info["lInverse"]:
             raise NotImplementedError("The inverse modeling module from "
                                       "Hydrus-1D will not be supported. "
                                       "Python packages are used for this.")
@@ -927,16 +950,16 @@ class Model:
         # Write Block K – Carbon dioxide transport information
 
         # Write Block L – Major ion chemistry information
-        if self.basic_information["lChem"]:
+        if self.basic_info["lChem"]:
             raise NotImplementedError
 
         # Write Block M – Meteorological information
-        if self.basic_information["lMeteo"]:
+        if self.basic_info["lMeteo"]:
             raise NotImplementedError
 
         # Write END statement
-        lines.append(string.format(" END OF INPUT FILE SELECTOR.IN ",
-                                   fill="*", align="<", width=72))
+        lines.append(string.format("END OF INPUT FILE SELECTOR.IN ",
+                                   "*", "<", 72))
 
         # Write the actual file
         fname = os.path.join(self.ws_name, fname)
@@ -950,7 +973,7 @@ class Model:
         """
         # 1 Write Header information
         lines = ["Pcp_File_Version={}\n".format(
-            self.basic_information["iVer"]),
+            self.basic_info["iVer"]),
             "*** BLOCK I: ATMOSPHERIC INFORMATION  "
             "**********************************\nMaxAL "
             "(MaxAL = number of atmospheric data-records)\n"]
@@ -965,7 +988,7 @@ class Model:
         lines.append(" ".join(vars5))
         vals = []
         for var in vars5[:-1]:
-            val = self.atmosphere_information[var]
+            val = self.atmosphere_info[var]
             if var:
                 if val is True:
                     vals.append("t")
@@ -977,7 +1000,7 @@ class Model:
         lines.append("\n")
 
         lines.append("hCritS (max. allowed pressure head at the soil surface)")
-        lines.append("\n{}\n".format(self.atmosphere_information["hCritS"]))
+        lines.append("\n{}\n".format(self.atmosphere_info["hCritS"]))
 
         lines.append(self.atmosphere.to_string(index=False))
         lines.append("\n")
@@ -989,7 +1012,7 @@ class Model:
             file.writelines(lines)
         print("Succesfully wrote {}".format(fname))
 
-    def write_profile(self, fname="PROFILE.DAT", ws=""):
+    def write_profile(self, fname="PROFILE.DAT"):
         """Method to write the profile.dat file.
 
         """
@@ -999,7 +1022,7 @@ class Model:
         # Print some values
         nrow = self.profile.index.size
         ii = 0  # TODO Figure this out
-        ns = 0  # TODO Number of solutes
+        ns = self.n_solutes  # Number of solutes
         lines.append("{} {} {} ".format(nrow, ii, ns))
 
         # 2. Write the profile data
@@ -1016,8 +1039,14 @@ class Model:
             file.writelines(lines)
         print("Succesfully wrote {}".format(fname))
 
+    def write_fit(self, fname="FIT.IN"):
+        raise NotImplementedError
+
+    def write_meteo(self, fname="METEO.IN"):
+        raise NotImplementedError
+
     def read_output(self):
-        pass
+        raise NotImplementedError
 
     def read_profile(self, fname="PROFILE.OUT"):
         path = os.path.join(self.ws_name, fname)
@@ -1050,17 +1079,17 @@ class Model:
         if usecols is None:
             usecols = ["Area", "W-volume", "In-flow", "h Mean", "Top Flux",
                        "Bot Flux", "WatBalT", "WatBalR"]
-            if not self.solute_transport == None:
+            if self.solute_transport is not None:
                 usecols.append("ConcVol", "ConcVolIm", "cMean", "CncBalT",
                                "CncBalR")
 
-            if not self.heat_transport == None:
+            if self.heat_transport is not None:
                 usecols.append("TVol", "TMean")
 
-            if not self.CO2Transport == None:
+            if self.CO2Transport is not None:
                 usecols.append("COVol", "COMean", "CO2BalT", "CncBalT")
 
-            if not self.dual_porosity == None:
+            if self.water_flow["iModel"] in [5, 6, 7]:
                 usecols.append("W-VolumeI", "cMeanIm")
 
         data = read_balance(path=path, usecols=usecols)
@@ -1089,7 +1118,7 @@ class Model:
 
             if self.water_flow["iModel"] > 4:
                 usecols.append("Cum(WTrans)")
-            if self.basic_information["lSnow"]:
+            if self.basic_info["lSnow"]:
                 usecols.append("SnowLayer")
 
         data = read_tlevel(path=path, usecols=usecols)
@@ -1105,6 +1134,28 @@ class Model:
         path = os.path.join(self.ws_name, fname)
         data = read_solute(path=path)
         return data
+
+    def get_empty_material_df(self):
+        """Returns an empty dataframe with the soil parameters as columns.
+
+        return
+        ----------
+        pandas.DataFrame
+            Pandas DataFrame with the soil parameters as columns.
+
+        """
+        columns = {
+            0: ["thr", "ths", "Alfa", "n", "Ks", "l"],
+            1: list(range(10)),
+            2: list(range(6)),
+            3: list(range(6)),
+            4: list(range(6)),
+            5: list(range(9)),
+            6: list(range(9)),
+            7: list(range(11)),
+            9: list(range(17))
+        }
+        return DataFrame(columns=columns[self.water_flow["iModel"]])
 
 
 # Copy all the docstrings from the read methods

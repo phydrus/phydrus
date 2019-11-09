@@ -25,10 +25,10 @@ ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
               mass_units="-", time_unit="days", length_unit="cm")
 
 # Time info
-ml.time_information["tInit"] = 0
-ml.time_information["tMax"] = 100
-ml.time_information["dtMin"] = 0.000001
-ml.time_information["dt"] = 0.001
+ml.time_info["tInit"] = 0
+ml.time_info["tMax"] = 100
+ml.time_info["dtMin"] = 0.000001
+ml.time_info["dt"] = 0.001
 
 # Water flow info
 ml.add_waterflow(linitw=False, free_drainage=True, ha=1e-6, hb=1e4, rtop=-0.12)
@@ -52,7 +52,7 @@ ml.add_profile(profile)
 ml.add_observations([50, 100])
 
 # run steady state simulation
-ml.write_files()
+ml.write_input()
 ml.simulate()
 
 # Update the initial head for the transient simulation with the steady state
@@ -64,12 +64,12 @@ atm = pd.read_csv("data/ex4.csv", decimal=",", sep=";")
 ml.add_atmospheric_bc(atm)
 ml.water_flow["KodBot"] = -1
 
-ml.time_information["tMax"] = 360
+ml.time_info["tMax"] = 360
 
 # Root uptake
 ml.add_root_uptake(model=0, poptm=[-125] * m.index.size)
 
-ml.write_files()
+ml.write_input()
 ml.simulate()
 
 df = ml.read_tlevel()
