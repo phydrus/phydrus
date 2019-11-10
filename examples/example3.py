@@ -6,8 +6,9 @@ Author: R.A. Collenteur, University of Graz, 2019
 """
 
 import os
-import pydrus as ps
+
 import pandas as pd
+import pydrus as ps
 
 ws = "example3"
 exe = os.path.join(os.getcwd(), "hydrus")
@@ -19,8 +20,7 @@ ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
               mass_units="mmol", time_unit="days", length_unit="cm")
 
 # Time info
-ml.time_info["tInit"] = 0
-ml.time_info["tMax"] = 213
+times = ml.add_time_info(tmax=213, print_times=True)
 
 # Water flow info
 ml.add_waterflow(maxit=20, tolh=1, linitw=False, seepage_face=True, hseep=-60)

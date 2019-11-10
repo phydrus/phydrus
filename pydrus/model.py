@@ -5,6 +5,8 @@ This file contains the model class.
 import os
 from subprocess import run
 
+import numpy as np
+import pandas as pd
 from pandas import DataFrame
 
 from .plot import Plots
@@ -59,6 +61,7 @@ class Model:
         self.materials = None
         self.observations = []
         self.drains = None
+        self.times = None
 
         self.water_flow = None
         self.solute_transport = None
@@ -749,6 +752,81 @@ class Model:
                           "delete the old heat transport model first using "
                           "ml.del_solute_transport().")
 
+    def add_time_info(self, tinit=0, tmax=1, dt=0.1,
+                      dtmin=0.0001, dtmax=0.5, print_times=False,
+                      printinit=None, printmax=None, dtprint=None,
+                      nsteps=None, from_atmo=False):
+        """Method to produce time information.
+
+        Parameters
+        ----------
+        tinit: int, optional
+            Initial time of the simulation [T].
+        tmax: int, optional
+            Final time of the simulation [T].
+        print_times: boolean, optional
+            Set to True. if information of pressure head, water contents,
+            temperatures, and concentrations in observation nodes, and 
+            the water and solute fluxes is to be printed at a constant 
+            time interval of 1 time unit.
+        printinit: int, optional
+            First specified print-time [T].
+        printmax:int, optional
+            Last specified print-time [T].
+        dtprint: int, optional
+            Specified time increment for print times [T].
+        nsteps: str, optional
+            Number of required time steps between the first specified 
+            print-time (printinit) and the final specified 
+            print-time (printmax)".
+        from_atmo: boolean, optional.
+            Set to True. If time information is determined based oon the 
+            atmospheric boundary condition input.
+        dt: int, optional
+            Initial time increment [T].
+        dtmin: int, optional 
+            Minimum permitted time increment [T].        
+        dtmax: int, optional
+            Maximum permittedtime increment [T].
+        """
+        self.time_info["tInit"] = tinit
+        self.time_info["tMax"] = tmax
+        self.time_info["dt"] = dt
+        self.time_info["dtMax"] = dtmax
+        self.time_info["dtMin"] = dtmin
+        if from_atmo:
+            if self.atmosphere is None:
+                raise Warning("Atmospheric information not provided. Please "
+                              "provide atmosheric information through: "
+                              "ml.add_atmospheric_bc().")
+            if isinstance(self.atmosphere.index, pd.DatetimeIndex):
+                times = self.atmosphere.index.dayofyear
+            else:
+                times = self.atmosphere.index
+            self.time_info["tInit"] = times[0]
+            self.time_info["tMax"] = times[-1]
+            self.times = times[1:-1]
+        else:
+            if print_times:
+                if printinit is None:
+                    printinit = tinit
+                if printmax is None:
+                    printmax = tmax
+                if nsteps is None:
+                    times = np.arange(printinit, printmax,
+                                      step=dtprint)
+                else:
+                    times = np.linspace(printinit, printmax,
+                                        num=nsteps + 1)
+                if printinit == tinit:
+                    self.times = times[1:]
+                else:
+                    self.times = times
+                self.time_info["MPL"] = len(self.times)
+            else:
+                self.time_info["MPL"] = 0
+        return self.times
+
     def simulate(self):
         """Method to call the Hydrus-1D executable.
 
@@ -758,27 +836,6 @@ class Model:
         result = run(cmd)
 
         return result
-
-    def get_print_times(self):
-        """Method to get the print times for the simulation.
-
-        Returns
-        -------
-
-        """
-        if self.time_info["TPrint(1)"] is None:
-            tmin = self.time_info["tInit"] + 1
-        else:
-            tmin = self.time_info["TPrint(1)"]
-
-        if self.time_info["TPrint(MPL)"] is None:
-            tmax = self.time_info["tMax"]
-        else:
-            tmax = self.time_info["TPrint(MPL)"]
-
-        times = range(tmin, tmax)
-
-        return times
 
     def write_input(self):
         """Method to write the input files for the HYDRUS-1D simulation."""
@@ -850,9 +907,18 @@ class Model:
                      ["BotInf", "qGWLF", "FreeD", "SeepF", "KodBot", "qDrain",
                       "hSeep", "\n"]]
 
-        if (self.water_flow["KodTop"] >= 0) or \
-                (self.water_flow["KodBot"] >= 0):
-            vars_list.append(["rTop", "rBot", "rRoot", "\n"])
+        upper_condition = (self.water_flow["KodTop"] < 0
+                           and not self.water_flow["TopInf"])
+
+        lower_condition = ((self.water_flow["KodBot"] < 0)
+                           and not self.water_flow["BotInf"]
+                           and not self.water_flow["qGWLF"]
+                           and not self.water_flow["FreeD"]
+                           and not self.water_flow["SeepF"]
+                           )
+
+        if upper_condition or lower_condition:
+            vars_list.append (["rTop", "rBot", "rRoot", "\n"])
 
         if self.water_flow["qGWLF"]:
             vars_list.append(["GWL0L", "Aqh", "Bqh", "\n"])
@@ -886,11 +952,6 @@ class Model:
 
         # Write BLOCK C: TIME INFORMATION
         lines.append(string.format("C: TIME INFORMATION ", "*", "<", 72))
-
-        times = self.get_print_times()
-
-        self.time_info["MPL"] = len(times)
-
         vars_list = [
             ["dt", "dtMin", "dtMax", "dMul", "dMul2", "ItMin", "ItMax",
              "MPL", "\n"], ["tInit", "tMax", "\n"],
@@ -910,9 +971,9 @@ class Model:
             lines.append(" ".join(values))
 
         lines.append("TPrint(1),TPrint(2),...,TPrint(MPL)\n")
-        for i in range(int(len(times) / 6) + 1):
+        for i in range(int(len(self.times) / 6) + 1):
             lines.append(
-                " ".join([str(time) for time in times[i * 6:i * 6 + 6]]))
+                " ".join([str(time) for time in self.times[i * 6:i * 6 + 6]]))
             lines.append("\n")
 
         # Write BLOCK D: Root Growth Information

@@ -12,8 +12,9 @@ Author: R.A. Collenteur, University of Graz, 2019
 """
 
 import os
-import pydrus as ps
+
 import pandas as pd
+import pydrus as ps
 
 ws = "example4"
 exe = os.path.join(os.getcwd(), "hydrus")
@@ -25,11 +26,8 @@ ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
               mass_units="-", time_unit="days", length_unit="cm")
 
 # Time info
-ml.time_info["tInit"] = 0
-ml.time_info["tMax"] = 100
-ml.time_info["dtMin"] = 0.000001
-ml.time_info["dt"] = 0.001
-
+times = ml.add_time_info(tmax=100, print_times=True, dt=0.001,
+                         dtmin=0.000001)
 # Water flow info
 ml.add_waterflow(linitw=False, free_drainage=True, ha=1e-6, hb=1e4, rtop=-0.12)
 
@@ -63,7 +61,8 @@ ml.profile["h"] = df["Head"].values
 atm = pd.read_csv("data/ex4.csv", decimal=",", sep=";")
 ml.add_atmospheric_bc(atm)
 
-ml.time_info["tMax"] = 360
+times1 = ml.add_time_info(tmax=360, print_times=True, dt=0.001,
+                          dtmin=0.000001)
 
 # Root uptake
 ml.add_root_uptake(model=0, poptm=[-125] * m.index.size)

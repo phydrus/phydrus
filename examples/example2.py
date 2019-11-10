@@ -6,8 +6,9 @@ Author: R.A. Collenteur, University of Graz, 2019
 """
 
 import os
-import pydrus as ps
+
 import pandas as pd
+import pydrus as ps
 
 ws = "example2"
 exe = os.path.join(os.getcwd(), "hydrus")
@@ -18,8 +19,7 @@ desc = "Example 2 - Grass Field Problem (Hupselse Beek 1982)"
 ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
               mass_units="-", time_unit="days", length_unit="cm")
 
-ml.time_info["tInit"] = 90
-ml.time_info["tMax"] = 273
+times = ml.add_time_info(tinit=90, tmax=273, print_times=True)
 
 # Water inflow parameters
 ml.add_waterflow(linitw=False, free_drainage=True, ha=1e-6, hb=1e4)
