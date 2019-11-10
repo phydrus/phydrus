@@ -22,7 +22,7 @@ ml.time_info["tInit"] = 90
 ml.time_info["tMax"] = 273
 
 # Water inflow parameters
-ml.add_waterflow(kodbot=-1, linitw=False, free_drainage=True, ha=1e-6, hb=1e4)
+ml.add_waterflow(linitw=False, free_drainage=True, ha=1e-6, hb=1e4)
 
 m = pd.DataFrame(columns=["thr", "ths", "Alfa", "n", "Ks", "l"],
                  data=[[0.0001, 0.399, 0.0174, 1.3757, 29.75, 0.5],

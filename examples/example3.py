@@ -22,6 +22,9 @@ ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
 ml.time_info["tInit"] = 0
 ml.time_info["tMax"] = 213
 
+# Water flow info
+ml.add_waterflow(maxit=20, tolh=1, linitw=False, seepage_face=True, hseep=-60)
+
 # Add materials
 m = pd.DataFrame(columns=["thr", "ths", "Alfa", "n", "Ks", "l"], index=[1],
                  data=[[0.095, 0.41, 0.019, 1.31, 3.4, 0.5]])
@@ -30,11 +33,6 @@ ml.add_material(m)
 # Profile
 profile = ps.create_profile(bot=-100, dx=10, h=-70.5614)
 ml.add_profile(profile)
-
-# Water flow info
-ml.add_waterflow(maxit=20, tolh=1, linitw=False, kodbot=-1,
-                 seepage_face=True, hseep=-60)
-#ml.add_waterflow(kodbot=-1, linitw=False, free_drainage=True, ha=1e-6, hb=1e4)
 
 # Atmospheric data
 atm = pd.read_csv("data/ex3.csv", index_col=0)

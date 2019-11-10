@@ -56,13 +56,12 @@ ml.write_input()
 ml.simulate()
 
 # Update the initial head for the transient simulation with the steady state
-df = ml.read_nod_inf(times=100)
+df = ml.read_nod_inf()
 ml.profile["h"] = df["Head"].values
 
 # Atmospheric data
 atm = pd.read_csv("data/ex4.csv", decimal=",", sep=";")
 ml.add_atmospheric_bc(atm)
-ml.water_flow["KodBot"] = -1
 
 ml.time_info["tMax"] = 360
 

@@ -66,7 +66,6 @@ class Plots:
 
         plt.tight_layout()
         return ax
-                             title="Profile Information", 
 
     def profile_information(self, data="Pressure Head", times=None,
                             legend=True, figsize=(7, 5),
@@ -236,10 +235,9 @@ class Plots:
         data: str, optional
             String with the variable of the water flow information to plot. 
             You can choose between: "Water Content", "Pressure head",
-                     "log Pressure head", "Hydraulic Capacity",
-                     "Hydraulic Conductivity", "log Hydraulic Conductivity",
-                     "Effective Water Content".
-            Default is "Water Content".        
+            "log Pressure head", "Hydraulic Capacity", "Hydraulic
+            Conductivity", "log Hydraulic Conductivity", "Effective Water
+            Content". Default is "Water Content".
         figsize: tuple, optional
         title: str, optional
         cmap: str, optional

@@ -3,7 +3,7 @@ This file contains the model class.
 """
 
 import os
-import subprocess
+from subprocess import run
 
 from pandas import DataFrame
 
@@ -203,11 +203,10 @@ class Model:
             self.observations.append(node)
 
     def add_waterflow(self, model=0, maxit=20, tolth=1e-4, tolh=0.1, ha=1e-3,
-                      hb=1e3, topinf=False, botinf=False, kodtop=-1, kodbot=1,
-                      linitw=True, free_drainage=False, seepage_face=False,
-                      qdrain=False, hseep=0, rtop=0, rbot=0, rroot=0,
-                      qgwlf=False, gw_level=None, aqh=None, bqh=None,
-                      hysteresis=0, ikappa=-1, wlayer=False):
+                      hb=1e3, linitw=True, free_drainage=False,
+                      seepage_face=False, qdrain=False, hseep=0, rtop=0,
+                      rbot=0, rroot=0, qgwlf=False, gw_level=None, aqh=None,
+                      bqh=None, hysteresis=0, ikappa=-1, wlayer=False):
         """Method to add a water_flow module to the model.
 
         Parameters
@@ -251,20 +250,6 @@ class Model:
             Absolute value of the lower limit [L] of the pressure head interval
              for which a table of hydraulic properties will be generated
              internally for each material.
-        topinf: bool, optional
-            Set to True if the surface boundary condition is time-dependent.
-        botinf: bool, optional
-            Set to True if the bottom boundary condition is time-dependent.
-        kodtop: int, optional
-            Code specifying type of boundary condition (BC) for water flow at
-            the surface. 1 for Dirichlet BC and -1 for Neumann BC. Set to 0
-            when a prescribed BC can change from Dirichlet BC to Neumann BC
-            and vice versa.
-        kodbot: int, optional
-            Code specifying type of boundary condition for water flow at the
-            bottom of the profile. Set to -1 for a Dirichlet BC and to 1 for
-            a Neumann BC. In case of a seepage face or free drainage BC set
-            KodBot=-1.
         linitw: bool, optional
             Set to True if the initial condition is given in terms of the
             water content. Set to False if given in terms of pressure head.
@@ -322,27 +307,21 @@ class Model:
                     raise TypeError("When the groundwater level is used as "
                                     "bottom boundary condition, the keyword "
                                     "{} needs to be provided".format(var))
-        if self.water_flow is None:
-            if free_drainage:
-                # In case of a seepage face or free drainage BC set KodBot=-1.
-                kodbot = -1
-            if seepage_face:
-                # In case of a seepage face or free drainage BC set KodBot=-1.
-                kodbot = -1
 
+        if self.water_flow is None:
             self.water_flow = {
                 "MaxIt": maxit,  # Maximum No. of Iterations
                 "TolTh": tolth,  # [-]
                 "TolH": tolh,  # [L], default is 0.1 cm
-                "TopInf": topinf,
+                "TopInf": None,  # Depends on boundary condition
                 "WLayer": wlayer,
-                "KodTop": kodtop,  # Depends on boundary condition
+                "KodTop": None,  # Depends on boundary condition
                 "lInitW": linitw,
-                "BotInf": botinf,
+                "BotInf": None,  # Depends on boundary condition
                 "qGWLF": qgwlf,
                 "FreeD": free_drainage,
                 "SeepF": seepage_face,
-                "KodBot": kodbot,  # Depends on boundary condition
+                "KodBot": None,  # Depends on boundary condition
                 "qDrain": qdrain,
                 "hSeep": hseep,  # [L]
                 "rTop": rtop,  # [LT-1]
@@ -426,8 +405,6 @@ class Model:
 
         # Enable atmosphere module
         self.basic_info["AtmInf"] = True
-        self.water_flow["TopInf"] = True
-        self.water_flow["KodTop"] = -1
 
     def add_root_uptake(self, model=0, crootmax=0, omegac=0.5, p0=-10,
                         p2h=-200, p2l=-800, p3=-8000, r2h=0.5, r2l=0.1,
@@ -729,7 +706,7 @@ class Model:
         """
         # Run Hydrus executable.
         cmd = [self.exe_name, self.ws_name, "-1"]
-        result = subprocess.run(cmd)
+        result = run(cmd)
 
         return result
 
@@ -775,6 +752,8 @@ class Model:
         """Write the selector.in file.
 
         """
+        self._set_bc_settings()
+
         # Create Header string
         string = "*** BLOCK {:{}{}{}}\n"
 
@@ -965,7 +944,7 @@ class Model:
         fname = os.path.join(self.ws_name, fname)
         with open(fname, "w") as file:
             file.writelines(lines)
-        print("Succesfully wrote {}".format(fname))
+        print("Successfully wrote {}".format(fname))
 
     def write_atmosphere(self, fname="ATMOSPH.IN"):
         """Method to write the ATMOSPH.IN file
@@ -997,27 +976,25 @@ class Model:
                 else:
                     vals.append(str(val))
         lines.append(" ".join(vals))
-        lines.append("\n")
 
-        lines.append("hCritS (max. allowed pressure head at the soil surface)")
-        lines.append("\n{}\n".format(self.atmosphere_info["hCritS"]))
+        lines.append("\nhCritS (max. allowed pressure head at the soil "
+                     "surface)\n{}\n".format(self.atmosphere_info["hCritS"]))
 
         lines.append(self.atmosphere.to_string(index=False))
-        lines.append("\n")
-        lines.append("end*** END OF INPUT FILE ATMOSPH.IN "
+        lines.append("\nend*** END OF INPUT FILE ATMOSPH.IN "
                      "**********************************\n")
         # Write the actual file
         fname = os.path.join(self.ws_name, fname)
         with open(fname, "w") as file:
             file.writelines(lines)
-        print("Succesfully wrote {}".format(fname))
+        print("Successfully wrote {}".format(fname))
 
     def write_profile(self, fname="PROFILE.DAT"):
         """Method to write the profile.dat file.
 
         """
         # 1 Write Header information
-        lines = ["Pcp_File_Version=4\n", "0\n"]
+        lines = ["Pcp_File_Version={}\n0\n".format(self.basic_info["iVer"])]
 
         # Print some values
         nrow = self.profile.index.size
@@ -1027,17 +1004,16 @@ class Model:
 
         # 2. Write the profile data
         lines.append(self.profile.to_string())
-        lines.append("\n")
 
         # 3. Write observation points
-        lines.append(str(len(self.observations)) + os.linesep)
+        lines.append("\n{}\n".format(len(self.observations)))
         lines.append("".join(["   {}".format(i) for i in self.observations]))
 
         # Write the actual file
         fname = os.path.join(self.ws_name, fname)
         with open(fname, "w") as file:
             file.writelines(lines)
-        print("Succesfully wrote {}".format(fname))
+        print("Successfully wrote {}".format(fname))
 
     def write_fit(self, fname="FIT.IN"):
         raise NotImplementedError
@@ -1146,16 +1122,61 @@ class Model:
         """
         columns = {
             0: ["thr", "ths", "Alfa", "n", "Ks", "l"],
-            1: list(range(10)),
-            2: list(range(6)),
-            3: list(range(6)),
-            4: list(range(6)),
-            5: list(range(9)),
-            6: list(range(9)),
-            7: list(range(11)),
+            1: ["thr", "ths", "Alfa", "n", "Ks", "l", "thm", "tha", "thk",
+                "Kk"],
+            2: ["thr", "ths", "Alfa", "n", "Ks", "l"],
+            3: ["thr", "ths", "Alfa", "n", "Ks", "l"],
+            4: ["thr", "ths", "Alfa", "n", "Ks", "l"],
+            5: ["thr", "ths", "Alfa", "n", "Ks", "l", "w", "Alfa2", "n2"],
+            6: ["thr", "ths", "Alfa", "n", "Ks", "l", "thr_im", "ths_im",
+                "omega"],
+            7: ["thr", "ths", "Alfa", "n", "Ks", "l", "thr_im", "ths_im",
+                "Alfa_im", "n_im", "Ka"],
             9: list(range(17))
         }
         return DataFrame(columns=columns[self.water_flow["iModel"]])
+
+    def _set_bc_settings(self):
+        """Internal method to set the boundary condition settings.
+
+        Returns
+        -------
+
+        Notes
+        -----
+        topinf: bool, optional
+            Set to True if the surface boundary condition is time-dependent.
+        botinf: bool, optional
+            Set to True if the bottom boundary condition is time-dependent.
+        kodtop: int, optional
+            Code specifying type of boundary condition (BC) for water flow at
+            the surface. 1 for Dirichlet BC and -1 for Neumann BC. Set to 0
+            when a prescribed BC can change from Dirichlet BC to Neumann BC
+            and vice versa.
+        kodbot: int, optional
+            Code specifying type of boundary condition for water flow at the
+            bottom of the profile. Set to -1 for a Dirichlet BC and to 1 for
+            a Neumann BC. In case of a seepage face or free drainage BC set
+            KodBot=-1.
+
+        """
+        kodtop = -1
+        topinf = False
+        kodbot = 1
+        botinf = False
+
+        # In case of a seepage face or free drainage BC set KodBot=-1.
+        if self.water_flow["SeepF"] or self.water_flow["FreeD"]:
+            kodbot = -1
+
+        if self.basic_info["AtmInf"]:
+            topinf = True
+            kodtop = -1
+
+        self.water_flow["KodTop"] = kodtop
+        self.water_flow["TopInf"] = topinf
+        self.water_flow["KodBot"] = kodbot
+        self.water_flow["BotInf"] = botinf
 
 
 # Copy all the docstrings from the read methods
