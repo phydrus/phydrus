@@ -962,17 +962,8 @@ class Model:
 
             for variables in vars_list:
                 lines.append(" ".join(variables))
-                values = []
-                for var in variables[:-1]:
-                    val = self.root_uptake[var]
-                    if var:
-                        if val is True:
-                            values.append("t")
-                        elif val is False:
-                            values.append("f")
-                        else:
-                            values.append(str(val))
-                lines.append("    ".join(values))
+                lines.append("    ".join(str(self.root_uptake[var]) for var in
+                                         variables[:-1]))
                 lines.append("\n")
 
             lines.append("POptm(1),POptm(2),...,POptm(NMat)\n")
