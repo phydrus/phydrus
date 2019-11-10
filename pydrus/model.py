@@ -731,7 +731,6 @@ class Model:
             Temperature of lower boundary, or temperature of the incoming
             fluid [degree Celsius].
 
-
         """
         if self.heat_transport is None:
             self.heat_transport = {
@@ -930,7 +929,22 @@ class Model:
 
         # Write Block E - Heat transport information
         if self.basic_info["lTemp"]:
-            raise NotImplementedError
+            lines.append(string.format("E: HEAT TRANSPORT INFORMATION ",
+                                       "*", "<", 72))
+            lines.append(self.heat_parameters.to_string(index=False))
+            lines.append(
+                "tAmpl tPeriod Campbell SnowMF lDummy lDummy lDummy "
+                "lDummy lDummy\n"
+                "{} {} {} {} f f f f f\n"
+                "kTopT TTop kBotT TBot\n"
+                "{} {} {} {}\n".format(self.heat_transport["Ampl"],
+                                       self.heat_transport["tPeriod"],
+                                       self.heat_transport["iCampbell"],
+                                       self.heat_transport["SnowMF"],
+                                       self.heat_transport["kTopT"],
+                                       self.heat_transport["tTop"],
+                                       self.heat_transport["kBotT"],
+                                       self.heat_transport["tBot"]))
 
         # Write Block F - Solute transport information
         if self.basic_info["lChem"]:
@@ -965,8 +979,6 @@ class Model:
             lines.append("    ".join(str(p) for p in self.root_uptake[
                 "POptm"]))
             lines.append("\n")
-
-        # Write Block H - Nodal information
 
         # Write Block J - Inverse solution information
         if self.basic_info["lInverse"]:
@@ -1042,20 +1054,16 @@ class Model:
 
         """
         # 1 Write Header information
-        lines = ["Pcp_File_Version={}\n0\n".format(self.basic_info["iVer"])]
-
-        # Print some values
-        nrow = self.profile.index.size
-        ii = 0  # TODO Figure this out
-        ns = self.n_solutes  # Number of solutes
-        lines.append("{} {} {} ".format(nrow, ii, ns))
-
-        # 2. Write the profile data
-        lines.append(self.profile.to_string())
-
-        # 3. Write observation points
-        lines.append("\n{}\n".format(len(self.observations)))
-        lines.append("".join(["   {}".format(i) for i in self.observations]))
+        lines = ["Pcp_File_Version={}\n"
+                 "0\n"
+                 "{} {} {} {}".format(self.basic_info["iVer"],
+                                      self.profile.index.size,
+                                      self.n_solutes, 0, 0),
+                 # 2. Write the profile data
+                 self.profile.to_string(),
+                 # 3. Write observation points
+                 "\n{}\n".format(len(self.observations)),
+                 "".join(["   {}".format(i) for i in self.observations])]
 
         # Write the actual file
         fname = os.path.join(self.ws_name, fname)
