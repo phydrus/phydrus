@@ -572,15 +572,34 @@ class Model:
                           "the old root growth model first using "
                           "ml.del_root_growth().")
 
-    def add_solute_transport(self, epsi=0.5, lupw=False, lartd=False,
+    def add_solute_transport(self, model=0, epsi=0.5, lupw=False, lartd=False,
                              ltdep=False, ctola=0.0, ctolr=0.0, maxitc=20,
                              pecr=0.0, ltort=True, ibacter=0, lfiltr=False,
-                             inonequal=0, lwatdep=False, ktopch=None,
-                             kbotch=None, dsurf=None, catm=None, tpulse=1):
+                             lwatdep=False, ktopch=None, kbotch=None,
+                             dsurf=None, catm=None, tpulse=1):
         """Method to add solute transport to the model.
 
         Parameters
         ----------
+        model: int, optional
+            Code describing type of nonequilibrium for solute transport:
+            0 = equilibrium solute transport (Default)
+            1 = one-site sorption model (chemical nonequilibrium)
+            2 = two-site sorption model (chemical nonequilibrium)
+            3 = two kinetic sorption sites model (attachment/detachment;
+            chemical nonequilibrium). This model is often used for particle
+            (viruses, colloids, bacteria) transport.
+            4 = two kinetic sorption sites model (attachment/detachment) (
+            chemical nonequilibrium). Attachment coefficients are calculated
+            using filtration theory.
+            5 = dual-porosity model (mobile-immobile regions; physical
+            nonequilibrium).
+            6 = dual-porosity model (mobile-immobile regions) with two-site
+            sorption in the mobile zone (physical and chemical nonequilibrium).
+            7 = dual-permeability model (physical nonequilibrium).
+            8 = dual-permeability model with either an immobile region in the
+            matrix domain (physical nonequilibrium) or with two-site
+            sorption in both domains (physical and chemical nonequilibrium).
         epsi: float, optional
             Temporal weighing coefficient. 0.0 for an explicit scheme (
             Default). 0.5 for a Crank-Nicholson implicit scheme. =1.0 for
@@ -596,7 +615,7 @@ class Model:
             temperature dependent, else False. If ltdep=True, then all
             values of ChPar(i,M) should be specified at a reference
             temperature Tr=20 degrees celsius.
-        ctola:float, optional
+        ctola: float, optional
             Absolute concentration tolerance [ML-3], the value is dependent
             on the units used (set equal to zero if nonlinear adsorption is
             not considered).
@@ -622,25 +641,6 @@ class Model:
         lfiltr: bool, optional
             Set this logical variable equal to True. if the attachment
             coefficient is to be evaluated using the filtration theory.
-        inonequal: int, optional
-            Code describing type of nonequilibrium for solute transport:
-            0 = equilibrium solute transport
-            1 = one-site sorption model (chemical nonequilibrium)
-            2 = two-site sorption model (chemical nonequilibrium)
-            3 = two kinetic sorption sites model (attachment/detachment;
-            chemical nonequilibrium). This model is often used for particle
-            (viruses, colloids, bacteria) transport.
-            4 = two kinetic sorption sites model (attachment/detachment) (
-            chemical nonequilibrium). Attachment coefficients are calculated
-            using filtration theory.
-            5 = dual-porosity model (mobile-immobile regions; physical
-            nonequilibrium).
-            6 = dual-porosity model (mobile-immobile regions) with two-site
-            sorption in the mobile zone (physical and chemical nonequilibrium).
-            7 = dual-permeability model (physical nonequilibrium).
-            8 = dual-permeability model with either an immobile region in the
-            matrix domain (physical nonequilibrium) or with two-site
-            sorption in both domains (physical and chemical nonequilibrium).
         lwatdep: bool, optional
             True if at least one degradation coefficient (ChPar) is water
             content dependent.
@@ -665,31 +665,28 @@ class Model:
             Time duration of the concentration pulse [T].
 
         """
-
-        transport = {
-            "Epsi": epsi,
-            "lUpW": lupw,
-            "lArtD": lartd,
-            "ltDep": ltdep,
-            "cTolA": ctola,
-            "cTolR": ctolr,
-            "MaxItC": maxitc,
-            "PeCr": pecr,
-            "lTort": ltort,
-            "iBacter": ibacter,
-            "lFiltr": lfiltr,
-            "iNonEqual": inonequal,
-            "lWatDep": lwatdep,
-            "lDualEq": True if inonequal == 6 else False,
-            "kTopCh": ktopch,
-            "kBotCh": kbotch,
-            "dSurf": dsurf,
-            "cAtm": catm,
-            "tPulse": tpulse
-        }
-
         if self.solute_transport is None:
-            self.solute_transport = transport
+            self.solute_transport = {
+                "Epsi": epsi,
+                "lUpW": lupw,
+                "lArtD": lartd,
+                "ltDep": ltdep,
+                "cTolA": ctola,
+                "cTolR": ctolr,
+                "MaxItC": maxitc,
+                "PeCr": pecr,
+                "lTort": ltort,
+                "iBacter": ibacter,
+                "lFiltr": lfiltr,
+                "iNonEqual": model,
+                "lWatDep": lwatdep,
+                "lDualEq": True if model == 6 else False,
+                "kTopCh": ktopch,
+                "kBotCh": kbotch,
+                "dSurf": dsurf,
+                "cAtm": catm,
+                "tPulse": tpulse
+            }
             self.basic_info["lChem"] = True
         else:
             raise Warning("Solute transport model already exists. Please "
@@ -699,6 +696,59 @@ class Model:
     def add_solutes(self, data, ):
         if self.solutes is None:
             self.solutes = data
+
+    def add_heat_transport(self, ampl, tperiod, icampbell, snowmf, top_bc,
+                           top_temp, bot_bc, bot_temp):
+        """Method to add heat transport to the model.
+
+        Parameters
+        ----------
+        ampl: float, optional
+            Temperature amplitude at the soil surface [K].
+        tperiod: float, optional
+            Time interval for completion of one temperature cycle (usually 1
+            day) [T].
+        icampbell: int, optional
+            Set equal to 1 if Campbell [1985] formula is to be used to
+            calculate the thermal conductivity. Set equal to 0, when Chung
+            and Horton [1987] formula is to be used.
+        snowmf: float, optional
+            Amount of snow that will melt during one day for each degree
+            Celsius (e.g., 0.43cm).
+        top_bc: int, optional
+            Code which specifies the type of upper boundary condition:
+            1 = Dirichlet boundary condition,
+            -1 = Cauchy boundary condition.
+        top_temp: float, optional
+            Temperature of the upper boundary, or temperature of the
+            incoming fluid [degree Celsius].
+        bot_bc: int, optional
+            Code which specifies the type of lower boundary condition:
+            1 = Dirichlet boundary condition,
+            0 = continuous temperature profile, zero gradient,
+            -1 = Cauchy boundary condition.
+        bot_temp: float, optional
+            Temperature of lower boundary, or temperature of the incoming
+            fluid [degree Celsius].
+
+
+        """
+        if self.heat_transport is None:
+            self.heat_transport = {
+                "Ampl": ampl,
+                "tPeriod": tperiod,
+                "iCampbell": icampbell,
+                "SnowMF": snowmf,
+                "kTopT": top_bc,
+                "tTop": top_temp,
+                "kBotT": bot_bc,
+                "tBot": bot_temp
+            }
+            self.basic_info["lTemp"] = True
+        else:
+            raise Warning("Heat transport model already exists. Please "
+                          "delete the old heat transport model first using "
+                          "ml.del_solute_transport().")
 
     def simulate(self):
         """Method to call the Hydrus-1D executable.
@@ -757,15 +807,21 @@ class Model:
         # Create Header string
         string = "*** BLOCK {:{}{}{}}\n"
 
-        lines = [
-            "Pcp_File_Version={}\n{}{}\n{}\nLUnit TUnit MUnit\n{}\n{}\n{}\n"
-                .format(self.basic_info["iVer"],
-                        string.format("A: BASIC INFORMATION ", "*", "<", 72),
-                        self.basic_info["Hed"], self.description,
-                        self.basic_info["LUnit"], self.basic_info["TUnit"],
-                        self.basic_info["MUnit"])]
-
         # Write block A: BASIC INFORMATION
+        lines = [
+            "Pcp_File_Version={}\n"
+            "{}{}\n"
+            "{}\n"
+            "LUnit TUnit MUnit\n"
+            "{}\n"
+            "{}\n"
+            "{}\n".format(self.basic_info["iVer"],
+                          string.format("A: BASIC INFORMATION ", "*", "<", 72),
+                          self.basic_info["Hed"], self.description,
+                          self.basic_info["LUnit"], self.basic_info["TUnit"],
+                          self.basic_info["MUnit"])
+        ]
+
         vars_list = [["lWat", "lChem", "lTemp", "lSink", "lRoot", "lShort",
                       "lWDep", "lScreen", "AtmInf", "lEquil", "lInverse",
                       "\n"],
@@ -774,20 +830,12 @@ class Model:
 
         for variables in vars_list:
             lines.append("  ".join(variables))
-            values = []
-            for var in variables[:-1]:
-                val = self.basic_info[var]
-                if val is True:
-                    values.append("t")
-                elif val is False:
-                    values.append("f")
-                else:
-                    values.append(str(val))
-            values.append("\n")
-            lines.append("     ".join(values))
+            lines.append("  ".join("t" if self.basic_info[var] else "f" for
+                                   var in variables[:-1]))
+            lines.append("\n")
 
-        lines.append("NMat NLay CosAlfa \n")
-        lines.append("{} {} {}\n".format(self.n_materials, self.n_layers,
+        lines.append("NMat NLay CosAlfa \n"
+                     "{} {} {}\n".format(self.n_materials, self.n_layers,
                                          self.basic_info["CosAlfa"]))
 
         # Write block B: WATER FLOW INFORMATION
@@ -1135,6 +1183,13 @@ class Model:
             9: list(range(17))
         }
         return DataFrame(columns=columns[self.water_flow["iModel"]])
+
+    def get_empty_heat_df(self):
+        """Returns an empty DataFrame to fill in the heat parameters.
+
+        """
+        columns = ["thn", "tho", "lambda", "b1", "b2", "b3", "Cn", "C0", "Cw"]
+        return DataFrame(columns=columns, index=self.materials.index)
 
     def _set_bc_settings(self):
         """Internal method to set the boundary condition settings.
