@@ -6,8 +6,9 @@ Author: R.A. Collenteur, University of Graz, 2019
 """
 
 import os
-import pydrus as ps
+
 import pandas as pd
+import pydrus as ps
 
 ws = "example"
 exe = os.path.join(os.getcwd(), "hydrus")
@@ -18,19 +19,16 @@ desc = "Infiltration and drainage in a large caisson"
 ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
               mass_units="mmol", time_unit="min", length_unit="cm")
 
-ml.time_info["tInit"] = 90
-ml.time_info["tMax"] = 273
-ml.time_info["dt"] = 0.1
-ml.time_info["dtMax"] = 0.5
-
-ml.time_info["TPrint(1)"] = 120
-ml.time_info["TPrint(MPL)"] = 273
+times = ml.add_time_info(tinit=90, tmax=273, print_times=True, dt=0.1,
+                         dtmax=0.5, printinit=120)
 
 ml.add_waterflow()
 
 m = pd.DataFrame(data=[[0.08, 0.3421, 0.03, 5, 1, -0.5],
                        [0.08, 0.3421, 0.03, 5, 0.1, -0.5]],
-                 columns=["thr", "ths", "Alfa", "n", "Ks", "l"], index=[1, 2])
+                 columns=["thr", "ths", "Alfa", "n", "Ks", "l"],
+                 index=[1, 2])
+
 ml.add_material(m)
 
 profile = ps.create_profile(h=0.342)
