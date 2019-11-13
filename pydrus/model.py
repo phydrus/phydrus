@@ -697,24 +697,14 @@ class Model:
         if self.solutes is None:
             self.solutes = data
 
-    def add_heat_transport(self, ampl, tperiod, icampbell, snowmf, top_bc,
-                           top_temp, bot_bc, bot_temp):
+    def add_heat_transport(self, ampl, top_bc, top_temp, bot_bc, bot_temp,
+                           tperiod=1, icampbell=1, snowmelt=0.40):
         """Method to add heat transport to the model.
 
         Parameters
         ----------
         ampl: float, optional
             Temperature amplitude at the soil surface [K].
-        tperiod: float, optional
-            Time interval for completion of one temperature cycle (usually 1
-            day) [T].
-        icampbell: int, optional
-            Set equal to 1 if Campbell [1985] formula is to be used to
-            calculate the thermal conductivity. Set equal to 0, when Chung
-            and Horton [1987] formula is to be used.
-        snowmf: float, optional
-            Amount of snow that will melt during one day for each degree
-            Celsius (e.g., 0.43cm).
         top_bc: int, optional
             Code which specifies the type of upper boundary condition:
             1 = Dirichlet boundary condition,
@@ -730,6 +720,16 @@ class Model:
         bot_temp: float, optional
             Temperature of lower boundary, or temperature of the incoming
             fluid [degree Celsius].
+        tperiod: float, optional
+            Time interval for completion of one temperature cycle (usually 1
+            day, default) [T].
+        icampbell: int, optional
+            Set equal to 1 if Campbell [1985] formula is to be used to
+            calculate the thermal conductivity (Default_. Set equal to 0,
+            when Chung and Horton [1987] formula is to be used.
+        snowmelt: float, optional
+            Amount of snow that will melt during one day for each degree
+            Celsius (e.g., 0.40cm default).
 
         """
         if self.heat_transport is None:
@@ -737,7 +737,7 @@ class Model:
                 "Ampl": ampl,
                 "tPeriod": tperiod,
                 "iCampbell": icampbell,
-                "SnowMF": snowmf,
+                "SnowMF": snowmelt,
                 "kTopT": top_bc,
                 "tTop": top_temp,
                 "kBotT": bot_bc,
