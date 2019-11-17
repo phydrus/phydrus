@@ -40,7 +40,7 @@ times = ml.add_time_info(tmax=1, print_times=True, nsteps=12,
 
 # Define free drainage and dirichlet BC at surface(kodtop = 1),
 # initial condition is given in pressure head (lInitW = False)
-ml.add_waterflow(free_drainage=True, linitw=False,
+ml.add_waterflow(top_bc=0, bot_bc=4, linitw=False,
                  ha=1e-006, hb=10000, maxit=10, tolth=0.001, tolh=1)
 
 m = pd.DataFrame(data=[[0.078, 0.43, 0.036, 1.56, 24.96, 0.5]],

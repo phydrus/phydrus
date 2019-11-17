@@ -23,7 +23,7 @@ ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
 times = ml.add_time_info(tmax=213, print_times=True)
 
 # Water flow info
-ml.add_waterflow(maxit=20, tolh=1, linitw=False, seepage_face=True, hseep=-60)
+ml.add_waterflow(maxit=20, tolh=1, linitw=False, top_bc=3, bot_bc=6, hseep=-60)
 
 # Add materials
 m = pd.DataFrame(columns=["thr", "ths", "Alfa", "n", "Ks", "l"], index=[1],

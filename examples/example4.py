@@ -29,7 +29,7 @@ ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
 times = ml.add_time_info(tmax=100, print_times=True, dt=0.001,
                          dtmin=0.000001)
 # Water flow info
-ml.add_waterflow(linitw=False, free_drainage=True, ha=1e-6, hb=1e4, rtop=-0.12)
+ml.add_waterflow(linitw=False, top_bc=1, bot_bc=4, ha=1e-6, hb=1e4, rtop=-0.12)
 
 # Add materials
 m = pd.DataFrame(columns=["thr", "ths", "Alfa", "n", "Ks", "l"],

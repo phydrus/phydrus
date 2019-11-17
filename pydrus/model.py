@@ -206,10 +206,9 @@ class Model:
             self.observations.append(node)
 
     def add_waterflow(self, model=0, maxit=20, tolth=1e-4, tolh=0.1, ha=1e-3,
-                      hb=1e3, linitw=True, free_drainage=False,
-                      seepage_face=False, qdrain=False, hseep=0, rtop=0,
-                      rbot=0, rroot=0, qgwlf=False, gw_level=None, aqh=None,
-                      bqh=None, hysteresis=0, ikappa=-1, wlayer=False):
+                      hb=1e3, linitw=True, top_bc=0, bot_bc=0, hseep=0,
+                      rtop=None, rbot=None, rroot=None, gw_level=None,
+                      aqh=None, bqh=None, hysteresis=0, ikappa=-1):
         """Method to add a water_flow module to the model.
 
         Parameters
@@ -256,12 +255,24 @@ class Model:
         linitw: bool, optional
             Set to True if the initial condition is given in terms of the
             water content. Set to False if given in terms of pressure head.
-        free_drainage: bool, optional
-            True if free drainage is to be considered as bottom BC.
-        seepage_face: bool, optional
-            True if seepage face is to be considered as the bottom BC.
-        qdrain: bool, optional
-            True if flow to horizontal drains is considered as bottom BC.
+        top_bc: int, optional
+            Upper Boundary Condition:
+            0 = Constant Pressure Head.
+            1 = Constant Flux.
+            2 = Atmospheric Boundary Condition with Surface Layer.
+            3 = Atmospheric Boundary Condition with Surface Run Off.
+            4 = Variable Pressure Head.
+            5 = Variable Pressure Head/Flux.
+        bot_bc: int, optional
+            Lower Boundary Condition:
+            0 = Constant Pressure Head.
+            1 = Constant Flux.
+            2 = Variable Pressure Head.
+            3 = Variable Flux.
+            4 = Free Drainage.
+            5 = Deep Drainage.
+            6 = Seepage Face.
+            7 = Horizontal Drains.
         hseep: float, optional
             Pressure head (i.e., 0) that initiates flow over the seepage face
             bottom boundary.
@@ -275,9 +286,6 @@ class Model:
             Prescribed potential transpiration rate [LT-1] (if no transpiration
             occurs or if transpiration is variable in time set this variable
             equal to zero).
-        qgwlf: bool, optional
-            Set to True if the discharge-groundwater level relationship q(
-            GWL) is applied as bottom boundary condition.
         gw_level: float, optional
             Reference position of the groundwater table (e.g., the
             x-coordinate of the soil surface).
@@ -298,34 +306,47 @@ class Model:
             Set to -1 if the initial condition is to be calculated from the
             main drying branch. Set to 1 if the initial condition is to be
             calculated from the main wetting branch.
-        wlayer: bool: optional
-            Set to True if water can accumulate at the surface with zero
-            surface runoff.
 
         """
         # If qgwlf is user as bottom boundary condition
-        if qgwlf:
+        if bot_bc == 5:
             for var in [gw_level, aqh, bqh]:
                 if var is None:
                     raise TypeError("When the groundwater level is used as "
                                     "bottom boundary condition, the keyword "
                                     "{} needs to be provided".format(var))
+        # If Constant Flux is used as top boundary condition
+        if top_bc == 1:
+            if rtop is None:
+                raise TypeError ("When the Constant Flux is used as top "
+                                 "boundary condition, the keyword rtop needs "
+                                 "to be provided")
+        # If Constant Flux is used as bottom boundary condition
+        if bot_bc == 1:
+            if rbot is None:
+                raise TypeError ("When the Constant Flux is used as bottom "
+                                 "boundary condition, the keyword rbot needs "
+                                 "to be provided")
+        if bot_bc == 7:
+            raise NotImplementedError
 
         if self.water_flow is None:
             self.water_flow = {
                 "MaxIt": maxit,  # Maximum No. of Iterations
                 "TolTh": tolth,  # [-]
                 "TolH": tolh,  # [L], default is 0.1 cm
-                "TopInf": None,  # Depends on boundary condition
-                "WLayer": wlayer,
-                "KodTop": None,  # Depends on boundary condition
+                "TopInf": True,
+                "WLayer": False,
+                "KodTop": -1,
                 "lInitW": linitw,
-                "BotInf": None,  # Depends on boundary condition
-                "qGWLF": qgwlf,
-                "FreeD": free_drainage,
-                "SeepF": seepage_face,
-                "KodBot": None,  # Depends on boundary condition
-                "qDrain": qdrain,
+                "top_bc": top_bc,
+                "bot_bc": bot_bc,
+                "BotInf": False,
+                "qGWLF": False,
+                "FreeD": False,
+                "SeepF": False,
+                "KodBot": -1,  # Depends on boundary condition
+                "qDrain": False,
                 "hSeep": hseep,  # [L]
                 "rTop": rtop,  # [LT-1]
                 "rBot": rbot,  # [LT-1]
@@ -1275,23 +1296,47 @@ class Model:
             KodBot=-1.
 
         """
-        kodtop = -1
-        topinf = False
-        kodbot = 1
-        botinf = False
+        if self.water_flow["top_bc"] == 0:
+            self.water_flow["TopInf"] = False
+            self.water_flow["KodTop"] = 1
 
-        # In case of a seepage face or free drainage BC set KodBot=-1.
-        if self.water_flow["SeepF"] or self.water_flow["FreeD"]:
-            kodbot = -1
+        if self.water_flow["top_bc"] == 1:
+            self.water_flow["TopInf"] = False
+            if self.water_flow["rBot"] is None:
+                self.water_flow["rBot"] = 0
+                self.water_flow["rRoot"] = 0
 
-        if self.basic_info["AtmInf"]:
-            topinf = True
-            kodtop = -1
+        if self.water_flow["top_bc"] == 2:
+            self.water_flow["WLayer"] = True
 
-        self.water_flow["KodTop"] = kodtop
-        self.water_flow["TopInf"] = topinf
-        self.water_flow["KodBot"] = kodbot
-        self.water_flow["BotInf"] = botinf
+        if self.water_flow["top_bc"] == 4:
+            self.water_flow["KodTop"] = 1
+
+        if self.water_flow["top_bc"] == 5:
+            self.water_flow["KodTop"] = 0
+
+        if self.water_flow["bot_bc"] == 0:
+            self.water_flow["KodBot"] = 1
+
+        if self.water_flow["bot_bc"] == 1 and self.water_flow["rTop"] is None:
+            self.water_flow["rTop"] = 0
+            self.water_flow["rRoot"] = 0
+
+        if self.water_flow["bot_bc"] == 2:
+            self.water_flow["BotInf"] = True
+            self.water_flow["KodBot"] = 1
+
+        if self.water_flow["bot_bc"] == 3:
+            self.water_flow["BotInf"] = True
+
+        if self.water_flow["bot_bc"] == 4:
+            self.water_flow["FreeD"] = True
+
+        if self.water_flow["bot_bc"] == 5:
+            self.water_flow["qGWLF"] = True
+
+        if self.water_flow["bot_bc"] == 6:
+            self.water_flow["SeepF"] = True
 
 
 # Copy all the docstrings from the read methods
