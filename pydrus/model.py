@@ -318,15 +318,15 @@ class Model:
         # If Constant Flux is used as top boundary condition
         if top_bc == 1:
             if rtop is None:
-                raise TypeError ("When the Constant Flux is used as top "
-                                 "boundary condition, the keyword rtop needs "
-                                 "to be provided")
+                raise TypeError("When the Constant Flux is used as top "
+                                "boundary condition, the keyword rtop needs "
+                                "to be provided")
         # If Constant Flux is used as bottom boundary condition
         if bot_bc == 1:
             if rbot is None:
-                raise TypeError ("When the Constant Flux is used as bottom "
-                                 "boundary condition, the keyword rbot needs "
-                                 "to be provided")
+                raise TypeError("When the Constant Flux is used as bottom "
+                                "boundary condition, the keyword rbot needs "
+                                "to be provided")
         if bot_bc == 7:
             raise NotImplementedError
 
@@ -599,9 +599,8 @@ class Model:
 
     def add_solute_transport(self, model=0, epsi=0.5, lupw=False, lartd=False,
                              ltdep=False, ctola=0.0, ctolr=0.0, maxitc=20,
-                             pecr=0.0, ltort=True, ibacter=0, lfiltr=False,
-                             lwatdep=False, ktopch=None, kbotch=None,
-                             dsurf=None, catm=None, tpulse=1):
+                             pecr=0.0, ltort=True, lwatdep=False, top_bc=None,
+                             bot_bc=None, dsurf=None, catm=None, tpulse=1):
         """Method to add solute transport to the model.
 
         Parameters
@@ -669,13 +668,13 @@ class Model:
         lwatdep: bool, optional
             True if at least one degradation coefficient (ChPar) is water
             content dependent.
-        ktopch: int, optional
+        top_bc: int, optional
             Code which specifies the type of upper boundary condition
             1 = Dirichlet boundary condition,
             -1 = Cauchy boundary condition.
             -2 = a special type of boundary condition for volatile solutes
             as described by equation (3.46).
-        kbotch: int, optional
+        bot_bc: int, optional
             Code which specifies the type of lower boundary condition:
             1 = Dirichlet boundary condition,
             0 = continuous concentration profile,
@@ -690,6 +689,12 @@ class Model:
             Time duration of the concentration pulse [T].
 
         """
+        if ltdep:
+            raise NotImplementedError("Temperature dependency not supported.")
+        if lwatdep:
+            raise NotImplementedError("Water content dependency not "
+                                      "supported.")
+
         if self.solute_transport is None:
             self.solute_transport = {
                 "Epsi": epsi,
@@ -701,13 +706,13 @@ class Model:
                 "MaxItC": maxitc,
                 "PeCr": pecr,
                 "lTort": ltort,
-                "iBacter": ibacter,
-                "lFiltr": lfiltr,
+                "iBacter": 1 if (model == 3) or (model == 4) else 0,
+                "lFiltr": True if model == 4 else False,
                 "iNonEqual": model,
                 "lWatDep": lwatdep,
                 "lDualEq": True if model == 6 else False,
-                "kTopCh": ktopch,
-                "kBotCh": kbotch,
+                "kTopCh": top_bc,
+                "kBotCh": bot_bc,
                 "dSurf": dsurf,
                 "cAtm": catm,
                 "tPulse": tpulse
@@ -719,6 +724,16 @@ class Model:
                           "ml.del_solute_transport().")
 
     def add_solutes(self, data, ):
+        """Method to add a solute to the model
+
+        Parameters
+        ----------
+        data
+
+        Returns
+        -------
+
+        """
         if self.solutes is None:
             self.solutes = data
 
@@ -1031,7 +1046,9 @@ class Model:
 
         # Write Block F - Solute transport information
         if self.basic_info["lChem"]:
-            raise NotImplementedError
+            vars_list = [
+
+            ]
 
         # Write Block G - Root water uptake information
         if self.basic_info["lSink"]:
@@ -1293,11 +1310,25 @@ class Model:
         """Returns an empty DataFrame with the solute parameters as columns.
         """
         models = {
-            1: "",
-
+            0: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
+                "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
+            1: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
+                "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
+            2: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
+                "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
+            3: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "ipsi", "mu_sw",
+                "s_max", "ka2", "kd2", "b1", "ka1", "kd1"],
+            4: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "dc", "dp",
+                "smax2", "alfa2", "kd2", "smax1", "alfa1", "kd1"],
+            5: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
+                "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
+            6: NotImplementedError,
+            7: NotImplementedError,
+            8: NotImplementedError,
         }
 
-        df = DataFrame(columns=models[self.solute_transport["lNonEqual"]])
+        df = DataFrame(columns=models[self.solute_transport["iNonEqual"]],
+                       index=self.materials.index, data=0)
         return df
 
     def _set_bc_settings(self):
