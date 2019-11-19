@@ -22,7 +22,7 @@ ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
 times = ml.add_time_info(tinit=90, tmax=273, print_times=True)
 
 # Water inflow parameters
-ml.add_waterflow(linitw=False, free_drainage=True, ha=1e-6, hb=1e4)
+ml.add_waterflow(linitw=False, top_bc=3, bot_bc=4, ha=1e-6, hb=1e4)
 
 m = pd.DataFrame(columns=["thr", "ths", "Alfa", "n", "Ks", "l"],
                  data=[[0.0001, 0.399, 0.0174, 1.3757, 29.75, 0.5],
