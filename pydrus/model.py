@@ -339,6 +339,7 @@ class Model:
                 "iHyst": hysteresis,
                 "iKappa": ikappa,
             }
+
             self.basic_info["lWat"] = True
             self.materials = self.get_empty_material_df()
         else:
@@ -918,7 +919,7 @@ class Model:
                            )
 
         if upper_condition or lower_condition:
-            vars_list.append (["rTop", "rBot", "rRoot", "\n"])
+            vars_list.append(["rTop", "rBot", "rRoot", "\n"])
 
         if self.water_flow["qGWLF"]:
             vars_list.append(["GWL0L", "Aqh", "Bqh", "\n"])
@@ -1228,7 +1229,7 @@ class Model:
             Pandas DataFrame with the soil parameters as columns.
 
         """
-        columns = {
+        models = {
             0: ["thr", "ths", "Alfa", "n", "Ks", "l"],
             1: ["thr", "ths", "Alfa", "n", "Ks", "l", "thm", "tha", "thk",
                 "Kk"],
@@ -1242,7 +1243,23 @@ class Model:
                 "Alfa_im", "n_im", "Ka"],
             9: list(range(17))
         }
-        return DataFrame(columns=columns[self.water_flow["iModel"]])
+
+        cols = models[self.water_flow["iModel"]]
+
+        if self.solute_transport is not None:
+            models = {
+                1: [],
+                2: [],
+                3: [],
+                4: [],
+                5: [],
+                6: [],
+                7: [],
+                8: []
+            }
+            cols.extend(models[self.solute_transport["lNonEqual"]])
+
+        return DataFrame(columns=cols)
 
     def get_empty_heat_df(self):
         """Returns an empty DataFrame to fill in the heat parameters.
@@ -1250,6 +1267,17 @@ class Model:
         """
         columns = ["thn", "tho", "lambda", "b1", "b2", "b3", "Cn", "C0", "Cw"]
         return DataFrame(columns=columns, index=self.materials.index)
+
+    def get_empty_solute_df(self):
+        """Returns an empty DataFrame with the solute parameters as columns.
+        """
+        models = {
+            1: "",
+
+        }
+
+        df = DataFrame(columns=models[self.solute_transport["lNonEqual"]])
+        return df
 
     def _set_bc_settings(self):
         """Internal method to set the boundary condition settings.
