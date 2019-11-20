@@ -134,7 +134,7 @@ class Model:
         if self.solutes is None:
             return 0
         else:
-            return self.solutes.index.size
+            return len(self.solutes)
 
     @property
     def n_layers(self):
@@ -168,16 +168,13 @@ class Model:
         ml.add_material(m)
 
         """
-        if self.materials is None:
-            raise Warning("The water flow module has to be chosen before "
-                          "adding the soil materials. Use ml.add_water_flow("
-                          ") to add water flow to the model")
-        elif material.columns.size != self.materials.columns.size:
+        if material.columns.size != \
+                self.get_empty_material_df().columns.size:
             raise TypeError("the number of parameters (columns) describing "
                             "the material does not match the water flow "
                             "model. Please check the number of parameters.")
         else:
-            self.materials = self.materials.append(material)
+            self.materials = material
 
     def add_drains(self):
         """Method to add a drain to the model.
@@ -362,7 +359,6 @@ class Model:
             }
 
             self.basic_info["lWat"] = True
-            self.materials = self.get_empty_material_df()
         else:
             raise Warning("Water flow was already provided. Please delete "
                           "the old information first.")
@@ -421,9 +417,12 @@ class Model:
                           "Please delete the old information first through "
                           "ml.del_atmosphere().")
 
+        ctop = 0
+        cbot = 0
+
         data = {"tAtm": tatm, "Prec": prec, "rSoil": rsoil, "rRoot": rroot,
                 "hCritA": hcrita, "rB": rb, "hB": hb, "ht": ht, "tTop": ttop,
-                "tBot": tbot, "Ampl": ampl}
+                "tBot": tbot, "Ampl": ampl, "cTop": ctop, "cBot": cbot}
 
         self.atmosphere = DataFrame(data=data, index=atmosphere.index)
         self.atmosphere.update(atmosphere)
@@ -599,8 +598,8 @@ class Model:
 
     def add_solute_transport(self, model=0, epsi=0.5, lupw=False, lartd=False,
                              ltdep=False, ctola=0.0, ctolr=0.0, maxitc=20,
-                             pecr=0.0, ltort=True, lwatdep=False, top_bc=None,
-                             bot_bc=None, dsurf=None, catm=None, tpulse=1):
+                             pecr=0.0, ltort=True, lwatdep=False, top_bc=-1,
+                             bot_bc=0, dsurf=None, catm=None, tpulse=1):
         """Method to add solute transport to the model.
 
         Parameters
@@ -723,19 +722,25 @@ class Model:
                           "delete the old solute transport model first using "
                           "ml.del_solute_transport().")
 
-    def add_solutes(self, data, ):
+    def add_solute(self, data, difw=0, difg=0, top_conc=0, bot_conc=0):
         """Method to add a solute to the model
 
         Parameters
         ----------
-        data
+        data: pandas.DataFrame
+            Pandas DataFrame with
+        difw:
+
 
         Returns
         -------
 
         """
         if self.solutes is None:
-            self.solutes = data
+            self.solutes = []
+
+        self.solutes.append({"data": data, "difw": difw, "difg": difg,
+                             "top_conc": top_conc, "bot_conc": bot_conc})
 
     def add_heat_transport(self, ampl, top_bc, top_temp, bot_bc, bot_temp,
                            tperiod=1, icampbell=1, snowmelt=0.40):
@@ -984,7 +989,7 @@ class Model:
             raise NotImplementedError
 
         # Write the material parameters
-        lines.append(self.materials.to_string(index=False))
+        lines.append(self.materials["water"].to_string(index=False))
         lines.append("\n")
 
         # Write BLOCK C: TIME INFORMATION
@@ -1046,9 +1051,57 @@ class Model:
 
         # Write Block F - Solute transport information
         if self.basic_info["lChem"]:
-            vars_list = [
+            lines.append(string.format("C: SOLUTE TRANSPORT INFORMATION ",
+                                       "*", "<", 72))
+            lines.append(" Epsi lUpW lArtD lTDep cTolA cTolR MaxItC PeCr "
+                         "No.Solutes lTort iBacter lFiltr nChPar\n"
+                         "{} {} {} {} {} {} {} {} {} {} {} {} {}\n"
+                         "iNonEqul lWatDep lDualNEq lInitM lInitEq lTort "
+                         "lDummy lDummy lDummy lDummy lCFTr\n"
+                         "{} {} {} {} {} {} {} {} {} {} {}\n".format(
+                self.solute_transport["Epsi"],
+                "t" if self.solute_transport["lUpW"] else "f",
+                "t" if self.solute_transport["lArtD"] else "f",
+                "t" if self.solute_transport["ltDep"] else "f",
+                self.solute_transport["cTolA"],
+                self.solute_transport["cTolR"],
+                self.solute_transport["MaxItC"],
+                self.solute_transport["PeCr"],
+                self.n_solutes,
+                "t" if self.solute_transport["lTort"] else "f",
+                self.solute_transport["iBacter"],
+                "t" if self.solute_transport["lFiltr"] else "f",
+                self.get_empty_solute_df().columns.size + 2,
+                self.solute_transport["iNonEqual"],
+                "t" if self.solute_transport["lWatDep"] else "f",
+                "t" if self.solute_transport["lDualEq"] else "f",
+                "f", "f",
+                "t" if self.solute_transport["lTort"] else "f",
+                "f", "f", "f", "f", "f"
+            ))
 
-            ]
+            # Write the material parameters
+            lines.append(self.materials["solute"].to_string(index=False))
+            lines.append("\n")
+
+            for sol in self.solutes:
+                lines.append(
+                    "DifW DifG\n{} {}\n{}\n".format(
+                        sol["difw"],
+                        sol["difg"],
+                        sol["data"].to_string(index=False)))
+
+            lines.append("kTopSolute SolTop kBotSolute SolBot\n{} {} {} {}\n"
+                         "tPulse\n{}\n".format(self.solute_transport["kTopCh"],
+                                               " ".join([str(s["top_conc"])
+                                                         for s in
+                                                         self.solutes]),
+                                               self.solute_transport["kBotCh"],
+                                               " ".join([str(s["bot_conc"])
+                                                         for s in
+                                                         self.solutes]),
+                                               self.solute_transport["tPulse"]
+                                               ))
 
         # Write Block G - Root water uptake information
         if self.basic_info["lSink"]:
@@ -1079,10 +1132,6 @@ class Model:
 
         # Write Block K – Carbon dioxide transport information
 
-        # Write Block L – Major ion chemistry information
-        if self.basic_info["lChem"]:
-            raise NotImplementedError
-
         # Write Block M – Meteorological information
         if self.basic_info["lMeteo"]:
             raise NotImplementedError
@@ -1109,8 +1158,7 @@ class Model:
             "(MaxAL = number of atmospheric data-records)\n"]
 
         # Print some values
-        nrow = self.atmosphere.index.size
-        lines.append("{}\n".format(nrow))
+        lines.append("{}\n".format(self.atmosphere.index.size))
 
         vars5 = ["lDailyVar", "lSinusVar", "lLai", "lBCCycles", "lInterc",
                  "\n"]
@@ -1253,13 +1301,18 @@ class Model:
         data = read_alevel(path=path, usecols=usecols)
         return data
 
-    def read_solutes(self, fname="SOLUTE.OUT"):
+    def read_solutes(self, fname="SOLUTE1.OUT"):
         path = os.path.join(self.ws_name, fname)
         data = read_solute(path=path)
         return data
 
-    def get_empty_material_df(self):
+    def get_empty_material_df(self, n=1):
         """Returns an empty dataframe with the soil parameters as columns.
+
+        Parameters
+        ----------
+        n: int, optional
+            Number of materials to add.
 
         return
         ----------
@@ -1282,10 +1335,12 @@ class Model:
             9: list(range(17))
         }
 
-        cols = models[self.water_flow["iModel"]]
+        level2 = models[self.water_flow["iModel"]]
+        level1 = ["water"] * len(level2)
 
         if self.solute_transport is not None:
             models = {
+                0: ["bulk.d", "DisperL", "frac", "mobile_wc"],
                 1: [],
                 2: [],
                 3: [],
@@ -1295,9 +1350,15 @@ class Model:
                 7: [],
                 8: []
             }
-            cols.extend(models[self.solute_transport["lNonEqual"]])
 
-        return DataFrame(columns=cols)
+            cols2 = models[self.solute_transport["iNonEqual"]]
+            level1.extend(["solute"] * len(cols2))
+            level2.extend(cols2)
+
+        columns = pd.MultiIndex.from_arrays([level1, level2])
+
+        return DataFrame(columns=columns, index=np.arange(1, n + 1),
+                         data=0)
 
     def get_empty_heat_df(self):
         """Returns an empty DataFrame to fill in the heat parameters.

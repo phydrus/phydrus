@@ -32,7 +32,7 @@ class Plots:
         w = w + 0.2 * w
 
         # Set colors by color_by
-        col = self.ml.materials[color_by]
+        col = self.ml.materials["water"][color_by]
         col = (col - col.min()) / (col.max() - col.min())
         colors = cm.get_cmap(cmap, 7)(col.values)
 
