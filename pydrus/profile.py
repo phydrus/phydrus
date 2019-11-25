@@ -3,8 +3,8 @@ from pandas import read_csv, DataFrame
 from numpy import linspace
 
 
-def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1,
-                   ak=1, ath=1, temp=None, conc=None, sconc=None):
+def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,
+                   ak=1.0, ath=1.0, temp=20.0, conc=None, sconc=None):
     """Method to create a DataFrame describing the soil profile.
 
     Parameters

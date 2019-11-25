@@ -17,7 +17,7 @@ from .version import __version__
 
 class Model:
     def __init__(self, exe_name, ws_name, name="model", description=None,
-                 length_unit="m", time_unit="days", mass_units="mmol",
+                 length_unit="cm", time_unit="days", mass_units="mmol",
                  print_screen=False):
         """Basic Hydrus model container.
 
@@ -96,7 +96,7 @@ class Model:
             "lMeteo": False,
             "lVapor": False,
             "lActRSU": False,
-            "lFlux": True,
+            "lFlux": False,
             "lIrrig": False,
             "CosAlfa": 1,
         }
@@ -113,8 +113,8 @@ class Model:
             "tInit": 0.1,
             "tMax": 1,
             "lPrint": True,
-            "nPrintSteps": 10,
-            "tPrintInterval": 10,
+            "nPrintSteps": 1,
+            "tPrintInterval": 1,
             "lEnter": False,  # This should not be changed!
             "TPrint(1)": None,
             "TPrint(MPL)": None,
@@ -854,18 +854,17 @@ class Model:
                 if printmax is None:
                     printmax = tmax
                 if nsteps is None:
-                    times = np.arange(printinit, printmax,
-                                      step=dtprint)
+                    times = np.arange(printinit, printmax, step=dtprint)
                 else:
-                    times = np.linspace(printinit, printmax,
-                                        num=nsteps + 1)
+                    times = np.linspace(printinit, printmax, num=nsteps + 1)
                 if printinit == tinit:
                     self.times = times[1:]
                 else:
                     self.times = times
                 self.time_info["MPL"] = len(self.times)
             else:
-                self.time_info["MPL"] = 0
+                self.time_info["MPL"] = 1
+                self.times = [self.time_info["tMax"]]
         return self.times
 
     def simulate(self):
@@ -1123,6 +1122,9 @@ class Model:
                 "POptm"]))
             lines.append("\n")
 
+            if self.basic_info["lChem"]:
+                lines.append("Solute Reduction\nf\n")
+
         # Write Block J - Inverse solution information
         if self.basic_info["lInverse"]:
             raise NotImplementedError("The inverse modeling module from "
@@ -1199,7 +1201,9 @@ class Model:
                  "0\n"
                  "{} {} {} {}".format(self.basic_info["iVer"],
                                       self.profile.index.size,
-                                      self.n_solutes, 0, 0),
+                                      self.n_solutes,
+                                      1 if self.basic_info["lChem"] else 0,
+                                      1 if self.basic_info["lChem"] else 0),
                  # 2. Write the profile data
                  self.profile.to_string(),
                  # 3. Write observation points
