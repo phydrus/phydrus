@@ -96,7 +96,7 @@ class Model:
             "lMeteo": False,
             "lVapor": False,
             "lActRSU": False,
-            "lFlux": True,
+            "lFlux": False,
             "lIrrig": False,
             "CosAlfa": 1,
         }
@@ -113,8 +113,8 @@ class Model:
             "tInit": 0.1,
             "tMax": 1,
             "lPrint": True,
-            "nPrintSteps": 10,
-            "tPrintInterval": 10,
+            "nPrintSteps": 1,
+            "tPrintInterval": 1,
             "lEnter": False,  # This should not be changed!
             "TPrint(1)": None,
             "TPrint(MPL)": None,
@@ -203,7 +203,7 @@ class Model:
             self.observations.append(node)
 
     def add_waterflow(self, model=0, maxit=10, tolth=1e-3, tolh=1, ha=1e-6,
-                      hb=1e4, linitw=True, top_bc=0, bot_bc=0, hseep=0,
+                      hb=1e4, linitw=False, top_bc=0, bot_bc=0, hseep=0,
                       rtop=None, rbot=None, rroot=None, gw_level=None,
                       aqh=None, bqh=None, hysteresis=0, ikappa=-1):
         """Method to add a water_flow module to the model.
@@ -796,7 +796,8 @@ class Model:
 
     def add_time_info(self, tinit=0, tmax=1, dt=0.01, dtmin=1e-5, dtmax=5,
                       print_times=False, printinit=None, printmax=None,
-                      dtprint=None, nsteps=None, from_atmo=False):
+                      dtprint=None, nsteps=None, from_atmo=False,
+                      print_array=None):
         """Method to produce time information.
 
         Parameters
@@ -829,12 +830,18 @@ class Model:
             Minimum permitted time increment [T].        
         dtmax: int, optional
             Maximum permittedtime increment [T].
+        print_array: array of float, optional
+            Array of specified print-times.
+
         """
         self.time_info["tInit"] = tinit
         self.time_info["tMax"] = tmax
         self.time_info["dt"] = dt
         self.time_info["dtMax"] = dtmax
         self.time_info["dtMin"] = dtmin
+        if print_array is not None:
+            self.times = print_array
+            self.time_info["MPL"] = len(print_array)
         if from_atmo:
             if self.atmosphere is None:
                 raise Warning("Atmospheric information not provided. Please "
@@ -865,7 +872,8 @@ class Model:
                     self.times = times
                 self.time_info["MPL"] = len(self.times)
             else:
-                self.time_info["MPL"] = 0
+                self.time_info["MPL"] = 1
+                self.times = [self.time_info["tMax"]]
         return self.times
 
     def simulate(self):
