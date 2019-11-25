@@ -96,15 +96,15 @@ class Model:
             "lMeteo": False,
             "lVapor": False,
             "lActRSU": False,
-            "lFlux": False,
+            "lFlux": True,
             "lIrrig": False,
             "CosAlfa": 1,
         }
 
         self.time_info = {
-            "dt": 0.1,
-            "dtMin": 0.0001,
-            "dtMax": 0.5,
+            "dt": 0.01,
+            "dtMin": 1e-5,
+            "dtMax": 5,
             "dMul": 1.3,
             "dMul2": 0.7,
             "ItMin": 3,
@@ -202,8 +202,8 @@ class Model:
             node = nodes.index.item()
             self.observations.append(node)
 
-    def add_waterflow(self, model=0, maxit=20, tolth=1e-4, tolh=0.1, ha=1e-3,
-                      hb=1e3, linitw=True, top_bc=0, bot_bc=0, hseep=0,
+    def add_waterflow(self, model=0, maxit=10, tolth=1e-3, tolh=1, ha=1e-6,
+                      hb=1e4, linitw=True, top_bc=0, bot_bc=0, hseep=0,
                       rtop=None, rbot=None, rroot=None, gw_level=None,
                       aqh=None, bqh=None, hysteresis=0, ikappa=-1):
         """Method to add a water_flow module to the model.
@@ -598,7 +598,7 @@ class Model:
 
     def add_solute_transport(self, model=0, epsi=0.5, lupw=False, lartd=False,
                              ltdep=False, ctola=0.0, ctolr=0.0, maxit=20,
-                             pecr=0.0, ltort=True, lwatdep=False, top_bc=-1,
+                             pecr=2.0, ltort=True, lwatdep=False, top_bc=-1,
                              bot_bc=0, dsurf=None, catm=None, tpulse=1):
         """Method to add solute transport to the model.
 
@@ -794,10 +794,9 @@ class Model:
                           "delete the old heat transport model first using "
                           "ml.del_solute_transport().")
 
-    def add_time_info(self, tinit=0, tmax=1, dt=0.1,
-                      dtmin=0.0001, dtmax=0.5, print_times=False,
-                      printinit=None, printmax=None, dtprint=None,
-                      nsteps=None, from_atmo=False):
+    def add_time_info(self, tinit=0, tmax=1, dt=0.01, dtmin=1e-5, dtmax=5,
+                      print_times=False, printinit=None, printmax=None,
+                      dtprint=None, nsteps=None, from_atmo=False):
         """Method to produce time information.
 
         Parameters
@@ -1215,256 +1214,272 @@ class Model:
         if not verbose:
             print("Successfully wrote {}".format(fname))
 
-    def write_fit(self, fname="FIT.IN"):
-        raise NotImplementedError
 
-    def write_meteo(self, fname="METEO.IN"):
-        raise NotImplementedError
+def write_fit(self, fname="FIT.IN"):
+    raise NotImplementedError
 
-    def read_output(self):
-        raise NotImplementedError
 
-    def read_profile(self, fname="PROFILE.OUT"):
-        path = os.path.join(self.ws_name, fname)
-        data = read_profile(path=path)
-        return data
+def write_meteo(self, fname="METEO.IN"):
+    raise NotImplementedError
 
-    def read_nod_inf(self, fname="NOD_INF.OUT", times=None):
-        path = os.path.join(self.ws_name, fname)
-        data = read_nod_inf(path=path, times=times)
-        return data
 
-    def read_run_inf(self, fname="RUN_INF.OUT", usecols=None):
-        path = os.path.join(self.ws_name, fname)
+def read_output(self):
+    raise NotImplementedError
 
-        if usecols is None:
-            usecols = ["TLevel", "Time", "dt", "Iter", "ItCum", "KodT",
-                       "KodB", "Convergency", ]
-            if self.solute_transport is not None:
-                usecols.append("IterC")
 
-        data = read_run_inf(path, usecols=usecols)
-        return data
+def read_profile(self, fname="PROFILE.OUT"):
+    path = os.path.join(self.ws_name, fname)
+    data = read_profile(path=path)
+    return data
 
-    def read_balance(self, fname="BALANCE.OUT", usecols=None):
-        path = os.path.join(self.ws_name, fname)
-        if not os.path.exists(path):
-            raise FileNotFoundError(
-                "File {} has not been found.".format(path))
 
-        if usecols is None:
-            usecols = ["Area", "W-volume", "In-flow", "h Mean", "Top Flux",
-                       "Bot Flux", "WatBalT", "WatBalR"]
-            if self.solute_transport is not None:
-                usecols.append("ConcVol", "ConcVolIm", "cMean", "CncBalT",
-                               "CncBalR")
+def read_nod_inf(self, fname="NOD_INF.OUT", times=None):
+    path = os.path.join(self.ws_name, fname)
+    data = read_nod_inf(path=path, times=times)
+    return data
 
-            if self.heat_transport is not None:
-                usecols.append("TVol", "TMean")
 
-            if self.CO2Transport is not None:
-                usecols.append("COVol", "COMean", "CO2BalT", "CncBalT")
+def read_run_inf(self, fname="RUN_INF.OUT", usecols=None):
+    path = os.path.join(self.ws_name, fname)
 
-            if self.water_flow["iModel"] in [5, 6, 7]:
-                usecols.append("W-VolumeI", "cMeanIm")
-
-        data = read_balance(path=path, usecols=usecols)
-
-        return data
-
-    def read_obs_node(self, fname="OBS_NODE.OUT", nodes=None, times=None):
-        path = os.path.join(self.ws_name, fname)
-        if nodes is None:
-            nodes = self.observations
-
-        data = read_obs_node(path=path, nodes=nodes, times=times)
-        return data
-
-    def read_i_check(self, fname="I_CHECK.OUT"):
-        path = os.path.join(self.ws_name, fname)
-
-        data = read_i_check(path)
-        return data
-
-    def read_tlevel(self, fname="T_LEVEL.OUT", usecols=None):
-        path = os.path.join(self.ws_name, fname)
-
-        if usecols is None:
-            usecols = ["Time", "rTop", "rRoot", "vTop", "vRoot",
-                       "vBot", "sum(rTop)", "sum(rRoot)", "sum(vTop)",
-                       "sum(vRoot)", "sum(vBot)", "hTop", "hRoot", "hBot",
-                       "RunOff", "Volume", ]
-
-            if self.water_flow["iModel"] > 4:
-                usecols.append("Cum(WTrans)")
-            if self.basic_info["lSnow"]:
-                usecols.append("SnowLayer")
-
-        data = read_tlevel(path=path, usecols=usecols)
-
-        return data
-
-    def read_alevel(self, fname="A_LEVEL.OUT", usecols=None):
-        path = os.path.join(self.ws_name, fname)
-        data = read_alevel(path=path, usecols=usecols)
-        return data
-
-    def read_solutes(self, fname="SOLUTE1.OUT"):
-        path = os.path.join(self.ws_name, fname)
-        data = read_solute(path=path)
-        return data
-
-    def get_empty_material_df(self, n=1):
-        """Returns an empty dataframe with the soil parameters as columns.
-
-        Parameters
-        ----------
-        n: int, optional
-            Number of materials to add.
-
-        return
-        ----------
-        pandas.DataFrame
-            Pandas DataFrame with the soil parameters as columns.
-
-        """
-        models = {
-            0: ["thr", "ths", "Alfa", "n", "Ks", "l"],
-            1: ["thr", "ths", "Alfa", "n", "Ks", "l", "thm", "tha", "thk",
-                "Kk"],
-            2: ["thr", "ths", "Alfa", "n", "Ks", "l"],
-            3: ["thr", "ths", "Alfa", "n", "Ks", "l"],
-            4: ["thr", "ths", "Alfa", "n", "Ks", "l"],
-            5: ["thr", "ths", "Alfa", "n", "Ks", "l", "w", "Alfa2", "n2"],
-            6: ["thr", "ths", "Alfa", "n", "Ks", "l", "thr_im", "ths_im",
-                "omega"],
-            7: ["thr", "ths", "Alfa", "n", "Ks", "l", "thr_im", "ths_im",
-                "Alfa_im", "n_im", "Ka"],
-            9: list(range(17))
-        }
-
-        level2 = models[self.water_flow["iModel"]]
-        level1 = ["water"] * len(level2)
-
+    if usecols is None:
+        usecols = ["TLevel", "Time", "dt", "Iter", "ItCum", "KodT",
+                   "KodB", "Convergency", ]
         if self.solute_transport is not None:
-            models = {
-                0: ["bulk.d", "DisperL", "frac", "mobile_wc"],
-                1: [],
-                2: [],
-                3: [],
-                4: [],
-                5: [],
-                6: [],
-                7: [],
-                8: []
-            }
+            usecols.append("IterC")
 
-            cols2 = models[self.solute_transport["iNonEqual"]]
-            level1.extend(["solute"] * len(cols2))
-            level2.extend(cols2)
+    data = read_run_inf(path, usecols=usecols)
+    return data
 
-        columns = pd.MultiIndex.from_arrays([level1, level2])
 
-        return DataFrame(columns=columns, index=np.arange(1, n + 1),
-                         data=0)
+def read_balance(self, fname="BALANCE.OUT", usecols=None):
+    path = os.path.join(self.ws_name, fname)
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            "File {} has not been found.".format(path))
 
-    def get_empty_heat_df(self):
-        """Returns an empty DataFrame to fill in the heat parameters.
+    if usecols is None:
+        usecols = ["Area", "W-volume", "In-flow", "h Mean", "Top Flux",
+                   "Bot Flux", "WatBalT", "WatBalR"]
+        if self.solute_transport is not None:
+            usecols.append("ConcVol", "ConcVolIm", "cMean", "CncBalT",
+                           "CncBalR")
 
-        """
-        columns = ["thn", "tho", "lambda", "b1", "b2", "b3", "Cn", "C0", "Cw"]
-        return DataFrame(columns=columns, index=self.materials.index)
+        if self.heat_transport is not None:
+            usecols.append("TVol", "TMean")
 
-    def get_empty_solute_df(self):
-        """Returns an empty DataFrame with the solute parameters as columns.
-        """
+        if self.CO2Transport is not None:
+            usecols.append("COVol", "COMean", "CO2BalT", "CncBalT")
+
+        if self.water_flow["iModel"] in [5, 6, 7]:
+            usecols.append("W-VolumeI", "cMeanIm")
+
+    data = read_balance(path=path, usecols=usecols)
+
+    return data
+
+
+def read_obs_node(self, fname="OBS_NODE.OUT", nodes=None, times=None):
+    path = os.path.join(self.ws_name, fname)
+    if nodes is None:
+        nodes = self.observations
+
+    data = read_obs_node(path=path, nodes=nodes, times=times)
+    return data
+
+
+def read_i_check(self, fname="I_CHECK.OUT"):
+    path = os.path.join(self.ws_name, fname)
+
+    data = read_i_check(path)
+    return data
+
+
+def read_tlevel(self, fname="T_LEVEL.OUT", usecols=None):
+    path = os.path.join(self.ws_name, fname)
+
+    if usecols is None:
+        usecols = ["Time", "rTop", "rRoot", "vTop", "vRoot",
+                   "vBot", "sum(rTop)", "sum(rRoot)", "sum(vTop)",
+                   "sum(vRoot)", "sum(vBot)", "hTop", "hRoot", "hBot",
+                   "RunOff", "Volume", ]
+
+        if self.water_flow["iModel"] > 4:
+            usecols.append("Cum(WTrans)")
+        if self.basic_info["lSnow"]:
+            usecols.append("SnowLayer")
+
+    data = read_tlevel(path=path, usecols=usecols)
+
+    return data
+
+
+def read_alevel(self, fname="A_LEVEL.OUT", usecols=None):
+    path = os.path.join(self.ws_name, fname)
+    data = read_alevel(path=path, usecols=usecols)
+    return data
+
+
+def read_solutes(self, fname="SOLUTE1.OUT"):
+    path = os.path.join(self.ws_name, fname)
+    data = read_solute(path=path)
+    return data
+
+
+def get_empty_material_df(self, n=1):
+    """Returns an empty dataframe with the soil parameters as columns.
+
+    Parameters
+    ----------
+    n: int, optional
+        Number of materials to add.
+
+    return
+    ----------
+    pandas.DataFrame
+        Pandas DataFrame with the soil parameters as columns.
+
+    """
+    models = {
+        0: ["thr", "ths", "Alfa", "n", "Ks", "l"],
+        1: ["thr", "ths", "Alfa", "n", "Ks", "l", "thm", "tha", "thk",
+            "Kk"],
+        2: ["thr", "ths", "Alfa", "n", "Ks", "l"],
+        3: ["thr", "ths", "Alfa", "n", "Ks", "l"],
+        4: ["thr", "ths", "Alfa", "n", "Ks", "l"],
+        5: ["thr", "ths", "Alfa", "n", "Ks", "l", "w", "Alfa2", "n2"],
+        6: ["thr", "ths", "Alfa", "n", "Ks", "l", "thr_im", "ths_im",
+            "omega"],
+        7: ["thr", "ths", "Alfa", "n", "Ks", "l", "thr_im", "ths_im",
+            "Alfa_im", "n_im", "Ka"],
+        9: list(range(17))
+    }
+
+    level2 = models[self.water_flow["iModel"]]
+    level1 = ["water"] * len(level2)
+
+    if self.solute_transport is not None:
         models = {
-            0: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
-                "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
-            1: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
-                "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
-            2: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
-                "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
-            3: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "ipsi", "mu_sw",
-                "s_max", "ka2", "kd2", "b1", "ka1", "kd1"],
-            4: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "dc", "dp",
-                "smax2", "alfa2", "kd2", "smax1", "alfa1", "kd1"],
-            5: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
-                "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
-            6: NotImplementedError,
-            7: NotImplementedError,
-            8: NotImplementedError,
+            0: ["bulk.d", "DisperL", "frac", "mobile_wc"],
+            1: [],
+            2: [],
+            3: [],
+            4: [],
+            5: [],
+            6: [],
+            7: [],
+            8: []
         }
 
-        df = DataFrame(columns=models[self.solute_transport["iNonEqual"]],
-                       index=self.materials.index, data=0)
-        return df
+        cols2 = models[self.solute_transport["iNonEqual"]]
+        level1.extend(["solute"] * len(cols2))
+        level2.extend(cols2)
 
-    def _set_bc_settings(self):
-        """Internal method to set the boundary condition settings.
+    columns = pd.MultiIndex.from_arrays([level1, level2])
 
-        Returns
-        -------
+    return DataFrame(columns=columns, index=np.arange(1, n + 1),
+                     data=0)
 
-        Notes
-        -----
-        topinf: bool, optional
-            Set to True if the surface boundary condition is time-dependent.
-        botinf: bool, optional
-            Set to True if the bottom boundary condition is time-dependent.
-        kodtop: int, optional
-            Code specifying type of boundary condition (BC) for water flow at
-            the surface. 1 for Dirichlet BC and -1 for Neumann BC. Set to 0
-            when a prescribed BC can change from Dirichlet BC to Neumann BC
-            and vice versa.
-        kodbot: int, optional
-            Code specifying type of boundary condition for water flow at the
-            bottom of the profile. Set to -1 for a Dirichlet BC and to 1 for
-            a Neumann BC. In case of a seepage face or free drainage BC set
-            KodBot=-1.
 
-        """
-        if self.water_flow["top_bc"] == 0:
-            self.water_flow["TopInf"] = False
-            self.water_flow["KodTop"] = 1
+def get_empty_heat_df(self):
+    """Returns an empty DataFrame to fill in the heat parameters.
 
-        if self.water_flow["top_bc"] == 1:
-            self.water_flow["TopInf"] = False
-            if self.water_flow["rBot"] is None:
-                self.water_flow["rBot"] = 0
-                self.water_flow["rRoot"] = 0
+    """
+    columns = ["thn", "tho", "lambda", "b1", "b2", "b3", "Cn", "C0", "Cw"]
+    return DataFrame(columns=columns, index=self.materials.index)
 
-        if self.water_flow["top_bc"] == 2:
-            self.water_flow["WLayer"] = True
 
-        if self.water_flow["top_bc"] == 4:
-            self.water_flow["KodTop"] = 1
+def get_empty_solute_df(self):
+    """Returns an empty DataFrame with the solute parameters as columns.
+    """
+    models = {
+        0: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
+            "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
+        1: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
+            "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
+        2: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
+            "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
+        3: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "ipsi", "mu_sw",
+            "s_max", "ka2", "kd2", "b1", "ka1", "kd1"],
+        4: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "dc", "dp",
+            "smax2", "alfa2", "kd2", "smax1", "alfa1", "kd1"],
+        5: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
+            "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
+        6: NotImplementedError,
+        7: NotImplementedError,
+        8: NotImplementedError,
+    }
 
-        if self.water_flow["top_bc"] == 5:
-            self.water_flow["KodTop"] = 0
+    df = DataFrame(columns=models[self.solute_transport["iNonEqual"]],
+                   index=self.materials.index, data=0)
+    return df
 
-        if self.water_flow["bot_bc"] == 0:
-            self.water_flow["KodBot"] = 1
 
-        if self.water_flow["bot_bc"] == 1 and self.water_flow["rTop"] is None:
-            self.water_flow["rTop"] = 0
+def _set_bc_settings(self):
+    """Internal method to set the boundary condition settings.
+
+    Returns
+    -------
+
+    Notes
+    -----
+    topinf: bool, optional
+        Set to True if the surface boundary condition is time-dependent.
+    botinf: bool, optional
+        Set to True if the bottom boundary condition is time-dependent.
+    kodtop: int, optional
+        Code specifying type of boundary condition (BC) for water flow at
+        the surface. 1 for Dirichlet BC and -1 for Neumann BC. Set to 0
+        when a prescribed BC can change from Dirichlet BC to Neumann BC
+        and vice versa.
+    kodbot: int, optional
+        Code specifying type of boundary condition for water flow at the
+        bottom of the profile. Set to -1 for a Dirichlet BC and to 1 for
+        a Neumann BC. In case of a seepage face or free drainage BC set
+        KodBot=-1.
+
+    """
+    if self.water_flow["top_bc"] == 0:
+        self.water_flow["TopInf"] = False
+        self.water_flow["KodTop"] = 1
+
+    if self.water_flow["top_bc"] == 1:
+        self.water_flow["TopInf"] = False
+        if self.water_flow["rBot"] is None:
+            self.water_flow["rBot"] = 0
             self.water_flow["rRoot"] = 0
 
-        if self.water_flow["bot_bc"] == 2:
-            self.water_flow["BotInf"] = True
-            self.water_flow["KodBot"] = 1
+    if self.water_flow["top_bc"] == 2:
+        self.water_flow["WLayer"] = True
 
-        if self.water_flow["bot_bc"] == 3:
-            self.water_flow["BotInf"] = True
+    if self.water_flow["top_bc"] == 4:
+        self.water_flow["KodTop"] = 1
 
-        if self.water_flow["bot_bc"] == 4:
-            self.water_flow["FreeD"] = True
+    if self.water_flow["top_bc"] == 5:
+        self.water_flow["KodTop"] = 0
 
-        if self.water_flow["bot_bc"] == 5:
-            self.water_flow["qGWLF"] = True
+    if self.water_flow["bot_bc"] == 0:
+        self.water_flow["KodBot"] = 1
 
-        if self.water_flow["bot_bc"] == 6:
-            self.water_flow["SeepF"] = True
+    if self.water_flow["bot_bc"] == 1 and self.water_flow["rTop"] is None:
+        self.water_flow["rTop"] = 0
+        self.water_flow["rRoot"] = 0
+
+    if self.water_flow["bot_bc"] == 2:
+        self.water_flow["BotInf"] = True
+        self.water_flow["KodBot"] = 1
+
+    if self.water_flow["bot_bc"] == 3:
+        self.water_flow["BotInf"] = True
+
+    if self.water_flow["bot_bc"] == 4:
+        self.water_flow["FreeD"] = True
+
+    if self.water_flow["bot_bc"] == 5:
+        self.water_flow["qGWLF"] = True
+
+    if self.water_flow["bot_bc"] == 6:
+        self.water_flow["SeepF"] = True
 
 
 # Copy all the docstrings from the read methods
