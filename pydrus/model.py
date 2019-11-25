@@ -17,7 +17,7 @@ from .version import __version__
 
 class Model:
     def __init__(self, exe_name, ws_name, name="model", description=None,
-                 length_unit="m", time_unit="days", mass_units="mmol",
+                 length_unit="cm", time_unit="days", mass_units="mmol",
                  print_screen=False):
         """Basic Hydrus model container.
 
@@ -597,8 +597,8 @@ class Model:
                           "ml.del_root_growth().")
 
     def add_solute_transport(self, model=0, epsi=0.5, lupw=False, lartd=False,
-                             ltdep=False, ctola=0.0, ctolr=2.0, maxitc=20,
-                             pecr=0.0, ltort=True, lwatdep=False, top_bc=-1,
+                             ltdep=False, ctola=0.0, ctolr=0.0, maxit=20,
+                             pecr=2.0, ltort=True, lwatdep=False, top_bc=-1,
                              bot_bc=0, dsurf=None, catm=None, tpulse=1):
         """Method to add solute transport to the model.
 
@@ -645,7 +645,7 @@ class Model:
         ctolr: float, optional
             Relative concentration tolerance [-] (set equal to zero if
             nonlinear adsorption is not considered).
-        maxitc: int, optional
+        maxit: int, optional
             Maximum number of iterations allowed during any time step for
             solute transport - usually 20 (set equal to zero if nonlinear
             adsorption is not considered).
@@ -702,7 +702,7 @@ class Model:
                 "ltDep": ltdep,
                 "cTolA": ctola,
                 "cTolR": ctolr,
-                "MaxItC": maxitc,
+                "MaxItC": maxit,
                 "PeCr": pecr,
                 "lTort": ltort,
                 "iBacter": 1 if (model == 3) or (model == 4) else 0,
@@ -861,11 +861,9 @@ class Model:
                 if printmax is None:
                     printmax = tmax
                 if nsteps is None:
-                    times = np.arange(printinit, printmax,
-                                      step=dtprint)
+                    times = np.arange(printinit, printmax, step=dtprint)
                 else:
-                    times = np.linspace(printinit, printmax,
-                                        num=nsteps + 1)
+                    times = np.linspace(printinit, printmax, num=nsteps + 1)
                 if printinit == tinit:
                     self.times = times[1:]
                 else:
@@ -886,22 +884,22 @@ class Model:
 
         return result
 
-    def write_input(self):
+    def write_input(self, verbose=True):
         """Method to write the input files for the HYDRUS-1D simulation."""
         # 1. Write SELECTOR.IN
-        self.write_selector()
+        self.write_selector(verbose=verbose)
         # 2. Write PROFILE.DAT
-        self.write_profile()
+        self.write_profile(verbose=verbose)
 
         # 3. Write ATMOSPH.IN
         if self.basic_info["AtmInf"]:
-            self.write_atmosphere()
+            self.write_atmosphere(verbose=verbose)
         # 4. Write METEO.IN
         if self.basic_info["lMeteo"]:
-            self.write_meteo()
+            self.write_meteo(verbose=verbose)
         # 5. Write FIT.IN
         if self.basic_info["lInverse"]:
-            self.write_fit()
+            self.write_fit(verbose=verbose)
 
     def write_selector(self, fname="SELECTOR.IN", verbose=True):
         """Write the selector.in file.
@@ -1131,6 +1129,9 @@ class Model:
                 "POptm"]))
             lines.append("\n")
 
+            if self.basic_info["lChem"]:
+                lines.append("Solute Reduction\nf\n")
+
         # Write Block J - Inverse solution information
         if self.basic_info["lInverse"]:
             raise NotImplementedError("The inverse modeling module from "
@@ -1198,7 +1199,7 @@ class Model:
         if not verbose:
             print("Successfully wrote {}".format(fname))
 
-    def write_profile(self, fname="PROFILE.DAT"):
+    def write_profile(self, fname="PROFILE.DAT", verbose=True):
         """Method to write the profile.dat file.
 
         """
@@ -1207,7 +1208,9 @@ class Model:
                  "0\n"
                  "{} {} {} {}".format(self.basic_info["iVer"],
                                       self.profile.index.size,
-                                      self.n_solutes, 0, 0),
+                                      self.n_solutes,
+                                      1 if self.basic_info["lChem"] else 0,
+                                      1 if self.basic_info["lChem"] else 0),
                  # 2. Write the profile data
                  self.profile.to_string(),
                  # 3. Write observation points
@@ -1219,7 +1222,8 @@ class Model:
         with open(fname, "w") as file:
             file.writelines(lines)
 
-        print("Successfully wrote {}".format(fname))
+        if not verbose:
+            print("Successfully wrote {}".format(fname))
 
     def write_fit(self, fname="FIT.IN"):
         raise NotImplementedError
