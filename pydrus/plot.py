@@ -68,9 +68,7 @@ class Plots:
         return ax
 
     def profile_information(self, data="Pressure Head", times=None,
-                            legend=True, figsize=(7, 5),
-                            title="Profile Information",
-                            nodes="all", cmap="YlOrBr", **kwargs):
+                            legend=True, figsize=(7, 5), **kwargs):
         """Method to plot the soil profile information.
 
         Parameters
@@ -84,9 +82,7 @@ class Plots:
         times: list of int
             List of integers of the time step to plot.       
         figsize: tuple, optional
-        title: str, optional
-        cmap: str, optional
-            String with a named Matplotlib colormap.
+        legend: boolean, optional
 
         Returns
         -------
@@ -150,34 +146,15 @@ class Plots:
         plt.tight_layout()
         return ax
 
-    def mass_balance(self, figsize=(6, 10), title="Mass_Balance_Information",
-                     **kwargs):
-        """Method to show the Mass balance information.
-
-        Parameters
-        ----------
-        figsize: tuple, optional
-        title: str, optional
-
-        Returns
-        -------
-        balance: opens BALANCE.OUT in notepad
-        """
-        import subprocess
-
-        folder = self.ml.ws_name
-        balance = subprocess.Popen(["notepad.exe", folder + "\\BALANCE.OUT"])
-        return balance
-
     def water_flow(self, data="Potential Surface Flux", figsize=(10, 3),
-                   title="Water Flow", cmap="YlOrBr", **kwargs):
+                   **kwargs):
         """Method to plot the water flow information.
 
         Parameters
         ----------
         data: str, optional
-            String with the variable of the water flow information to plot. 
-            You can choose between: "Potential Surface Flux", 
+            String with the variable of the water flow information to plot.
+            You can choose between: "Potential Surface Flux",
             "Potential Root Water Uptake", "Actual Surface Flux", 
             "Actual Root Water Uptake", "Bottom Flux", 
             "Pressure head at the soil surface", 
@@ -186,9 +163,6 @@ class Plots:
             "Surface runoff", "Volume of water in the entire flow domain".
             Default is "Potential Surface Flux".
         figsize: tuple, optional
-        title: str, optional
-        cmap: str, optional
-            String with a named Matplotlib colormap.
 
         Returns
         -------
@@ -206,28 +180,38 @@ class Plots:
         cols = ("rTop", "rRoot", "vTop", "vRoot", "vBot", "hTop", "hRoot",
                 "hBot", "RunOff", "Volume")
         df = self.ml.read_tlevel()
+        df.index = df.index.astype(float)
         col = col_names.index(data)
 
         if col < 5:
-            fig, ax = plt.subplots(figsize=figsize, nrows=1, ncols=2
-                                   , **kwargs)
-            ax[0].plot(df.index, df[cols[col]])
-            ax[0].set_title(data)
-            ax[0].grid()
+            fig, axes = plt.subplots(figsize=figsize, nrows=1, ncols=2,
+                                     **kwargs)
+            axes[0].plot(df.index, df[cols[col]])
+            axes[0].set_title(data, fontsize=17)
+            axes[0].set_xlabel("Time [" + self.ml.basic_info["TUnit"] + "]",
+                               fontsize=12)
+            axes[0].tick_params(axis='both', which='major', labelsize=12)
+            axes[0].grid()
             # Cumulative sum
-            ax[1].plot(df.index, df["sum(" + cols[col] + ")"])
-            ax[1].set_title("sum(" + data + ")")
-            ax[1].grid()
+            axes[1].plot(df.index, df["sum(" + cols[col] + ")"])
+            axes[1].set_title("sum(" + data + ")", fontsize=17)
+            axes[1].set_xlabel("Time ["+self.ml.basic_info["TUnit"] + "]",
+                               fontsize=12)
+            axes[1].tick_params(axis='both', which='major', labelsize=12)
+            axes[1].grid()
         else:
-            fig, ax = plt.subplots(figsize=(5, 3), nrows=1, ncols=1,
-                                   **kwargs)
-            ax.plot(df.index, df[cols[col]])
-            ax.set_title(data)
-            ax.grid()
-        return ax
+            fig, axes = plt.subplots(figsize=(5, 3), nrows=1, ncols=1,
+                                     **kwargs)
+            axes.plot(df.index, df[cols[col]])
+            axes.set_title(data, fontsize=18)
+            axes.set_xlabel("Time [" + self.ml.basic_info["TUnit"] + "]",
+                            fontsize=12)
+            axes.tick_params(axis='both', which='major', labelsize=12)
+            axes.grid()
+        return axes
 
-    def shp(self, data="Water Content", figsize=(10, 3),
-            title="Soil hydraulic properties", cmap="YlOrBr", **kwargs):
+    def soil_properties(self, data="Water Content", figsize=(10, 2.5),
+                        **kwargs):
         """Method to plot the soil hydraulic properties.
 
         Parameters
@@ -239,36 +223,35 @@ class Plots:
             Conductivity", "log Hydraulic Conductivity", "Effective Water
             Content". Default is "Water Content".
         figsize: tuple, optional
-        title: str, optional
-        cmap: str, optional
-            String with a named Matplotlib colormap.
 
         Returns
         -------
         axes: matplotlib axes instance
 
         """
-        col_names = ("Water Content", "Pressure head",
-                     "log Pressure head", "Hydraulic Capacity",
-                     "Hydraulic Conductivity", "log Hydraulic Conductivity",
-                     "Effective Water Content")
+        col_names = ("Water Content", "Pressure head", "log Pressure head",
+                     "Hydraulic Capacity", "Hydraulic Conductivity",
+                     "log Hydraulic Conductivity", "Effective Water Content")
         cols = ("theta", "h", "log_h", "C", "K", "log_K", "S", "Kv")
         df = self.ml.read_i_check()
         col = col_names.index(data)
 
         fig, axes = plt.subplots(figsize=figsize, nrows=1, ncols=3,
                                  **kwargs)
-        fig.suptitle(data, fontsize=16, y=0.99)
+        fig.suptitle(data, fontsize=18, y=0.99)
 
         axes[0].plot(abs(df["h"]), df[cols[col]])
         axes[0].grid()
-        axes[0].set_xlabel("h")
+        axes[0].set_xlabel("h", fontsize=12)
+        axes[0].tick_params(axis='both', which='major', labelsize=12)
 
         axes[1].plot(df["log_h"], df[cols[col]])
         axes[1].grid()
-        axes[1].set_xlabel("log_h")
+        axes[1].set_xlabel("log_h", fontsize=12)
+        axes[1].tick_params(axis='both', which='major', labelsize=12)
 
         axes[2].plot(df["theta"], df[cols[col]])
         axes[2].grid()
-        axes[2].set_xlabel(r"$\dot{\Theta}$")
+        axes[2].set_xlabel(r"$\dot{\Theta}$", fontsize=12)
+        axes[2].tick_params(axis='both', which='major', labelsize=12)
         return axes

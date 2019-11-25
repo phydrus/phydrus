@@ -1280,8 +1280,11 @@ class Model:
         data = read_obs_node(path=path, nodes=nodes, times=times)
         return data
 
-    def read_i_check(self, fname="I_CHECK.OUT", times=None):
-        raise NotImplementedError
+    def read_i_check(self, fname="I_CHECK.OUT"):
+        path = os.path.join(self.ws_name, fname)
+
+        data = read_i_check(path)
+        return data
 
     def read_tlevel(self, fname="T_LEVEL.OUT", usecols=None):
         path = os.path.join(self.ws_name, fname)

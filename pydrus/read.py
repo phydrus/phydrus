@@ -49,7 +49,8 @@ def read_run_inf(path="RUN_INF.OUT", usecols=None):
     return data
 
 
-def read_i_check(path="I_CHECK.OUT", usecols=None, times=None):
+@check_file_path
+def read_i_check(path="I_CHECK.OUT"):
     """Method to read the I_CHECK.OUT output file.
 
     Parameters
@@ -57,8 +58,6 @@ def read_i_check(path="I_CHECK.OUT", usecols=None, times=None):
     path: str, optional
         String with the name of the I_Check out file. default is
         "I_Check.OUT".
-    usecols: list, optional
-    times
 
     Returns
     -------
@@ -67,7 +66,21 @@ def read_i_check(path="I_CHECK.OUT", usecols=None, times=None):
         value.
 
     """
-    raise NotImplementedError
+    names = ["theta", "h", "log_h", "C", "K", "log_K", "S", "Kv"]
+    with open(path) as file:
+        # Find the starting line
+        for i, line in enumerate(file.readlines()):
+            if "theta" in line:
+                s = i
+            elif "end" in line:
+                e = i
+        file.seek(0)  # Go back to start of file
+
+        # Read data into a Pandas DataFrame
+        data = pd.read_csv(file, skiprows=s + 1, nrows=e - s - 2,
+                           skipinitialspace=True, delim_whitespace=True,
+                           names=names)
+    return data
 
 
 def read_tlevel(path="T_LEVEL.OUT", usecols=None):
