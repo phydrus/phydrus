@@ -896,7 +896,7 @@ class Model:
         if self.basic_info["lInverse"]:
             self.write_fit()
 
-    def write_selector(self, fname="SELECTOR.IN"):
+    def write_selector(self, fname="SELECTOR.IN", verbose=True):
         """Write the selector.in file.
 
         """
@@ -1144,9 +1144,11 @@ class Model:
         fname = os.path.join(self.ws_name, fname)
         with open(fname, "w") as file:
             file.writelines(lines)
-        print("Successfully wrote {}".format(fname))
 
-    def write_atmosphere(self, fname="ATMOSPH.IN"):
+        if not verbose:
+            print("Successfully wrote {}".format(fname))
+
+    def write_atmosphere(self, fname="ATMOSPH.IN", verbose=True):
         """Method to write the ATMOSPH.IN file
 
         """
@@ -1186,7 +1188,8 @@ class Model:
         fname = os.path.join(self.ws_name, fname)
         with open(fname, "w") as file:
             file.writelines(lines)
-        print("Successfully wrote {}".format(fname))
+        if not verbose:
+            print("Successfully wrote {}".format(fname))
 
     def write_profile(self, fname="PROFILE.DAT"):
         """Method to write the profile.dat file.
@@ -1208,6 +1211,8 @@ class Model:
         fname = os.path.join(self.ws_name, fname)
         with open(fname, "w") as file:
             file.writelines(lines)
+
+
         print("Successfully wrote {}".format(fname))
 
     def write_fit(self, fname="FIT.IN"):
