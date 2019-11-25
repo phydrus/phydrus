@@ -96,15 +96,15 @@ class Model:
             "lMeteo": False,
             "lVapor": False,
             "lActRSU": False,
-            "lFlux": False,
+            "lFlux": True,
             "lIrrig": False,
             "CosAlfa": 1,
         }
 
         self.time_info = {
-            "dt": 0.1,
-            "dtMin": 0.0001,
-            "dtMax": 0.5,
+            "dt": 0.01,
+            "dtMin": 1e-5,
+            "dtMax": 5,
             "dMul": 1.3,
             "dMul2": 0.7,
             "ItMin": 3,
@@ -202,8 +202,8 @@ class Model:
             node = nodes.index.item()
             self.observations.append(node)
 
-    def add_waterflow(self, model=0, maxit=20, tolth=1e-4, tolh=0.1, ha=1e-3,
-                      hb=1e3, linitw=True, top_bc=0, bot_bc=0, hseep=0,
+    def add_waterflow(self, model=0, maxit=10, tolth=1e-3, tolh=1, ha=1e-6,
+                      hb=1e4, linitw=True, top_bc=0, bot_bc=0, hseep=0,
                       rtop=None, rbot=None, rroot=None, gw_level=None,
                       aqh=None, bqh=None, hysteresis=0, ikappa=-1):
         """Method to add a water_flow module to the model.
@@ -597,7 +597,7 @@ class Model:
                           "ml.del_root_growth().")
 
     def add_solute_transport(self, model=0, epsi=0.5, lupw=False, lartd=False,
-                             ltdep=False, ctola=0.0, ctolr=0.0, maxitc=20,
+                             ltdep=False, ctola=0.0, ctolr=2.0, maxitc=20,
                              pecr=0.0, ltort=True, lwatdep=False, top_bc=-1,
                              bot_bc=0, dsurf=None, catm=None, tpulse=1):
         """Method to add solute transport to the model.
@@ -794,10 +794,9 @@ class Model:
                           "delete the old heat transport model first using "
                           "ml.del_solute_transport().")
 
-    def add_time_info(self, tinit=0, tmax=1, dt=0.1,
-                      dtmin=0.0001, dtmax=0.5, print_times=False,
-                      printinit=None, printmax=None, dtprint=None,
-                      nsteps=None, from_atmo=False):
+    def add_time_info(self, tinit=0, tmax=1, dt=0.01, dtmin=1e-5, dtmax=5,
+                      print_times=False, printinit=None, printmax=None,
+                      dtprint=None, nsteps=None, from_atmo=False):
         """Method to produce time information.
 
         Parameters
@@ -1211,7 +1210,6 @@ class Model:
         fname = os.path.join(self.ws_name, fname)
         with open(fname, "w") as file:
             file.writelines(lines)
-
 
         print("Successfully wrote {}".format(fname))
 
