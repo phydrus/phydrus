@@ -56,23 +56,24 @@ class Model:
         self.name = name
         self.description = description
 
-        # The main processes to describe the simulation
+        # Attributes for the physical properties of the model
         self.profile = None
         self.materials = None
-        self.observations = []
-        self.drains = None
-        self.times = None
-
-        self.water_flow = None
-        self.solute_transport = None
+        self.obs_nodes = []
         self.solutes = None
-        self.heat_transport = None
-
-        self.root_uptake = None
-        self.root_growth = None
 
         self.atmosphere_info = None
         self.atmosphere = None
+
+        self.drains = None
+        self.times = None
+
+        # Attributes for the information on the processes
+        self.water_flow = None
+        self.solute_transport = None
+        self.heat_transport = None
+        self.root_uptake = None
+        self.root_growth = None
 
         self.basic_info = {
             "iVer": "4",
@@ -175,6 +176,7 @@ class Model:
                             "model. Please check the number of parameters.")
         else:
             self.materials = material
+        return self.materials
 
     def add_drains(self):
         """Method to add a drain to the model.
@@ -185,22 +187,22 @@ class Model:
         """
         return NotImplementedError
 
-    def add_observations(self, observations):
+    def add_obs_nodes(self, depths):
         """Method to add observation points.
 
         Parameters
         ----------
-        observations: list of ints
+        depths: list of ints
             List of floats denoting the depth of the nodes. The depth is
             defined in the same length unit as selected in ml.model function.
             The function defines the closest node to the desired depth.
 
         """
-        for obs in observations:
+        for obs in depths:
             nodes = self.profile.iloc[
                 (self.profile['x'] - obs).abs().argsort()[:1]]
             node = nodes.index.item()
-            self.observations.append(node)
+            self.obs_nodes.append(node)
 
     def add_waterflow(self, model=0, maxit=10, tolth=1e-3, tolh=1, ha=1e-6,
                       hb=1e4, linitw=False, top_bc=0, bot_bc=0, hseep=0,
@@ -597,9 +599,9 @@ class Model:
                           "ml.del_root_growth().")
 
     def add_solute_transport(self, model=0, epsi=0.5, lupw=False, lartd=False,
-                             ltdep=False, ctola=0.0, ctolr=0.0, maxit=20,
-                             pecr=2.0, ltort=True, lwatdep=False, top_bc=-1,
-                             bot_bc=0, dsurf=None, catm=None, tpulse=1):
+                             ltdep=False, ctola=0, ctolr=0, maxit=0, pecr=2,
+                             ltort=True, lwatdep=False, top_bc=-1, bot_bc=0,
+                             dsurf=None, catm=None, tpulse=1):
         """Method to add solute transport to the model.
 
         Parameters
@@ -650,20 +652,10 @@ class Model:
             solute transport - usually 20 (set equal to zero if nonlinear
             adsorption is not considered).
         pecr: float optional
-            Stability criteria (see Section 8.4.4). Set equal to zero when
-            lUpW is equal to True.
+            Stability criteria. Set to zero when lUpW=True.
         ltort: bool, optional
             True if the tortuosity factor [Millington and Quirk, 1961] is to be
             used. False if the tortuosity factor is assumed to be equal to one.
-        ibacter: int, optional
-            Set equal to 1 if attachment/detachment approach is to be used
-            to calculate nonequilibrium transport of viruses, colloids,
-            or bacteria. Set equal to 0 if original formulations, i.e.,
-            physical nonequilibrium or two-site sorption is to be used to
-            describe nonequilibrium solute transport.
-        lfiltr: bool, optional
-            Set this logical variable equal to True. if the attachment
-            coefficient is to be evaluated using the filtration theory.
         lwatdep: bool, optional
             True if at least one degradation coefficient (ChPar) is water
             content dependent.
@@ -703,7 +695,7 @@ class Model:
                 "cTolA": ctola,
                 "cTolR": ctolr,
                 "MaxItC": maxit,
-                "PeCr": pecr,
+                "PeCr": 0 if lupw else pecr,
                 "lTort": ltort,
                 "iBacter": 1 if (model == 3) or (model == 4) else 0,
                 "lFiltr": True if model == 4 else False,
@@ -1214,8 +1206,8 @@ class Model:
                  # 2. Write the profile data
                  self.profile.to_string(),
                  # 3. Write observation points
-                 "\n{}\n".format(len(self.observations)),
-                 "".join(["   {}".format(i) for i in self.observations])]
+                 "\n{}\n".format(len(self.obs_nodes)),
+                 "".join(["   {}".format(i) for i in self.obs_nodes])]
 
         # Write the actual file
         fname = os.path.join(self.ws_name, fname)
@@ -1225,13 +1217,10 @@ class Model:
         if not verbose:
             print("Successfully wrote {}".format(fname))
 
-    def write_fit(self, fname="FIT.IN"):
+    def write_fit(self, fname="FIT.IN", verbose=True):
         raise NotImplementedError
 
-    def write_meteo(self, fname="METEO.IN"):
-        raise NotImplementedError
-
-    def read_output(self):
+    def write_meteo(self, fname="METEO.IN", verbose=True):
         raise NotImplementedError
 
     def read_profile(self, fname="PROFILE.OUT"):
@@ -1285,7 +1274,7 @@ class Model:
     def read_obs_node(self, fname="OBS_NODE.OUT", nodes=None, times=None):
         path = os.path.join(self.ws_name, fname)
         if nodes is None:
-            nodes = self.observations
+            nodes = self.obs_nodes
 
         data = read_obs_node(path=path, nodes=nodes, times=times)
         return data
@@ -1300,10 +1289,10 @@ class Model:
         path = os.path.join(self.ws_name, fname)
 
         if usecols is None:
-            usecols = ["Time", "rTop", "rRoot", "vTop", "vRoot",
-                       "vBot", "sum(rTop)", "sum(rRoot)", "sum(vTop)",
-                       "sum(vRoot)", "sum(vBot)", "hTop", "hRoot", "hBot",
-                       "RunOff", "Volume", ]
+            usecols = ["Time", "rTop", "rRoot", "vTop", "vRoot", "vBot",
+                       "sum(rTop)", "sum(rRoot)", "sum(vTop)", "sum(vRoot)",
+                       "sum(vBot)", "hTop", "hRoot", "hBot", "RunOff",
+                       "Volume", ]
 
             if self.water_flow["iModel"] > 4:
                 usecols.append("Cum(WTrans)")
@@ -1319,7 +1308,9 @@ class Model:
         data = read_alevel(path=path, usecols=usecols)
         return data
 
-    def read_solutes(self, fname="SOLUTE1.OUT"):
+    def read_solutes(self, fname="SOLUTE{}.OUT", solute=1):
+        if solute:
+            fname = fname.format(solute)
         path = os.path.join(self.ws_name, fname)
         data = read_solute(path=path)
         return data

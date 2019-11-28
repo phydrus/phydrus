@@ -34,7 +34,7 @@ ml.add_material(m)
 
 profile = ps.create_profile(0, [-100, -230], h=-200, dx=10, mat=m.index)
 ml.add_profile(profile)
-ml.add_observations([10, 20])
+ml.add_obs_nodes([10, 20])
 
 atm = pd.read_csv("data/ex2.csv", index_col=0)
 ml.add_atmospheric_bc(atm)

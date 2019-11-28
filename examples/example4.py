@@ -47,7 +47,7 @@ ml.add_material(m)
 profile = ps.create_profile(bot=[-7, -19, -24, -28, -50, -75, -100], dx=1,
                             h=-100, mat=m.index)
 ml.add_profile(profile)
-ml.add_observations([50, 100])
+ml.add_obs_nodes([50, 100])
 
 # run steady state simulation
 ml.write_input()

@@ -6,7 +6,7 @@ class Plots:
     def __init__(self, ml):
         self.ml = ml
 
-    def profile(self, figsize=(4, 10), title="Soil Profile", cmap="YlOrBr",
+    def profile(self, figsize=(3, 6), title="Soil Profile", cmap="YlOrBr",
                 color_by="Ks", **kwargs):
         """Method to plot the soil profile.
 
@@ -59,8 +59,8 @@ class Plots:
         legend_elements = [line[0]]
         for i, color in enumerate(colors):
             legend_elements.append(plt.Rectangle((0, 0), 0, 0, color=color,
-                                                 label="material {}".format(
-                                                     i)))
+                                                 label="material {}".format(i))
+                                   )
 
         plt.legend(handles=legend_elements, loc="best")
 
@@ -91,7 +91,7 @@ class Plots:
         """
         l_unit = self.ml.basic_info["LUnit"]
         t_unit = self.ml.basic_info["TUnit"]
-        dfini = self.ml.read_nod_inf(times=0)
+        dfini = self.ml.read_nod_inf(times=[0])
 
         use_cols = ("Head", "Moisture", "K", "C", "Flux", "Sink")
         col_names = ("Pressure Head", "Water Content",
@@ -130,14 +130,12 @@ class Plots:
         if data == "Hydraulic Capacity":
             ax.set_xlim(0)
 
-        ax.plot(dfini[use_cols[col]], dfini["Depth"],
-                label="T0", color='k')
+        ax.plot(dfini[use_cols[col]], dfini["Depth"], label="T0", color='k')
 
         ax.set_ylim(self.ml.profile.loc[:, "x"].min(),
                     self.ml.profile.loc[:, "x"].max())
         ax.set_xlabel(units[col])
         ax.set_ylabel("Depth [{}]".format(self.ml.basic_info["LUnit"]))
-        ax.set_title("Profile Information: " + data)
         ax.grid(linestyle='--')
 
         if legend:
@@ -146,7 +144,7 @@ class Plots:
         plt.tight_layout()
         return ax
 
-    def water_flow(self, data="Potential Surface Flux", figsize=(10, 3),
+    def water_flow(self, data="Potential Surface Flux", figsize=(6, 3),
                    **kwargs):
         """Method to plot the water flow information.
 
@@ -180,38 +178,27 @@ class Plots:
         cols = ("rTop", "rRoot", "vTop", "vRoot", "vBot", "hTop", "hRoot",
                 "hBot", "RunOff", "Volume")
         df = self.ml.read_tlevel()
-        df.index = df.index.astype(float)
         col = col_names.index(data)
 
         if col < 5:
-            fig, axes = plt.subplots(figsize=figsize, nrows=1, ncols=2,
-                                     **kwargs)
-            axes[0].plot(df.index, df[cols[col]])
-            axes[0].set_title(data, fontsize=17)
-            axes[0].set_xlabel("Time [" + self.ml.basic_info["TUnit"] + "]",
-                               fontsize=12)
-            axes[0].tick_params(axis='both', which='major', labelsize=12)
-            axes[0].grid()
+            fig, axes = plt.subplots(1, 2, figsize=figsize, **kwargs)
+            df.plot(y=cols[col], ax=axes[0])
+            axes[0].set_ylabel(data)
+            axes[0].set_xlabel("Time [{}]".format(self.ml.basic_info["TUnit"]))
+
             # Cumulative sum
-            axes[1].plot(df.index, df["sum(" + cols[col] + ")"])
-            axes[1].set_title("sum(" + data + ")", fontsize=17)
-            axes[1].set_xlabel("Time ["+self.ml.basic_info["TUnit"] + "]",
-                               fontsize=12)
-            axes[1].tick_params(axis='both', which='major', labelsize=12)
-            axes[1].grid()
+            df.loc[:, cols[col]].cumsum().plot(ax=axes[1])
+            axes[1].set_ylabel("Cum. {}".format(data))
+            axes[1].set_xlabel("Time [{}]".format(self.ml.basic_info["TUnit"]))
+            fig.tight_layout()
         else:
-            fig, axes = plt.subplots(figsize=(5, 3), nrows=1, ncols=1,
-                                     **kwargs)
+            fig, axes = plt.subplots(1, 1, figsize=figsize, **kwargs)
             axes.plot(df.index, df[cols[col]])
-            axes.set_title(data, fontsize=18)
-            axes.set_xlabel("Time [" + self.ml.basic_info["TUnit"] + "]",
-                            fontsize=12)
-            axes.tick_params(axis='both', which='major', labelsize=12)
-            axes.grid()
+            axes.set_ylabel(data)
+            axes.set_xlabel("Time [{}]".format(self.ml.basic_info["TUnit"]))
         return axes
 
-    def soil_properties(self, data="Water Content", figsize=(10, 2.5),
-                        **kwargs):
+    def soil_properties(self, data="Water Content", figsize=(6, 3), **kwargs):
         """Method to plot the soil hydraulic properties.
 
         Parameters
@@ -233,25 +220,20 @@ class Plots:
                      "Hydraulic Capacity", "Hydraulic Conductivity",
                      "log Hydraulic Conductivity", "Effective Water Content")
         cols = ("theta", "h", "log_h", "C", "K", "log_K", "S", "Kv")
-        df = self.ml.read_i_check()
         col = col_names.index(data)
 
-        fig, axes = plt.subplots(figsize=figsize, nrows=1, ncols=3,
-                                 **kwargs)
-        fig.suptitle(data, fontsize=18, y=0.99)
+        dfs = self.ml.read_i_check()
 
-        axes[0].plot(abs(df["h"]), df[cols[col]])
-        axes[0].grid()
-        axes[0].set_xlabel("h", fontsize=12)
-        axes[0].tick_params(axis='both', which='major', labelsize=12)
+        fig, axes = plt.subplots(figsize=figsize, nrows=1, ncols=2,
+                                 sharey=True, **kwargs)
 
-        axes[1].plot(df["log_h"], df[cols[col]])
-        axes[1].grid()
-        axes[1].set_xlabel("log_h", fontsize=12)
-        axes[1].tick_params(axis='both', which='major', labelsize=12)
+        for i, df in dfs.items():
+            name = "Node {}".format(i)
+            df.plot(x="h", y=cols[col], ax=axes[0], label=name)
+            df.plot(x="log_h", y=cols[col], ax=axes[1], label=name)
 
-        axes[2].plot(df["theta"], df[cols[col]])
-        axes[2].grid()
-        axes[2].set_xlabel(r"$\dot{\Theta}$", fontsize=12)
-        axes[2].tick_params(axis='both', which='major', labelsize=12)
+        axes[0].set_xlabel(xlabel="h")
+        axes[1].set_xlabel(xlabel="log_h")
+        axes[0].set_ylabel(cols[col])
+
         return axes

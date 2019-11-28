@@ -67,7 +67,7 @@ ml.add_profile(profile)
 # Add observation nodes at depth
 
 obs = [-20, -40, -60, -80, -100]
-ml.add_observations(obs)
+ml.add_obs_nodes(obs)
 
 # Write input files and run Hydrus
 ml.write_input()

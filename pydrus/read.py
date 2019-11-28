@@ -67,20 +67,30 @@ def read_i_check(path="I_CHECK.OUT"):
 
     """
     names = ["theta", "h", "log_h", "C", "K", "log_K", "S", "Kv"]
+
+    end = []
+    start = 0
+
     with open(path) as file:
         # Find the starting line
         for i, line in enumerate(file.readlines()):
             if "theta" in line:
-                s = i
-            elif "end" in line:
-                e = i
-        file.seek(0)  # Go back to start of file
+                start = i
+            elif "end" in line and start > 0:
+                end.append(i)
 
-        # Read data into a Pandas DataFrame
-        data = pd.read_csv(file, skiprows=s + 1, nrows=e - s - 2,
-                           skipinitialspace=True, delim_whitespace=True,
-                           names=names)
-    return data
+        data = {}
+
+        for i, e in enumerate(end):
+            file.seek(0)  # Go back to start of file
+
+            # Read data into a Pandas DataFrame
+            nrows = e - start - 2
+            data[i] = pd.read_csv(file, skiprows=start + 1, nrows=nrows,
+                                  skipinitialspace=True, delim_whitespace=True,
+                                  names=names, dtype=float)
+            start = e
+        return data
 
 
 def read_tlevel(path="T_LEVEL.OUT", usecols=None):
@@ -176,12 +186,15 @@ def _read_file(path, start, end="end", usecols=None, idx_col=None,
         file.seek(0)  # Go back to start of file
 
         # Read data into a Pandas DataFrame
-        data = pd.read_csv(file, skiprows=s, nrows=e - s - 2,
+        data = pd.read_csv(file, skiprows=s, nrows=e - s - 2, usecols=usecols,
                            index_col=idx_col, skipinitialspace=True,
-                           delim_whitespace=True, usecols=usecols)
+                           delim_whitespace=True)
 
         if remove_first_row:
-            data = data.drop(index=data.index[0]).apply(pd.to_numeric)
+            data = data.drop(index=data.index[0]).apply(pd.to_numeric,
+                                                        errors="ignore")
+        else:
+            data = data.apply(pd.to_numeric, errors="ignore")
 
     return data
 
@@ -275,10 +288,10 @@ def read_nod_inf(path="NOD_INF.OUT", times=None):
         for s, e, time in zip(start, end, use_times):
             if time in times:
                 file.seek(0)  # Go back to start of file
-                df = pd.read_csv(file, skiprows=s + 2, header=None,
-                                 skipinitialspace=True, delim_whitespace=True,
-                                 nrows=e - s - 3)
-                data[time] = df
+                data[time] = pd.read_csv(file, skiprows=s + 2, header=None,
+                                         skipinitialspace=True,
+                                         delim_whitespace=True,
+                                         nrows=e - s - 3)
     if len(data) is 1:
         return next(iter(data.values()))
     else:
