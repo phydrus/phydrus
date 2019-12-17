@@ -68,7 +68,7 @@ class Plots:
         return ax
 
     def profile_information(self, data="Pressure Head", times=None,
-                            legend=True, figsize=(7, 5), **kwargs):
+                            legend=True, figsize=(5, 3), **kwargs):
         """Method to plot the soil profile information.
 
         Parameters
@@ -91,7 +91,7 @@ class Plots:
         """
         l_unit = self.ml.basic_info["LUnit"]
         t_unit = self.ml.basic_info["TUnit"]
-        dfini = self.ml.read_nod_inf(times=[0])
+        m_unit = self.ml.basic_info["MUnit"]
 
         use_cols = ("Head", "Moisture", "K", "C", "Flux", "Sink")
         col_names = ("Pressure Head", "Water Content",
@@ -103,43 +103,29 @@ class Plots:
                  "v [{}/{}]".format(l_unit, t_unit),
                  "S [1/{}]".format(t_unit)]
 
+        if self.ml.basic_info["lChem"]:
+            use_cols = use_cols + ("Conc(1..NS)", "Sorb(1...NS)")
+            col_names = col_names+("Concentration", "Sorbtion")
+            units.extend(["c [{}/{}*3]".format(m_unit, l_unit), "sorb."])
+
         col = col_names.index(data)
         fig, ax = plt.subplots(figsize=figsize, **kwargs)
+        dfs = self.ml.read_nod_inf(times=times)
 
-        if times is None:
-            df = self.ml.read_nod_inf()
-            for key, dataframe in df.items():
-                ax.plot(dataframe[use_cols[col]], dataframe["Depth"],
-                        label="T" + str(key))
+        if times is None or len(times) > 1:
+            for key, df in dfs.items():
+                df.plot(x=use_cols[col], y="Depth", ax=ax,
+                        label="time= " + str(key))
         else:
-            for time in times:
-                df = self.ml.read_nod_inf(times=time)
-                ax.plot(df[use_cols[col]], df["Depth"])
+            dfs.plot(x=use_cols[col], y="Depth", ax=ax,
+                     label="T " + str(times))
 
-        space = (abs(dfini[use_cols[col]].min()) -
-                 abs(dfini[use_cols[col]].max()))
-
-        if data == "Pressure Head":
-            ax.set_xlim(dfini[use_cols[col]].min(),
-                        dfini[use_cols[col]].max() + space * 0.2)
-        if data == "Water Content":
-            ax.set_xlim(dfini[use_cols[col]].min() + space * 0.2,
-                        dfini[use_cols[col]].max() - space * 0.1)
-        if data == "Hydraulic Conductivity":
-            ax.set_xlim(0, dfini[use_cols[col]].max())
-        if data == "Hydraulic Capacity":
-            ax.set_xlim(0)
-
-        ax.plot(dfini[use_cols[col]], dfini["Depth"], label="T0", color='k')
-
-        ax.set_ylim(self.ml.profile.loc[:, "x"].min(),
-                    self.ml.profile.loc[:, "x"].max())
         ax.set_xlabel(units[col])
         ax.set_ylabel("Depth [{}]".format(self.ml.basic_info["LUnit"]))
         ax.grid(linestyle='--')
 
         if legend:
-            ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+            ax.legend(bbox_to_anchor=(1, 1), loc="upper left")
 
         plt.tight_layout()
         return ax
@@ -182,12 +168,12 @@ class Plots:
 
         if col < 5:
             fig, axes = plt.subplots(1, 2, figsize=figsize, **kwargs)
-            df.plot(y=cols[col], ax=axes[0])
+            df.plot(y=cols[col], ax=axes[0], use_index=True)
             axes[0].set_ylabel(data)
             axes[0].set_xlabel("Time [{}]".format(self.ml.basic_info["TUnit"]))
 
             # Cumulative sum
-            df.loc[:, cols[col]].cumsum().plot(ax=axes[1])
+            df.plot(y="sum("+cols[col]+")", ax=axes[1], use_index=True)
             axes[1].set_ylabel("Cum. {}".format(data))
             axes[1].set_xlabel("Time [{}]".format(self.ml.basic_info["TUnit"]))
             fig.tight_layout()
@@ -237,3 +223,36 @@ class Plots:
         axes[0].set_ylabel(cols[col])
 
         return axes
+
+    def obs_points(self, data="Pressure Head", figsize=(4, 3), **kwargs):
+        """Method to plot the pressure heads, water contents and water fluxes
+        at selected observation nodes.
+
+        Parameters
+        ----------
+        data: str, optional
+            String with the variable of the variable to plot.
+            You can choose between: "Pressure head", "Water content",
+            "Water flux".
+        figsize: tuple, optional
+
+        Returns
+        -------
+        axes: matplotlib axes instance
+
+        """
+        col_names = ("Pressure Head", "Water Content", "Water Flux",
+                     "Concentration")
+        cols = ("h", "theta", "Temp", "Conc")
+        col = col_names.index(data)
+
+        dfs = self.ml.read_obs_node()
+
+        fig, ax = plt.subplots(figsize=figsize, **kwargs)
+        for i, df in dfs.items():
+            name = "Node {}".format(i)
+            df.plot(y=cols[col], ax=ax, label=name, use_index=True)
+
+        ax.set_xlabel("Time [{}]".format(self.ml.basic_info["TUnit"]))
+        ax.set_ylabel(cols[col])
+        return ax

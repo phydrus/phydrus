@@ -8,6 +8,7 @@ Author: R.A. Collenteur, University of Graz, 2019
 import os
 
 import pandas as pd
+
 import pydrus as ps
 
 ws = "example3"
@@ -26,8 +27,8 @@ times = ml.add_time_info(tmax=213, print_times=True)
 ml.add_waterflow(maxit=20, tolh=1, linitw=False, top_bc=3, bot_bc=6, hseep=-60)
 
 # Add materials
-m = pd.DataFrame(columns=["thr", "ths", "Alfa", "n", "Ks", "l"], index=[1],
-                 data=[[0.095, 0.41, 0.019, 1.31, 3.4, 0.5]])
+m = ml.get_empty_material_df(n=1)
+m.loc[[1, 1]] = [[0.095, 0.41, 0.019, 1.31, 3.4, 0.5]]
 ml.add_material(m)
 
 # Profile

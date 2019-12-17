@@ -117,6 +117,7 @@ def read_tlevel(path="T_LEVEL.OUT", usecols=None):
     """
     data = _read_file(path=path, start="rTop", idx_col="Time",
                       remove_first_row=True, usecols=usecols)
+    data = data.set_index(pd.to_numeric(data.index, errors='coerce'))
     return data
 
 
@@ -200,7 +201,7 @@ def _read_file(path, start, end="end", usecols=None, idx_col=None,
 
 
 @check_file_path
-def read_obs_node(path="OBS_NODE.OUT", nodes=None, times=None):
+def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False):
     """Method to read the OBS_NODE.OUT output file.
 
     Parameters
@@ -209,7 +210,8 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, times=None):
     path: str, optional
         String with the name of the OBS_NODE out file. default is
         "OBS_NODE.OUT".
-    times
+    nodes: list of ints
+    conc: boolean, optional
 
     Returns
     -------
@@ -232,13 +234,20 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, times=None):
             file.seek(0)
             if i == 0:
                 usecols = ["time", "h", "theta", "Temp"]
+                if conc:
+                    usecols.append("Conc")
             else:
                 usecols = ["time", "h." + str(i), "theta." + str(i),
                            "Temp." + str(i)]
+                if conc:
+                    usecols.append("Conc." + str(i))
             df = pd.read_csv(file, skiprows=start, index_col=0,
                              skipinitialspace=True, delim_whitespace=True,
                              nrows=end - start - 1, usecols=usecols)
-            df.columns = ["h", "theta", "Temp"]
+            if conc:
+                df.columns = ["h", "theta", "Temp", "Conc"]
+            else:
+                df.columns = ["h", "theta", "Temp"]
             data[node] = df
 
     return data
@@ -279,19 +288,19 @@ def read_nod_inf(path="NOD_INF.OUT", times=None):
                 start.append(i)
             elif "end" in line:
                 end.append(i)
-
         if times is None:
             times = use_times
-
         # Read the data into a Pandas DataFrame
         data = {}
         for s, e, time in zip(start, end, use_times):
             if time in times:
                 file.seek(0)  # Go back to start of file
-                data[time] = pd.read_csv(file, skiprows=s + 2, header=None,
+                data[time] = pd.read_csv(file, skiprows=s,
                                          skipinitialspace=True,
                                          delim_whitespace=True,
-                                         nrows=e - s - 3)
+                                         nrows=e - s - 2)
+                data[time] = data[time].drop([0])
+                data[time] = data[time].apply(pd.to_numeric)
     if len(data) is 1:
         return next(iter(data.values()))
     else:

@@ -28,7 +28,7 @@ ml.add_waterflow(linitw=False, top_bc=3, bot_bc=4, ha=1e-6, hb=1e4)
 ml.add_solute_transport(tpulse=1)
 
 m = ml.get_empty_material_df(n=2)
-m.loc[1:3] = [[0.01, 0.399, 0.0174, 1.3757, 209.75, 0.5, 1.9, 130, 1, 0],
+m.loc[1:2] = [[0.01, 0.399, 0.0174, 1.3757, 209.75, 0.5, 1.9, 130, 1, 0],
               [0.01, 0.339, 0.0139, 1.6024, 45.34, 0.5, 1.9, 100, 1, 0]]
 ml.add_material(m)
 

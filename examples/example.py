@@ -24,7 +24,7 @@ times = ml.add_time_info(tinit=90, tmax=273, print_times=True, dt=0.1,
 ml.add_waterflow(top_bc=1, bot_bc=0, rtop=0)
 
 m = ml.get_empty_material_df(n=2)
-m.loc[1:3] = [[0.08, 0.3421, 0.03, 5, 1, -0.5],
+m.loc[1:2] = [[0.08, 0.3421, 0.03, 5, 1, -0.5],
               [0.08, 0.3421, 0.03, 5, 0.1, -0.5]]
 
 ml.add_material(m)

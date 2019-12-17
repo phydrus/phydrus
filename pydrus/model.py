@@ -201,7 +201,7 @@ class Model:
         for obs in depths:
             nodes = self.profile.iloc[
                 (self.profile['x'] - obs).abs().argsort()[:1]]
-            node = nodes.index.item()
+            node = nodes.index.values.astype(int)[0]
             self.obs_nodes.append(node)
 
     def add_waterflow(self, model=0, maxit=10, tolth=1e-3, tolh=1, ha=1e-6,
@@ -832,8 +832,9 @@ class Model:
         self.time_info["dtMax"] = dtmax
         self.time_info["dtMin"] = dtmin
         if print_array is not None:
-            self.times = print_array
             self.time_info["MPL"] = len(print_array)
+            self.times = print_array
+            return self.times
         if from_atmo:
             if self.atmosphere is None:
                 raise Warning("Atmospheric information not provided. Please "
@@ -1271,12 +1272,14 @@ class Model:
 
         return data
 
-    def read_obs_node(self, fname="OBS_NODE.OUT", nodes=None, times=None):
+    def read_obs_node(self, fname="OBS_NODE.OUT", nodes=None, conc=False):
         path = os.path.join(self.ws_name, fname)
+        if self.basic_info["lChem"]:
+            conc = True
         if nodes is None:
             nodes = self.obs_nodes
 
-        data = read_obs_node(path=path, nodes=nodes, times=times)
+        data = read_obs_node(path=path, nodes=nodes, conc=conc)
         return data
 
     def read_i_check(self, fname="I_CHECK.OUT"):

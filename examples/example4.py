@@ -14,6 +14,7 @@ Author: R.A. Collenteur, University of Graz, 2019
 import os
 
 import pandas as pd
+
 import pydrus as ps
 
 ws = "example4"
@@ -32,29 +33,28 @@ times = ml.add_time_info(tmax=100, print_times=True, dt=0.001,
 ml.add_waterflow(linitw=False, top_bc=1, bot_bc=4, ha=1e-6, hb=1e4, rtop=-0.12)
 
 # Add materials
-m = pd.DataFrame(columns=["thr", "ths", "Alfa", "n", "Ks", "l"],
-                 data=[[0.065, 0.42, 0.016, 1.94, 95.040, 0.5],
-                       [0.035, 0.42, 0.015, 3.21, 311.04, 0.5],
-                       [0.042, 0.40, 0.016, 1.52, 38.880, 0.5],
-                       [0.044, 0.40, 0.028, 2.01, 864.00, 0.5],
-                       [0.039, 0.40, 0.023, 2.99, 1209.6, 0.5],
-                       [0.030, 0.42, 0.021, 2.99, 1209.6, 0.5],
-                       [0.021, 0.39, 0.021, 2.99, 1209.6, 0.5]],
-                 index=range(1, 8))
+m = ml.get_empty_material_df(n=7)
+m.loc[1:7] = [[0.065, 0.42, 0.016, 1.94, 95.040, 0.5],
+              [0.035, 0.42, 0.015, 3.21, 311.04, 0.5],
+              [0.042, 0.40, 0.016, 1.52, 38.880, 0.5],
+              [0.044, 0.40, 0.028, 2.01, 864.00, 0.5],
+              [0.039, 0.40, 0.023, 2.99, 1209.6, 0.5],
+              [0.030, 0.42, 0.021, 2.99, 1209.6, 0.5], 
+              [0.021, 0.39, 0.021, 2.99, 1209.6, 0.5]]
 ml.add_material(m)
 
 # Profile
 profile = ps.create_profile(bot=[-7, -19, -24, -28, -50, -75, -100], dx=1,
                             h=-100, mat=m.index)
 ml.add_profile(profile)
-ml.add_obs_nodes([50, 100])
+ml.add_obs_nodes([profile["x"]])
 
 # run steady state simulation
 ml.write_input()
 ml.simulate()
 
 # Update the initial head for the transient simulation with the steady state
-df = ml.read_nod_inf()
+df = ml.read_nod_inf(times=[100])
 ml.profile["h"] = df["Head"].values
 
 # Atmospheric data
