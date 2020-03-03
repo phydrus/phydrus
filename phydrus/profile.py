@@ -1,6 +1,7 @@
 from os import path
-from pandas import read_csv, DataFrame
+
 from numpy import linspace
+from pandas import read_csv, DataFrame
 
 
 def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,

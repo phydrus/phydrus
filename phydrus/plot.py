@@ -63,7 +63,6 @@ class Plots:
                                    )
 
         plt.legend(handles=legend_elements, loc="best")
-
         plt.tight_layout()
         return ax
 
@@ -105,7 +104,7 @@ class Plots:
 
         if self.ml.basic_info["lChem"]:
             use_cols = use_cols + ("Conc(1..NS)", "Sorb(1...NS)")
-            col_names = col_names+("Concentration", "Sorbtion")
+            col_names = col_names + ("Concentration", "Sorbtion")
             units.extend(["c [{}/{}*3]".format(m_unit, l_unit), "sorb."])
 
         col = col_names.index(data)
@@ -173,7 +172,7 @@ class Plots:
             axes[0].set_xlabel("Time [{}]".format(self.ml.basic_info["TUnit"]))
 
             # Cumulative sum
-            df.plot(y="sum("+cols[col]+")", ax=axes[1], use_index=True)
+            df.plot(y="sum(" + cols[col] + ")", ax=axes[1], use_index=True)
             axes[1].set_ylabel("Cum. {}".format(data))
             axes[1].set_xlabel("Time [{}]".format(self.ml.basic_info["TUnit"]))
             fig.tight_layout()
@@ -210,8 +209,8 @@ class Plots:
 
         dfs = self.ml.read_i_check()
 
-        fig, axes = plt.subplots(figsize=figsize, nrows=1, ncols=2,
-                                 sharey=True, **kwargs)
+        _, axes = plt.subplots(figsize=figsize, nrows=1, ncols=2,
+                               sharey=True, **kwargs)
 
         for i, df in dfs.items():
             name = "Node {}".format(i)
@@ -248,7 +247,7 @@ class Plots:
 
         dfs = self.ml.read_obs_node()
 
-        fig, ax = plt.subplots(figsize=figsize, **kwargs)
+        _, ax = plt.subplots(figsize=figsize, **kwargs)
         for i, df in dfs.items():
             name = "Node {}".format(i)
             df.plot(y=cols[col], ax=ax, label=name, use_index=True)
