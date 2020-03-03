@@ -14,6 +14,7 @@ examples/notebooks/.ipynb_checkpoints/
 gui/settings
 build
 dist
+phydrus.egg-info
 
 .idea/.name
 .cache/v/cache/lastfailed

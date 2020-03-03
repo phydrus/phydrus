@@ -30,10 +30,12 @@ install:
   - pip install --upgrade pip
   - pip install codecov
   - pip install pytest-cov
+  - pip install codacy-coverage
+
 
 # command to run tests
 script:
   - py.test ./tests --cov=phydrus --cov-report=xml
 
 after_success:
-  - codecov
+   - python-codacy-coverage -r coverage.xml
