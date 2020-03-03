@@ -1,0 +1,36 @@
+{
+  "description": "Phydrus: an open source Python implementation of the Hydrus-1D model",
+  "license": "GNU LGPL V3",
+  "title": "Phydrus: an open source Python implementation of the Hydrus-1D model",
+  "upload_type": "software",
+  "creators": [
+    {
+      "affiliation": "University of Graz, Graz, Austria.",
+      "name": "Raoul Collenteur",
+      "orcid": "0000-0001-7843-1538"
+    },
+    {
+      "affiliation": "University of Graz, Graz, Austria.",
+      "name": "Matevz Vremec",
+      "orcid": "0000-0002-2730-494X"
+    },
+    {
+      "affiliation": "Institute of Hydraulics and Rural Water Management, Univ. of Natural Resources and Life Sciences, Vienna, Austria",
+      "name": "Giuseppe Brunetti",
+      "orcid": "0000-0001-7943-8088"
+    },
+    {
+      "affiliation": "Dep. of Land, Air and Water Resources, Univ. of California, Davis, United States",
+      "name": "Jirka Šimunek",
+      "orcid": "0000-0002-0166-6563"
+    }
+  ],
+  "access_right": "open",
+  "keywords": [
+    "python",
+    "hydrology",
+    "Hydrus-1D",
+    "unsaturated zone",
+    "open source"
+  ]
+}
