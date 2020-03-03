@@ -1,3 +1,3 @@
 def test_import():
-    import pydrus as ps
+    import phydrus as ps
     return ps

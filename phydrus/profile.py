@@ -50,7 +50,7 @@ def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,
         # If there are multiple layers
         for i, arg in enumerate(variables):
             if isinstance(arg, int) or isinstance(arg, float) or arg is None:
-                variables[i] = [arg]*len(bot)
+                variables[i] = [arg] * len(bot)
 
         for i, b in enumerate(bot):
             layer = ((data.loc[:, "x"] <= top) & (data.loc[:, "x"] > (b - dx)))
@@ -71,7 +71,7 @@ def profile_from_file(fname="PROFILE.DAT", ws=None):
 
     Returns
     -------
-    profile: pydrus.profile.SoilProfile
+    profile: phydrus.profile.SoilProfile
 
     """
     fname = path.join(ws, fname)

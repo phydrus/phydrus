@@ -15,7 +15,7 @@ import os
 
 import pandas as pd
 
-import pydrus as ps
+import phydrus as ps
 
 ws = "example4"
 exe = os.path.join(os.getcwd(), "hydrus")

@@ -7,7 +7,7 @@ Author: R.A. Collenteur, University of Graz, 2019
 
 import os
 
-import pydrus as ps
+import phydrus as ps
 
 ws = "example"
 exe = os.path.join(os.getcwd(), "hydrus")

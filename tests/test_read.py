@@ -1,4 +1,4 @@
-import pydrus as ps
+import phydrus as ps
 
 
 def test_read_profile():

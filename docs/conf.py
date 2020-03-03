@@ -14,22 +14,21 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../pydrus'))
 
+sys.path.insert(0, os.path.abspath('../phydrus'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Pydrus'
+project = 'Phydrus'
 copyright = '2019, R.A. Collenteur, G. Brunetti, M. Vremec'
 author = 'R.A. Collenteur, G. Brunetti, M. Vremec'
 
-from pydrus.version import __version__
+from phydrus.version import __version__
 
 # The short X.Y version
 version = __version__
 # The full version, including alpha/beta/rc tags
 release = __version__
-
 
 # -- General configuration ---------------------------------------------------
 
@@ -51,8 +50,7 @@ extensions = [
     'sphinxcontrib.apidoc',
 ]
 
-
-apidoc_module_dir = '../pydrus'
+apidoc_module_dir = '../phydrus'
 apidoc_output_dir = 'reference'
 apidoc_excluded_paths = ['tests']
 apidoc_separate_modules = True
@@ -86,7 +84,6 @@ exclude_patterns = []
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
-
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -105,13 +102,13 @@ html_theme_options = {
     'logo': 'logo.png',
     'travis_button': True,
     'logo_name': False,
-    'github_user': 'raoulcollenteur',
-    'github_repo': 'pydrus',
+    'github_user': 'phydrus',
+    'github_repo': 'phydrus',
     'github_banner': True,
     'github_button': True,
     'github_type': 'watch',
     'github_count': True,
-    'description': "Pydrus is a Python implementation for unsaturated zone "
+    'description': "Phydrus is a Python implementation for unsaturated zone "
                    "modeling in Hydrus-1D.",
     'codecov_button': True,
 }
@@ -134,8 +131,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Pydrusdoc'
-
+htmlhelp_basename = 'phydrusdoc'
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -161,20 +157,18 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Pydrus.tex', 'Pydrus Documentation',
+    (master_doc, 'phydrus.tex', 'Phydrus Documentation',
      'R.A. Collenteur, G. Brunetti, M. Vremec', 'manual'),
 ]
-
 
 # -- Options for manual page output ------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'pydrus', 'Pydrus Documentation',
+    (master_doc, 'phydrus', 'Phydrus Documentation',
      [author], 1)
 ]
-
 
 # -- Options for Texinfo output ----------------------------------------------
 
@@ -182,11 +176,10 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Pydrus', 'Pydrus Documentation',
-     author, 'Pydrus', 'One line description of project.',
+    (master_doc, 'Phydrus', 'Phydrus Documentation',
+     author, 'Phydrus', 'One line description of project.',
      'Miscellaneous'),
 ]
-
 
 # -- Options for Epub output -------------------------------------------------
 
@@ -204,7 +197,6 @@ epub_title = project
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ['search.html']
-
 
 # -- Extension configuration -------------------------------------------------
 
