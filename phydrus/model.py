@@ -101,26 +101,7 @@ class Model:
             "lIrrig": False,
             "CosAlfa": 1,
         }
-
-        self.time_info = {
-            "dt": 0.01,
-            "dtMin": 1e-5,
-            "dtMax": 5,
-            "dMul": 1.3,
-            "dMul2": 0.7,
-            "ItMin": 3,
-            "ItMax": 7,
-            "MPL": None,  # Calculate automatically
-            "tInit": 0.1,
-            "tMax": 1,
-            "lPrint": True,
-            "nPrintSteps": 1,
-            "tPrintInterval": 1,
-            "lEnter": False,  # This should not be changed!
-            "TPrint(1)": None,
-            "TPrint(MPL)": None,
-        }
-
+        
         self.plots = Plots(ml=self)
 
     @property
@@ -826,6 +807,27 @@ class Model:
             Array of specified print-times.
 
         """
+        
+        self.time_info = {
+            "dt": 0.01,
+            "dtMin": 1e-5,
+            "dtMax": 5,
+            "dMul": 1.3,
+            "dMul2": 0.7,
+            "ItMin": 3,
+            "ItMax": 7,
+            "MPL": None,  # Calculate automatically
+            "tInit": 0.1,
+            "tMax": 1,
+            "lPrint": print_times,
+            "nPrintSteps": 1,
+            "tPrintInterval": 1,
+            "lEnter": False,  # This should not be changed!
+            "TPrint(1)": None,
+            "TPrint(MPL)": None,
+        }
+        
+        
         self.time_info["tInit"] = tinit
         self.time_info["tMax"] = tmax
         self.time_info["dt"] = dt
