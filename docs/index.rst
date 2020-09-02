@@ -10,13 +10,12 @@ scripts, making it easy to adjust the model and providing a 100% reproducible
 workflow of your modeling process.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+    :maxdepth: 2
+    :hidden:
 
-
-Resources
-=========
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+    About <index>
+    Getting Started <getting_started>
+    Examples <examples/index>
+    Development <developers/index>
+    API Docs <api/index>
+    Release Notes <release_notes>

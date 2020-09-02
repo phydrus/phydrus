@@ -1,5 +1,6 @@
 """
 This file contains the model class.
+
 """
 
 import os
@@ -101,7 +102,7 @@ class Model:
             "lIrrig": False,
             "CosAlfa": 1,
         }
-        
+
         self.plots = Plots(ml=self)
 
     @property
@@ -807,7 +808,7 @@ class Model:
             Array of specified print-times.
 
         """
-        
+
         self.time_info = {
             "dt": 0.01,
             "dtMin": 1e-5,
@@ -826,8 +827,7 @@ class Model:
             "TPrint(1)": None,
             "TPrint(MPL)": None,
         }
-        
-        
+
         self.time_info["tInit"] = tinit
         self.time_info["tMax"] = tmax
         self.time_info["dt"] = dt
