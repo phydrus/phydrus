@@ -142,7 +142,6 @@ c        read(*,*)
         write(iUnit(i),*,err=903)'******* ',Hed
 !       call getdat(ii,imonth,iday)
 !       call gettim(ihours,mins,isecs,ii)
-        PRINT*, "getdat and gettim called but not available"
         write(iUnit(i),100,err=903) iday,imonth,ihours,mins,isecs
         write(iUnit(i),*,err=903)'Units: L = ',LUnit,', T = ',TUnit,
      !                                ', M = ',MUnit

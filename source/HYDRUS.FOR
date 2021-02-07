@@ -51,7 +51,7 @@
      !           NObsD =100,
      !           NSD   =11,
      !           NUnitD=7,
-     !           NPD   =1000)
+     !           NPD   =30000)
 
       integer PLevel,Alevel,TLevel,err
       logical SinkF,WLayer,qGWLF,TopInF,ShortO,lWat,lChem,lTemp,ConvgF,
@@ -68,14 +68,6 @@
       character cFileName*260,cDataPath*260
       integer*2 status
       integer*2 i2,iYear,iMonth,iDay,iHours,iMins,iSecs,i100th
-*---- START gettim and getdat gnu alternative function VARABLES ----
-      integer dtv(8)
-      character(8)  :: date
-      character(10) :: time
-      character(5)  :: zone
-      integer hundred
-*---- START gettim and getdat gnu alternative function VARABLES ----
-    
 
       dimension x(NumNPD),hNew(NumNPD),hOld(NumNPD),hTemp(NumNPD),
      !  MatNum(NumNPD),ParD(11,NMatD),TPrint(NPD),Sink(NumNPD),
@@ -402,19 +394,6 @@
       if(lScreen) write(*,*) 'beginning of numerical solution'
       ! using keyword arguments
 
-*---- START gettim and getdat gnu alternative function ----
-      call date_and_time(date,time,zone,dtv)
-      hundred=100
-      iYear=dtv(1)
-      iMonth=dtv(2)
-      iDay=dtv(3)
-      iHours=dtv(5)
-      iMins=dtv(6)
-      iSecs=dtv(7)
-      i100th=mod(dtv(8),hundred)
-*      call getdat(iYear,iMonth,iDay)
-*      call gettim(iHours,iMins,iSecs,i100th)
-*---- END gettim and getdat gnu alternative function ----
       Rtime1=RTime(iMonth,iDay,iHours,iMins,iSecs,i100th)
 
 *     Time stepping calculations ---------------------------------------
@@ -943,29 +922,29 @@
 *        stop
 *      end
 *
-*      function hand_fpe (signum, excnum)
-*        !MS$ATTRIBUTES C :: hand_fpe
-*        use MSFLIB
-*        integer(2)  signum, excnum
-*        select case(excnum)
-*          case(FPE$INVALID )
-*            write(*,*) 'Floating Point Error - Invalid number !'
-*          case( FPE$DENORMAL )
-*            write(*,*) 'Floating Point Error - Denormalized number !'
-*          case( FPE$ZERODIVIDE )
-*            write(*,*) 'Floating Point Error - Zero divide !'
-*          case( FPE$OVERFLOW )
-*            write(*,*) 'Floating Point Error - Overflow !'
-*          case( FPE$UNDERFLOW )
-*            write(*,*) 'Floating Point Error - Underflow !'
-*          case( FPE$INEXACT )
-*            write(*,*) 'Floating Point Error - Inexact precision !'
-*          case default
-*            write(*,*) 'Floating Point Error - Non-IEEE type !'
-*        end select
-*        hand_fpe = 1
-*        call CloseFiles
-*      end
+!      function hand_fpe (signum, excnum)
+!        !MS$ATTRIBUTES C :: hand_fpe
+!        use MSFLIB
+!        integer(2)  signum, excnum
+!        select case(excnum)
+!          case(FPE$INVALID )
+!            write(*,*) 'Floating Point Error - Invalid number !'
+!          case( FPE$DENORMAL )
+!            write(*,*) 'Floating Point Error - Denormalized number !'
+!          case( FPE$ZERODIVIDE )
+!            write(*,*) 'Floating Point Error - Zero divide !'
+!          case( FPE$OVERFLOW )
+!            write(*,*) 'Floating Point Error - Overflow !'
+!          case( FPE$UNDERFLOW )
+!            write(*,*) 'Floating Point Error - Underflow !'
+!          case( FPE$INEXACT )
+!            write(*,*) 'Floating Point Error - Inexact precision !'
+!          case default
+!            write(*,*) 'Floating Point Error - Non-IEEE type !'
+!        end select
+!        hand_fpe = 1
+!        call CloseFiles
+!      end
 *
 ************************************************************************
 
