@@ -705,7 +705,6 @@ class Model:
             Pandas DataFrame with
         difw:
 
-
         Returns
         -------
 
@@ -716,12 +715,15 @@ class Model:
         self.solutes.append({"data": data, "difw": difw, "difg": difg,
                              "top_conc": top_conc, "bot_conc": bot_conc})
 
-    def add_heat_transport(self, ampl, top_bc, top_temp, bot_bc, bot_temp,
-                           tperiod=1, icampbell=1, snowmelt=0.40):
+    def add_heat_transport(self, parameters, ampl, top_bc, top_temp, bot_bc,
+                           bot_temp, tperiod=1, icampbell=1, snowmelt=0.43):
         """Method to add heat transport to the model.
 
         Parameters
         ----------
+        parameters: pandas.DataFrame
+            DataFrame describing the heat transport material properties. An
+            empty DataFrame may be obtained using ml.get_empty_heat_df().
         ampl: float, optional
             Temperature amplitude at the soil surface [K].
         top_bc: int, optional
@@ -748,10 +750,16 @@ class Model:
             when Chung and Horton [1987] formula is to be used.
         snowmelt: float, optional
             Amount of snow that will melt during one day for each degree
-            Celsius (e.g., 0.40cm default).
+            Celsius (e.g., 0.43cm default).
+
+        Notes
+        -----
+        This method provides all the information necessary for "Block E -
+        Heat transport information".
 
         """
         if self.heat_transport is None:
+            self.heat_parameters = parameters
             self.heat_transport = {
                 "Ampl": ampl,
                 "tPeriod": tperiod,
@@ -766,7 +774,7 @@ class Model:
         else:
             raise Warning("Heat transport model already exists. Please "
                           "delete the old heat transport model first using "
-                          "ml.del_solute_transport().")
+                          "ml.del_heat_transport().")
 
     def add_time_info(self, tinit=0, tmax=1, dt=0.01, dtmin=1e-5, dtmax=5,
                       print_times=False, printinit=None, printmax=None,
@@ -796,9 +804,9 @@ class Model:
             print-time (printinit) and the final specified 
             print-time (printmax)".
         from_atmo: boolean, optional.
-            Set to True. If time information is determined based oon the 
-            atmospheric boundary condition input.
-        dt: int, optional
+            Set to True if time information is determined from the
+            atmospheric boundary condition input data.
+        dt: float, optional
             Initial time increment [T].
         dtmin: int, optional 
             Minimum permitted time increment [T].        
