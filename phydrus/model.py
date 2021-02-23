@@ -20,10 +20,15 @@ class Model:
     def __init__(self, exe_name, ws_name, name="model", description=None,
                  length_unit="cm", time_unit="days", mass_units="mmol",
                  print_screen=False):
-        """Basic Hydrus model container.
+        """Basic Phydrus model container.
 
         Parameters
         ----------
+        exe_name: str
+            String with the path to the Hydrus-1D executable.
+        ws_name: str
+            String with the workspace name. Folder is created if it does not
+            exist.
         name: str, optional
             String with the name of the model.
         description: str, optional
@@ -416,7 +421,7 @@ class Model:
 
     def add_root_uptake(self, model=0, crootmax=0, omegac=0.5, p0=-10,
                         p2h=-200, p2l=-800, p3=-8000, r2h=0.5, r2l=0.1,
-                        poptm=None):
+                        poptm=None, p50=-800, pexp=3, lsolred=False):
         """Method to add rootwater update modeule to the model.
 
         Parameters
@@ -455,17 +460,25 @@ class Model:
             Value of the pressure head, h2, below which roots start to extract
             water at the maximum possible rate. The length of poptm should
             equal the No. of materials.
+        p50: float, optioal
+            Only used if model=1. Value of the pressure head, h50, at which
+            the root water uptake is reduced by 50%. Default is -800cm.
+        pexp: float, optional
+            Only used if model=1. Exponent, p, in the S-shaped root water
+            uptake stress response function. Default value is 3.
+        lsolred: bool, optional
+            Set to True if root water uptake is reduced due to salinity.
+            NOT IMPLEMENTED YET.
 
         """
-        if model == 1:
-            raise NotImplementedError("Sorry, the S-shaped model has not been "
-                                      "implemented yet!")
-
-            # Number of pressure heads should equal the number of materials.
+        # Number of pressure heads should equal the number of materials.
         if poptm:
             if len(poptm) != self.n_materials:
                 raise Warning("Length of pressure heads poptm does not "
                               "equal the number of materials!")
+        if lsolred:
+            raise Warning("Reduced water uptake due to salinity is not "
+                          "implemented yet..")
 
         if self.root_uptake is None:
             self.root_uptake = {
@@ -473,13 +486,18 @@ class Model:
                 "cRootMax": crootmax,
                 "OmegaC": omegac,
                 "POptm": poptm,
-                "P0": p0,
-                "P2H": p2h,
-                "P2L": p2l,
-                "P3": p3,
-                "r2H": r2h,
-                "r2L": r2l,
             }
+            if model == 0:
+                self.root_uptake["P0"] = p0,
+                self.root_uptake["P2H"] = p2h,
+                self.root_uptake["P2L"] = p2l,
+                self.root_uptake["P3"] = p3,
+                self.root_uptake["r2H"] = r2h,
+                self.root_uptake["r2L"] = r2l,
+            elif model == 1:
+                self.root_uptake["P50"] = p50
+                self.root_uptake["P3"] = pexp
+
             self.basic_info["lSink"] = True
         else:
             msg = "Root water uptake model is already present in the model." \
@@ -542,18 +560,18 @@ class Model:
         """
 
         # Store the root growth information depending on the model.
-        if irootin is 0:
+        if irootin == 0:
             root_growth = {
                 "iRootIn": irootin
             }
-        elif irootin is 1:
+        elif irootin == 1:
             root_growth = {
                 "iRootIn": irootin,
                 "nGrowht": ngrowth,
                 "tGrwoth": tgrowth,
                 "RootDepth": rootdepth
             }
-        elif irootin is 2:
+        elif irootin == 2:
             root_growth = {
                 "iRootIn": irootin,
                 "iRFak": irfak,
@@ -565,7 +583,7 @@ class Model:
                 "xRMax": xrmax,
                 "tRPeriod": trperiod
             }
-            if irfak is 1:
+            if irfak == 1:
                 root_growth["tRMed"] = 0
                 root_growth["xRMed"] = 0
         else:
@@ -1117,9 +1135,11 @@ class Model:
                                        "*", "<", 72))
             vars_list = [["iMoSink", "cRootMax", "OmegaC", "\n"]]
 
-            if self.root_uptake["iMoSink"] is 0:
+            if self.root_uptake["iMoSink"] == 0:
                 vars_list.append(
                     ["P0", "P2H", "P2L", "P3", "r2H", "r2L", "\n"])
+            elif self.root_uptake["iMoSink"] == 1:
+                vars_list.append(["P50", "P3", "\n"])
 
             for variables in vars_list:
                 lines.append(" ".join(variables))
