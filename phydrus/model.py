@@ -488,12 +488,12 @@ class Model:
                 "POptm": poptm,
             }
             if model == 0:
-                self.root_uptake["P0"] = p0,
-                self.root_uptake["P2H"] = p2h,
-                self.root_uptake["P2L"] = p2l,
-                self.root_uptake["P3"] = p3,
-                self.root_uptake["r2H"] = r2h,
-                self.root_uptake["r2L"] = r2l,
+                self.root_uptake["P0"] = p0
+                self.root_uptake["P2H"] = p2h
+                self.root_uptake["P2L"] = p2l
+                self.root_uptake["P3"] = p3
+                self.root_uptake["r2H"] = r2h
+                self.root_uptake["r2L"] = r2l
             elif model == 1:
                 self.root_uptake["P50"] = p50
                 self.root_uptake["P3"] = pexp
