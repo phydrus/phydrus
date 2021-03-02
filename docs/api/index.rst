@@ -8,13 +8,18 @@ left-hand menu you will find the different categories of the API documentation.
 .. currentmodule:: phydrus
 
 .. autosummary::
-    :toctree: .
+    :toctree: ./generated
+    :nosignatures:
+    :recursive:
 
-    phydrus.model
-    phydrus.read
-    phydrus.profile
-
+    model.Model
+    read
+    profile
+    plot.Plots
 
 .. toctree::
-    :maxdepth: 5
+    :hidden:
+    :maxdepth: 4
+    :glob:
 
+    ./*

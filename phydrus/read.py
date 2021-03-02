@@ -8,7 +8,7 @@ from .decorators import check_file_path
 
 
 def read_profile(path="PROFILE.OUT"):
-    """
+    """Methpd to read the PROFILE.OUT output file.
 
     Parameters
     ----------
@@ -301,7 +301,7 @@ def read_nod_inf(path="NOD_INF.OUT", times=None):
                                          nrows=e - s - 2)
                 data[time] = data[time].drop([0])
                 data[time] = data[time].apply(pd.to_numeric)
-    if len(data) is 1:
+    if len(data) == 1:
         return next(iter(data.values()))
     else:
         return data

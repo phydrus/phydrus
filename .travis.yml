@@ -3,7 +3,6 @@ language: python
 
 env:
   global:
-    #- DEPENDS="cython>=0.19"
     - NO_NET=1
 
 git:
@@ -23,6 +22,18 @@ matrix:
       sudo: true
       services:
         - xvfb
+    - python: 3.8
+      dist: xenial
+      sudo: true
+      services:
+        - xvfb
+    - python: 3.9
+      dist: xenial
+      sudo: true
+      services:
+        - xvfb
+allow_failures:
+  - python: 3.9
 
 # Install dependencies
 install:

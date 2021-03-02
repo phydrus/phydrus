@@ -1,5 +1,4 @@
-"""
-This file contains the model class.
+"""This file contains the model class.
 
 """
 
@@ -17,35 +16,36 @@ from .version import __version__
 
 
 class Model:
+    """Basic Phydrus model container.
+
+    Parameters
+    ----------
+    exe_name: str
+        String with the path to the Hydrus-1D executable.
+    ws_name: str
+        String with the workspace name. Folder is created if it does not
+        exist.
+    name: str, optional
+        String with the name of the model.
+    description: str, optional
+        String with the description of the model.
+    length_unit: str, optional
+        length units to use in the simulation. Options are "mm", "cm",
+        and "m". Defaults to "cm".
+    time_unit: str, optional
+        time unit to use in the simulation, options are "seconds",
+        "minutes", "hours", "days, "years". Defaults to "days".
+    mass_units: str, optional
+        Mass units to use in the simulation, Options are "mmol".
+        Defaults to "mmol". Only used when transport process is added.
+    print_screen: bool, optional
+        Print the results to the screen during code execution.
+
+    """
+
     def __init__(self, exe_name, ws_name, name="model", description=None,
                  length_unit="cm", time_unit="days", mass_units="mmol",
                  print_screen=False):
-        """Basic Phydrus model container.
-
-        Parameters
-        ----------
-        exe_name: str
-            String with the path to the Hydrus-1D executable.
-        ws_name: str
-            String with the workspace name. Folder is created if it does not
-            exist.
-        name: str, optional
-            String with the name of the model.
-        description: str, optional
-            String with the description of the model.
-        length_unit: str, optional
-            length units to use in the simulation. Options are "mm", "cm",
-            and "m". Defaults to "cm".
-        time_unit: str, optional
-            time unit to use in the simulation, options are "seconds",
-            "minutes", "hours", "days, "years". Defaults to "days".
-        mass_units: str, optional
-            Mass units to use in the simulation, Options are "mmol".
-            Defaults to "mmol". Only used when transport process is added.
-        print_screen: bool, optional
-            Print the results to the screen during code execution.
-
-        """
         # Store the hydrus executable and the project workspace
         if not os.path.exists(exe_name):
             raise Warning("Path to the Hydrus-1D executable seems incorrect, "
@@ -151,9 +151,9 @@ class Model:
 
         Examples
         --------
-        m = pd.DataFrame({1: [0.08, 0.3421, 0.03, 5, 1, -0.5]}, index=[1],
-                         columns=["thr", "ths", "Alfa", "n" "Ks", "l"])
-        ml.add_material(m)
+        >>> m = pd.DataFrame({1: [0.08, 0.3421, 0.03, 5, 1, -0.5]}, index=[1],
+                             columns=["thr", "ths", "Alfa", "n" "Ks", "l"])
+        >>> ml.add_material(m)
 
         """
         if material.columns.size != \
@@ -764,7 +764,7 @@ class Model:
             day, default) [T].
         icampbell: int, optional
             Set equal to 1 if Campbell [1985] formula is to be used to
-            calculate the thermal conductivity (Default_. Set equal to 0,
+            calculate the thermal conductivity (Default). Set equal to 0,
             when Chung and Horton [1987] formula is to be used.
         snowmelt: float, optional
             Amount of snow that will melt during one day for each degree
