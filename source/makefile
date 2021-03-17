@@ -12,8 +12,7 @@ endif
 # Set the files and objects
 objects = HYDRUS.o INPUT.o HYSTER.o MATERIAL.o OUTPUT.o SINK.o SOLUTE.o TEMPER.o TIME.o WATFLOW.o
 files = HYDRUS.FOR INPUT.FOR HYSTER.FOR MATERIAL.FOR OUTPUT.FOR SINK.FOR SOLUTE.FOR TEMPER.FOR TIME.FOR WATFLOW.FOR
-FFLAGS = -g -ffpe-trap=zero,overflow,underflow
-
+FFLAGS = -g -ffpe-summary=none
 # Compile to a unix executable
 hydrus:
 	$(CC) $(FFLAGS) -c $(files)
