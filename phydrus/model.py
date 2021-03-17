@@ -83,7 +83,7 @@ class Model:
 
         self.basic_info = {
             "iVer": "4",
-            "Hed": "Created with Pydrus version {}".format(__version__),
+            "Hed": f"Created with Pydrus version {__version__}",
             "LUnit": length_unit,
             "TUnit": time_unit,
             "MUnit": mass_units,
@@ -163,7 +163,6 @@ class Model:
                             "model. Please check the number of parameters.")
         else:
             self.materials = material
-        return self.materials
 
     def add_drains(self):
         """Method to add a drain to the model.
@@ -808,8 +807,8 @@ class Model:
             Final time of the simulation [T].
         print_times: boolean, optional
             Set to True. if information of pressure head, water contents,
-            temperatures, and concentrations in observation nodes, and 
-            the water and solute fluxes is to be printed at a constant 
+            temperatures, and concentrations in observation nodes, and
+            the water and solute fluxes is to be printed at a constant
             time interval of 1 time unit.
         printinit: int, optional
             First specified print-time [T].
@@ -818,16 +817,16 @@ class Model:
         dtprint: int, optional
             Specified time increment for print times [T].
         nsteps: str, optional
-            Number of required time steps between the first specified 
-            print-time (printinit) and the final specified 
+            Number of required time steps between the first specified
+            print-time (printinit) and the final specified
             print-time (printmax)".
         from_atmo: boolean, optional.
             Set to True if time information is determined from the
             atmospheric boundary condition input data.
         dt: float, optional
             Initial time increment [T].
-        dtmin: int, optional 
-            Minimum permitted time increment [T].        
+        dtmin: int, optional
+            Minimum permitted time increment [T].
         dtmax: int, optional
             Maximum permittedtime increment [T].
         print_array: array of float, optional
@@ -835,30 +834,13 @@ class Model:
 
         """
 
-        self.time_info = {
-            "dt": 0.01,
-            "dtMin": 1e-5,
-            "dtMax": 5,
-            "dMul": 1.3,
-            "dMul2": 0.7,
-            "ItMin": 3,
-            "ItMax": 7,
-            "MPL": None,  # Calculate automatically
-            "tInit": 0.1,
-            "tMax": 1,
-            "lPrint": print_times,
-            "nPrintSteps": 1,
-            "tPrintInterval": 1,
-            "lEnter": False,  # This should not be changed!
-            "TPrint(1)": None,
-            "TPrint(MPL)": None,
-        }
+        self.time_info = {"dt": dt, "dtMin": dtmin, "dtMax": dtmax,
+                          "dMul": 1.3, "dMul2": 0.7, "ItMin": 3, "ItMax": 7,
+                          "MPL": None, "tInit": tinit, "tMax": tmax,
+                          "lPrint": print_times, "nPrintSteps": 1,
+                          "tPrintInterval": 1, "lEnter": False,
+                          "TPrint(1)": None, "TPrint(MPL)": None}
 
-        self.time_info["tInit"] = tinit
-        self.time_info["tMax"] = tmax
-        self.time_info["dt"] = dt
-        self.time_info["dtMax"] = dtmax
-        self.time_info["dtMin"] = dtmin
         if print_array is not None:
             self.time_info["MPL"] = len(print_array)
             self.times = print_array
@@ -909,6 +891,7 @@ class Model:
         """Method to write the input files for the HYDRUS-1D simulation."""
         # 1. Write SELECTOR.IN
         self.write_selector(verbose=verbose)
+
         # 2. Write PROFILE.DAT
         self.write_profile(verbose=verbose)
 
@@ -933,17 +916,11 @@ class Model:
 
         # Write block A: BASIC INFORMATION
         lines = [
-            "Pcp_File_Version={}\n"
-            "{}{}\n"
-            "{}\n"
-            "LUnit TUnit MUnit\n"
-            "{}\n"
-            "{}\n"
-            "{}\n".format(self.basic_info["iVer"],
-                          string.format("A: BASIC INFORMATION ", "*", "<", 72),
-                          self.basic_info["Hed"], self.description,
-                          self.basic_info["LUnit"], self.basic_info["TUnit"],
-                          self.basic_info["MUnit"])
+            f"Pcp_File_Version={self.basic_info['iVer']}\n"
+            f"{string.format('A: BASIC INFORMATION ', '*', '<', 72)}"
+            f"{self.basic_info['Hed']}\n{self.description}\n"
+            f"LUnit TUnit MUnit\n{self.basic_info['LUnit']}\n"
+            f"{self.basic_info['TUnit']}\n{self.basic_info['MUnit']}\n"
         ]
 
         vars_list = [["lWat", "lChem", "lTemp", "lSink", "lRoot", "lShort",
@@ -958,9 +935,8 @@ class Model:
                                    var in variables[:-1]))
             lines.append("\n")
 
-        lines.append("NMat NLay CosAlfa \n"
-                     "{} {} {}\n".format(self.n_materials, self.n_layers,
-                                         self.basic_info["CosAlfa"]))
+        lines.append(f"NMat NLay CosAlfa \n{self.n_materials}"
+                     f" {self.n_layers} {self.basic_info['CosAlfa']}\n")
 
         # Write block B: WATER FLOW INFORMATION
         lines.append(string.format("B: WATER FLOW INFORMATION ", "*", "<", 72))
@@ -1007,7 +983,7 @@ class Model:
                 elif val is False:
                     values.append("f")
                 else:
-                    values.append(str(val))
+                    values.append(f"{val}")
             values.append("\n")
             lines.append("     ".join(values))
 
@@ -1048,13 +1024,12 @@ class Model:
         if self.basic_info["lRoot"]:
             lines.append(
                 string.format("D: ROOT GROWTH INFORMATION ", "*", "<", 72))
-            lines.append("iRootDepthEntry\n{}\n".format(self.root_growth[
-                                                            "iRootIn"]))
+            lines.append(f"iRootDepthEntry\n{self.root_growth['iRootIn']}\n")
             d = self.root_growth.copy()
             d.pop("iRootIn")
             d["\n"] = "\n"
             lines.append("    ".join(d.keys()))
-            lines.append("    ".join(str(p) for p in d.values()))
+            lines.append("    ".join(f"{p}" for p in d.values()))
 
         # Write Block E - Heat transport information
         if self.basic_info["lTemp"]:
@@ -1111,19 +1086,17 @@ class Model:
             lines.append("\n")
 
             for sol in self.solutes:
-                lines.append(
-                    "DifW DifG\n{} {}\n{}\n".format(
-                        sol["difw"],
-                        sol["difg"],
-                        sol["data"].to_string(index=False)))
+                lines.append(f"DifW DifG\n{sol['difw']} {sol['difg']}\n"
+                             f"{sol['data'].to_string(index=False)}\n")
 
-            lines.append("kTopSolute SolTop kBotSolute SolBot\n{} {} {} {}\n"
+            lines.append("kTopSolute SolTop kBotSolute SolBot\n"
+                         "{} {} {} {}\n"
                          "tPulse\n{}\n".format(self.solute_transport["kTopCh"],
-                                               " ".join([str(s["top_conc"])
+                                               " ".join([f"{s['top_conc']}"
                                                          for s in
                                                          self.solutes]),
                                                self.solute_transport["kBotCh"],
-                                               " ".join([str(s["bot_conc"])
+                                               " ".join([f"{s['bot_conc']}"
                                                          for s in
                                                          self.solutes]),
                                                self.solute_transport["tPulse"]
@@ -1143,12 +1116,12 @@ class Model:
 
             for variables in vars_list:
                 lines.append(" ".join(variables))
-                lines.append("    ".join(str(self.root_uptake[var]) for var in
+                lines.append("    ".join(f"{self.root_uptake[var]}" for var in
                                          variables[:-1]))
                 lines.append("\n")
 
             lines.append("POptm(1),POptm(2),...,POptm(NMat)\n")
-            lines.append("    ".join(str(p) for p in self.root_uptake[
+            lines.append("    ".join(f"{p}" for p in self.root_uptake[
                 "POptm"]))
             lines.append("\n")
 
@@ -1184,15 +1157,13 @@ class Model:
 
         """
         # 1 Write Header information
-        lines = ["Pcp_File_Version={}\n".format(
-            self.basic_info["iVer"]),
-            "*** BLOCK I: ATMOSPHERIC INFORMATION  "
-            "**********************************\nMaxAL "
-            "(MaxAL = number of atmospheric data-records)\n"]
+        lines = [f"Pcp_File_Version={self.basic_info['iVer']}\n",
+                 f"*** BLOCK I: ATMOSPHERIC INFORMATION  "
+                 f"**********************************\nMaxAL "
+                 f"(MaxAL = number of atmospheric data-records)\n",
+                 f"{self.atmosphere.index.size}\n"]
 
         # Print some values
-        lines.append("{}\n".format(self.atmosphere.index.size))
-
         vars5 = ["lDailyVar", "lSinusVar", "lLai", "lBCCycles", "lInterc",
                  "\n"]
 
@@ -1209,8 +1180,8 @@ class Model:
                     vals.append(str(val))
         lines.append(" ".join(vals))
 
-        lines.append("\nhCritS (max. allowed pressure head at the soil "
-                     "surface)\n{}\n".format(self.atmosphere_info["hCritS"]))
+        lines.append(f"\nhCritS (max. allowed pressure head at the soil "
+                     f"surface)\n{self.atmosphere_info['hCritS']}\n")
 
         lines.append(self.atmosphere.to_string(index=False))
         lines.append("\nend*** END OF INPUT FILE ATMOSPH.IN "
@@ -1220,33 +1191,31 @@ class Model:
         with open(fname, "w") as file:
             file.writelines(lines)
         if not verbose:
-            print("Successfully wrote {}".format(fname))
+            print(f"Successfully wrote {fname}")
 
     def write_profile(self, fname="PROFILE.DAT", verbose=True):
         """Method to write the profile.dat file.
 
         """
-        # 1 Write Header information
-        lines = ["Pcp_File_Version={}\n"
-                 "0\n"
-                 "{} {} {} {}".format(self.basic_info["iVer"],
-                                      self.profile.index.size,
-                                      self.n_solutes,
-                                      1 if self.basic_info["lChem"] else 0,
-                                      1 if self.basic_info["lChem"] else 0),
-                 # 2. Write the profile data
-                 self.profile.to_string(),
-                 # 3. Write observation points
-                 "\n{}\n".format(len(self.obs_nodes)),
-                 "".join(["   {}".format(i) for i in self.obs_nodes])]
-
         # Write the actual file
         fname = os.path.join(self.ws_name, fname)
         with open(fname, "w") as file:
-            file.writelines(lines)
+            # 1 Write Header information
+            file.writelines(
+                [f"Pcp_File_Version={self.basic_info['iVer']}\n0\n"
+                 f"{self.profile.index.size} {self.n_solutes}"
+                 f" {1 if self.basic_info['lChem'] else 0}"
+                 f" {1 if self.basic_info['lChem'] else 0}"])
+
+            # 2. Write the profile data
+            self.profile.to_string(file)
+
+            file.writelines(
+                [f"\n{len(self.obs_nodes)}\n",
+                 "".join(["   {}".format(i) for i in self.obs_nodes])])
 
         if not verbose:
-            print("Successfully wrote {}".format(fname))
+            print(f"Successfully wrote {fname}")
 
     def write_fit(self, fname="FIT.IN", verbose=True):
         raise NotImplementedError
@@ -1279,24 +1248,23 @@ class Model:
     def read_balance(self, fname="BALANCE.OUT", usecols=None):
         path = os.path.join(self.ws_name, fname)
         if not os.path.exists(path):
-            raise FileNotFoundError(
-                "File {} has not been found.".format(path))
+            raise FileNotFoundError(f"File {path} has not been found.")
 
         if usecols is None:
             usecols = ["Area", "W-volume", "In-flow", "h Mean", "Top Flux",
                        "Bot Flux", "WatBalT", "WatBalR"]
             if self.solute_transport is not None:
-                usecols.append("ConcVol", "ConcVolIm", "cMean", "CncBalT",
-                               "CncBalR")
+                usecols += ["ConcVol", "ConcVolIm", "cMean", "CncBalT",
+                            "CncBalR"]
 
             if self.heat_transport is not None:
-                usecols.append("TVol", "TMean")
+                usecols += ["TVol", "TMean"]
 
             if self.CO2Transport is not None:
-                usecols.append("COVol", "COMean", "CO2BalT", "CncBalT")
+                usecols += ["COVol", "COMean", "CO2BalT", "CncBalT"]
 
             if self.water_flow["iModel"] in [5, 6, 7]:
-                usecols.append("W-VolumeI", "cMeanIm")
+                usecols += ["W-VolumeI", "cMeanIm"]
 
         data = read_balance(path=path, usecols=usecols)
 
@@ -1325,7 +1293,7 @@ class Model:
             usecols = ["Time", "rTop", "rRoot", "vTop", "vRoot", "vBot",
                        "sum(rTop)", "sum(rRoot)", "sum(vTop)", "sum(vRoot)",
                        "sum(vBot)", "hTop", "hRoot", "hBot", "RunOff",
-                       "Volume", ]
+                       "Volume"]
 
             if self.water_flow["iModel"] > 4:
                 usecols.append("Cum(WTrans)")
@@ -1400,14 +1368,15 @@ class Model:
         columns = pd.MultiIndex.from_arrays([level1, level2])
 
         return DataFrame(columns=columns, index=np.arange(1, n + 1),
-                         data=0)
+                         data=0, dtype=float)
 
     def get_empty_heat_df(self):
         """Returns an empty DataFrame to fill in the heat parameters.
 
         """
         columns = ["thn", "tho", "lambda", "b1", "b2", "b3", "Cn", "C0", "Cw"]
-        return DataFrame(columns=columns, index=self.materials.index)
+        return DataFrame(columns=columns, index=self.materials.index,
+                         dtype=float)
 
     def get_empty_solute_df(self):
         """Returns an empty DataFrame with the solute parameters as columns.
@@ -1431,7 +1400,7 @@ class Model:
         }
 
         df = DataFrame(columns=models[self.solute_transport["iNonEqual"]],
-                       index=self.materials.index, data=0)
+                       index=self.materials.index, data=0, dtype=float)
         return df
 
     def _set_bc_settings(self):
