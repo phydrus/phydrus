@@ -230,25 +230,21 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False):
                 end = i
                 break
 
-        for i, node in enumerate(nodes):
-            file.seek(0)
-            if i == 0:
-                usecols = ["time", "h", "theta", "Temp"]
-                if conc:
-                    usecols.append("Conc")
-            else:
-                usecols = ["time", "h." + str(i), "theta." + str(i),
-                           "Temp." + str(i)]
-                if conc:
-                    usecols.append("Conc." + str(i))
-            df = pd.read_csv(file, skiprows=start, index_col=0,
-                             skipinitialspace=True, delim_whitespace=True,
-                             nrows=end - start - 1, usecols=usecols)
-            if conc:
-                df.columns = ["h", "theta", "Temp", "Conc"]
-            else:
-                df.columns = ["h", "theta", "Temp"]
-            data[node] = df
+    df1 = pd.read_csv(path, skiprows=start, index_col=0, nrows=end - start - 1,
+                      skipinitialspace=True, delim_whitespace=True, engine="c")
+    cols = ["h", "theta", "Temp"]
+    if conc:
+        cols.append("Conc")
+
+    for i, node in enumerate(nodes):
+        if i > 0:
+            usecols = [f"{c}.{i}" for c in cols]
+        else:
+            usecols = cols
+
+        df = df1.loc[:, usecols]
+        df.columns = cols
+        data[node] = df
 
     return data
 
