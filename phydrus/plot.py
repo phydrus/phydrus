@@ -1,5 +1,14 @@
+"""The Plots class contains all the plot methods that are available for a
+Phydrus Model.
+
+Examples
+--------
+
+>>> ml.plots.profile()
+
+"""
+
 import matplotlib.pyplot as plt
-from matplotlib import cm
 
 
 class Plots:
@@ -7,7 +16,7 @@ class Plots:
         self.ml = ml
 
     def profile(self, figsize=(3, 6), title="Soil Profile", cmap="YlOrBr",
-                color_by="Ks", **kwargs):
+                color_by="Ks", show_grid=True, **kwargs):
         """Method to plot the soil profile.
 
         Parameters
@@ -19,6 +28,8 @@ class Plots:
         color_by: str, optional
             Column from the material properties sed to color the materials.
             Default is "Ks".
+        show_grid: bool, optional
+            Show the grid in the plot. Default is True.
 
         Returns
         -------
@@ -34,14 +45,19 @@ class Plots:
         # Set colors by color_by
         col = self.ml.materials["water"][color_by]
         col = (col - col.min()) / (col.max() - col.min())
-        colors = cm.get_cmap(cmap, 7)(col.values)
+        colors = plt.cm.get_cmap(cmap, 7)(col.values)
+
+        if show_grid:
+            edgecolor = "darkgray"
+        else:
+            edgecolor = None
 
         for i in self.ml.profile.index[1:]:
             bot = self.ml.profile.loc[i, "x"]
             h = bot - top
             color = colors[self.ml.profile.loc[i, "Mat"] - 1]
             patch = plt.Rectangle(xy=(0, top), width=w, height=h, linewidth=1,
-                                  edgecolor="darkgray", facecolor=color)
+                                  edgecolor=edgecolor, facecolor=color)
             ax.add_patch(patch)
             top = bot
 
@@ -59,8 +75,7 @@ class Plots:
         legend_elements = [line[0]]
         for i, color in enumerate(colors):
             legend_elements.append(plt.Rectangle((0, 0), 0, 0, color=color,
-                                                 label="material {}".format(i))
-                                   )
+                                                 label=f"material {i}"))
 
         plt.legend(handles=legend_elements, loc="best")
         plt.tight_layout()
@@ -76,8 +91,7 @@ class Plots:
             String with the variable of the profile information to plot. 
             You can choose between: "Pressure Head", "Water Content", 
             "Hydraulic Conductivity","Hydraulic Capacity", "Water Flux", 
-            "Root Uptake", "Temperature".
-            Default is "Pressure Head".
+            "Root Uptake", "Temperature". Default is "Pressure Head".
         times: list of int
             List of integers of the time step to plot.       
         figsize: tuple, optional
@@ -224,8 +238,7 @@ class Plots:
         return axes
 
     def obs_points(self, data="h", figsize=(4, 3), **kwargs):
-        """Method to plot the pressure heads, water contents and water fluxes
-        at selected observation nodes.
+        """Method to plot the pressure heads, water contents and water fluxes.
 
         Parameters
         ----------

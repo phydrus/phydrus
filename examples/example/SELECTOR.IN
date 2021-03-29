@@ -1,0 +1,65 @@
+Pcp_File_Version=4
+*** BLOCK A: BASIC INFORMATION ***************************************************
+Created with Pydrus version 0.1.0
+Infiltration and drainage in a large caisson
+LUnit TUnit MUnit
+cm
+min
+mmol
+lWat  lChem  lTemp  lSink  lRoot  lShort  lWDep  lScreen  AtmInf  lEquil  lInverse  
+t  f  f  f  f  t  f  f  f  t  f
+lSnow  lHP1  lMeteo  lVapor  lActRSU  lFlux  lIrrig  
+f  f  f  f  f  f  f
+NMat NLay CosAlfa 
+2 1 1
+*** BLOCK B: WATER FLOW INFORMATION **********************************************
+MaxIt  TolTh  TolH   (maximum number of iterations and tolerances)
+10   0.001   1
+TopInf  WLayer  KodTop  lInitW  
+f     f     -1     f     
+BotInf  qGWLF  FreeD  SeepF  KodBot  qDrain  hSeep  
+f     f     f     f     1     f     0     
+rTop  rBot  rRoot  
+0     0     0     
+ha  hb  
+1e-06     10000.0     
+iModel  iHyst  
+0     0     
+ thr    ths  Alfa   n  Ks    l
+0.08 0.3421  0.03 5.0 1.0 -0.5
+0.08 0.3421  0.03 5.0 0.1 -0.5
+*** BLOCK C: TIME INFORMATION ****************************************************
+dt dtMin dtMax dMul dMul2 ItMin ItMax MPL 
+0.1 1e-05 0.5 1.3 0.7 3 7 153 
+tInit tMax 
+90 273 
+lPrint nPrintSteps tPrintInterval lEnter 
+t 1 1 f 
+TPrint(1),TPrint(2),...,TPrint(MPL)
+120 121 122 123 124 125
+126 127 128 129 130 131
+132 133 134 135 136 137
+138 139 140 141 142 143
+144 145 146 147 148 149
+150 151 152 153 154 155
+156 157 158 159 160 161
+162 163 164 165 166 167
+168 169 170 171 172 173
+174 175 176 177 178 179
+180 181 182 183 184 185
+186 187 188 189 190 191
+192 193 194 195 196 197
+198 199 200 201 202 203
+204 205 206 207 208 209
+210 211 212 213 214 215
+216 217 218 219 220 221
+222 223 224 225 226 227
+228 229 230 231 232 233
+234 235 236 237 238 239
+240 241 242 243 244 245
+246 247 248 249 250 251
+252 253 254 255 256 257
+258 259 260 261 262 263
+264 265 266 267 268 269
+270 271 272
+*** BLOCK END OF INPUT FILE SELECTOR.IN ******************************************

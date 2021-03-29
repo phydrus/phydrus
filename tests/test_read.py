@@ -21,9 +21,9 @@ def test_read_obs_node():
     return
 
 
-# def test_read_i_check():
-#     ps.read_i_check(path="test_data/I_CHECK.OUT")
-#     return
+def test_read_i_check():
+    ps.read_i_check(path="test_data/I_CHECK.OUT")
+    return
 
 
 def test_read_tlevel():
@@ -36,9 +36,9 @@ def test_read_alevel():
     return
 
 
-# def test_read_balance():
-#     ps.read_balance(path="test_data/BALANCE.OUT")
-#     return
+def test_read_balance():
+    ps.read_balance(path="test_data/BALANCE.OUT")
+    return
 
 
 def test_read_solute():
