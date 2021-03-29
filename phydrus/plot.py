@@ -76,7 +76,7 @@ class Plots:
             String with the variable of the profile information to plot. 
             You can choose between: "Pressure Head", "Water Content", 
             "Hydraulic Conductivity","Hydraulic Capacity", "Water Flux", 
-            "Root Uptake".
+            "Root Uptake", "Temperature".
             Default is "Pressure Head".
         times: list of int
             List of integers of the time step to plot.       
@@ -92,15 +92,15 @@ class Plots:
         t_unit = self.ml.basic_info["TUnit"]
         m_unit = self.ml.basic_info["MUnit"]
 
-        use_cols = ("Head", "Moisture", "K", "C", "Flux", "Sink")
+        use_cols = ("Head", "Moisture", "K", "C", "Flux", "Sink", "Temp")
         col_names = ("Pressure Head", "Water Content",
                      "Hydraulic Conductivity", "Hydraulic Capacity",
-                     "Water Flux", "Root Uptake")
+                     "Water Flux", "Root Uptake", "Temperature")
         units = ["h [{}]".format(l_unit),
                  "Theta [-]", "K [{}/days]".format(l_unit),
                  "C [1/{}]".format(l_unit),
                  "v [{}/{}]".format(l_unit, t_unit),
-                 "S [1/{}]".format(t_unit)]
+                 "S [1/{}]".format(t_unit), "T [°C]"]
 
         if self.ml.basic_info["lChem"]:
             use_cols = use_cols + ("Conc(1..NS)", "Sorb(1...NS)")
@@ -223,7 +223,7 @@ class Plots:
 
         return axes
 
-    def obs_points(self, data="Pressure Head", figsize=(4, 3), **kwargs):
+    def obs_points(self, data="h", figsize=(4, 3), **kwargs):
         """Method to plot the pressure heads, water contents and water fluxes
         at selected observation nodes.
 
@@ -231,8 +231,7 @@ class Plots:
         ----------
         data: str, optional
             String with the variable of the variable to plot.
-            You can choose between: "Pressure head", "Water content",
-            "Water flux".
+            You can choose between: "h", "theta", "Temp", "Conc".
         figsize: tuple, optional
 
         Returns
@@ -240,18 +239,13 @@ class Plots:
         axes: matplotlib axes instance
 
         """
-        col_names = ("Pressure Head", "Water Content", "Water Flux",
-                     "Concentration")
-        cols = ("h", "theta", "Temp", "Conc")
-        col = col_names.index(data)
-
         dfs = self.ml.read_obs_node()
 
         _, ax = plt.subplots(figsize=figsize, **kwargs)
         for i, df in dfs.items():
             name = "Node {}".format(i)
-            df.plot(y=cols[col], ax=ax, label=name, use_index=True)
+            df.plot(y=data, ax=ax, label=name, use_index=True)
 
         ax.set_xlabel("Time [{}]".format(self.ml.basic_info["TUnit"]))
-        ax.set_ylabel(cols[col])
+        ax.set_ylabel(data)
         return ax
