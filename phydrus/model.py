@@ -1037,7 +1037,7 @@ class Model:
                                        "*", "<", 72))
             lines.append(self.heat_parameters.to_string(index=False))
             lines.append(
-                "tAmpl tPeriod Campbell SnowMF lDummy lDummy lDummy "
+                "\n tAmpl tPeriod Campbell SnowMF lDummy lDummy lDummy "
                 "lDummy lDummy\n"
                 "{} {} {} {} f f f f f\n"
                 "kTopT TTop kBotT TBot\n"
@@ -1090,17 +1090,22 @@ class Model:
                              f"{sol['data'].to_string(index=False)}\n")
 
             lines.append("kTopSolute SolTop kBotSolute SolBot\n"
-                         "{} {} {} {}\n"
-                         "tPulse\n{}\n".format(self.solute_transport["kTopCh"],
-                                               " ".join([f"{s['top_conc']}"
-                                                         for s in
-                                                         self.solutes]),
-                                               self.solute_transport["kBotCh"],
-                                               " ".join([f"{s['bot_conc']}"
-                                                         for s in
-                                                         self.solutes]),
-                                               self.solute_transport["tPulse"]
-                                               ))
+                         "{} {} {} {}\n".format(
+                self.solute_transport["kTopCh"],
+                " ".join([f"{s['top_conc']}"
+                          for s in
+                          self.solutes]),
+                self.solute_transport["kBotCh"],
+                " ".join([f"{s['bot_conc']}"
+                          for s in
+                          self.solutes])))
+            if self.solute_transport["kTopCh"] == -2:
+                lines.append("dSurf cAtm\n""{} {}\n".format(
+                    self.solute_transport["dSurf"],
+                    self.solute_transport["cAtm"]))
+
+            lines.append("tPulse\n{}\n".format(
+                self.solute_transport["tPulse"]))
 
         # Write Block G - Root water uptake information
         if self.basic_info["lSink"]:
