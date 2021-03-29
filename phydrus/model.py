@@ -5,9 +5,8 @@
 import os
 from subprocess import run
 
-import numpy as np
-import pandas as pd
-from pandas import DataFrame
+from numpy import arange, linspace
+from pandas import DataFrame, DatetimeIndex, MultiIndex
 
 from .plot import Plots
 from .read import read_profile, read_nod_inf, read_run_inf, read_tlevel, \
@@ -78,6 +77,7 @@ class Model:
         self.water_flow = None
         self.solute_transport = None
         self.heat_transport = None
+        self.heat_parameters = None
         self.root_uptake = None
         self.root_growth = None
 
@@ -850,7 +850,7 @@ class Model:
                 raise Warning("Atmospheric information not provided. Please "
                               "provide atmosheric information through: "
                               "ml.add_atmospheric_bc().")
-            if isinstance(self.atmosphere.index, pd.DatetimeIndex):
+            if isinstance(self.atmosphere.index, DatetimeIndex):
                 times = self.atmosphere.index.dayofyear
             else:
                 times = self.atmosphere.index
@@ -864,9 +864,9 @@ class Model:
                 if printmax is None:
                     printmax = tmax
                 if nsteps is None:
-                    times = np.arange(printinit, printmax, step=dtprint)
+                    times = arange(printinit, printmax, step=dtprint)
                 else:
-                    times = np.linspace(printinit, printmax, num=nsteps + 1)
+                    times = linspace(printinit, printmax, num=nsteps + 1)
                 if printinit == tinit:
                     self.times = times[1:]
                 else:
@@ -1270,14 +1270,15 @@ class Model:
 
         return data
 
-    def read_obs_node(self, fname="OBS_NODE.OUT", nodes=None, conc=False):
+    def read_obs_node(self, fname="OBS_NODE.OUT", nodes=None, conc=False,
+                      cols=None):
         path = os.path.join(self.ws_name, fname)
         if self.basic_info["lChem"]:
             conc = True
         if nodes is None:
             nodes = self.obs_nodes
 
-        data = read_obs_node(path=path, nodes=nodes, conc=conc)
+        data = read_obs_node(path=path, nodes=nodes, conc=conc, cols=cols)
         return data
 
     def read_i_check(self, fname="I_CHECK.OUT"):
@@ -1365,9 +1366,9 @@ class Model:
             level1.extend(["solute"] * len(cols2))
             level2.extend(cols2)
 
-        columns = pd.MultiIndex.from_arrays([level1, level2])
+        columns = MultiIndex.from_arrays([level1, level2])
 
-        return DataFrame(columns=columns, index=np.arange(1, n + 1),
+        return DataFrame(columns=columns, index=arange(1, n + 1),
                          data=0, dtype=float)
 
     def get_empty_heat_df(self):
