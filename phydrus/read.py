@@ -1,20 +1,32 @@
 """
+The read module contains methods that can be used to read in- and output
+files from Hydrus-1D models. The methods can be used stand-alone but are
+also available from the Model object. All the methods return the data as
+Pandas DataFrames.
+
+Examples
+--------
+>>> import phydrus as ps
+>>> ps.read.read_obs_node()
+
+or
+
+>>> ml.read_obs_node()
 
 """
 
-import pandas as pd
+from pandas import read_csv, DataFrame, to_numeric
 
 from .decorators import check_file_path
 
 
 def read_profile(path="PROFILE.OUT"):
-    """Methpd to read the PROFILE.OUT output file.
+    """Method to read the PROFILE.OUT output file.
 
     Parameters
     ----------
     path: str, optional
-        String with the name of the profile out file. default is
-        "PROFILE.OUT".
+        String with the name of the profile out file. default is "PROFILE.OUT".
 
     Returns
     -------
@@ -32,12 +44,9 @@ def read_run_inf(path="RUN_INF.OUT", usecols=None):
     Parameters
     ----------
     path: str, optional
-        String with the name of the run_inf out file. default is
-        "RUN_INF.OUT".
+        String with the name of the run_inf out file. default is "RUN_INF.OUT".
     usecols: list of str optional
-        List with the names of the columns to import. By default:
-        "TLevel", "Time", "dt", "Iter", "ItCum",
-        "KodT", "KodB", "Convergency".
+        List with the names of the columns to import. Default is all columns.
 
     Returns
     -------
@@ -45,7 +54,8 @@ def read_run_inf(path="RUN_INF.OUT", usecols=None):
         Pandas with the run_inf data
 
     """
-    data = _read_file(path=path, start="TLevel", idx_col="TLevel")
+    data = _read_file(path=path, start="TLevel", idx_col="TLevel",
+                      usecols=usecols)
     return data
 
 
@@ -56,14 +66,12 @@ def read_i_check(path="I_CHECK.OUT"):
     Parameters
     ----------
     path: str, optional
-        String with the name of the I_Check out file. default is
-        "I_Check.OUT".
+        String with the name of the I_Check out file. default is "I_Check.OUT".
 
     Returns
     -------
     data: dict
-        Dictionary with the node as a key and a Pandas DataFrame as a
-        value.
+        Dictionary with the node as a key and a Pandas DataFrame as a value.
 
     """
     names = ["theta", "h", "log_h", "C", "K", "log_K", "S", "Kv"]
@@ -86,9 +94,9 @@ def read_i_check(path="I_CHECK.OUT"):
 
             # Read data into a Pandas DataFrame
             nrows = e - start - 2
-            data[i] = pd.read_csv(file, skiprows=start + 1, nrows=nrows,
-                                  skipinitialspace=True, delim_whitespace=True,
-                                  names=names, dtype=float)
+            data[i] = read_csv(file, skiprows=start + 1, nrows=nrows,
+                               skipinitialspace=True, delim_whitespace=True,
+                               names=names, dtype=float)
             start = e
         return data
 
@@ -99,8 +107,7 @@ def read_tlevel(path="T_LEVEL.OUT", usecols=None):
     Parameters
     ----------
     path: str, optional
-        String with the name of the t_level out file. default is
-        "T_LEVEL.OUT".
+        String with the name of the t_level out file. default is "T_LEVEL.OUT".
     usecols: list of str optional
         List with the names of the columns to import. By default
         only the real fluxes are imported and not the cumulative
@@ -117,7 +124,7 @@ def read_tlevel(path="T_LEVEL.OUT", usecols=None):
     """
     data = _read_file(path=path, start="rTop", idx_col="Time",
                       remove_first_row=True, usecols=usecols)
-    data = data.set_index(pd.to_numeric(data.index, errors='coerce'))
+    data = data.set_index(to_numeric(data.index, errors='coerce'))
     return data
 
 
@@ -127,8 +134,7 @@ def read_alevel(path="A_LEVEL.OUT", usecols=None):
     Parameters
     ----------
     path: str, optional
-        String with the name of the t_level out file. default is
-        "A_LEVEL.OUT".
+        String with the name of the t_level out file. default is "A_LEVEL.OUT".
     usecols: list of str optional
         List with the names of the columns to import.
 
@@ -144,6 +150,19 @@ def read_alevel(path="A_LEVEL.OUT", usecols=None):
 
 
 def read_solute(path="SOLUTE1.OUT"):
+    """Method to read the SOLUTE.OUT output file.
+
+    Parameters
+    ----------
+    path: str, optional
+        String with the name of the solute out file. default is "SOLUTE1.OUT".
+
+    Returns
+    -------
+    data: pandas.DataFrame
+        Pandas with the a_level data
+
+    """
     data = _read_file(path=path, start="Time", idx_col="Time",
                       remove_first_row=True)
     return data
@@ -163,8 +182,7 @@ def _read_file(path, start, end="end", usecols=None, idx_col=None,
     end: str, optional
         String that determines the end of the data to be imported.
     usecols: list, optional
-        List with the names of the columns to import. Default is all
-        columns.
+        List with the names of the columns to import. Default is all columns.
     idx_col: str, optional
         String with the name used for the index column.
     remove_first_row: bool, optional
@@ -187,37 +205,38 @@ def _read_file(path, start, end="end", usecols=None, idx_col=None,
         file.seek(0)  # Go back to start of file
 
         # Read data into a Pandas DataFrame
-        data = pd.read_csv(file, skiprows=s, nrows=e - s - 2, usecols=usecols,
-                           index_col=idx_col, skipinitialspace=True,
-                           delim_whitespace=True)
+        data = read_csv(file, skiprows=s, nrows=e - s - 2, usecols=usecols,
+                        index_col=idx_col, skipinitialspace=True,
+                        delim_whitespace=True)
 
         if remove_first_row:
-            data = data.drop(index=data.index[0]).apply(pd.to_numeric,
+            data = data.drop(index=data.index[0]).apply(to_numeric,
                                                         errors="ignore")
         else:
-            data = data.apply(pd.to_numeric, errors="ignore")
+            data = data.apply(to_numeric, errors="ignore")
 
     return data
 
 
 @check_file_path
-def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False):
+def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
     """Method to read the OBS_NODE.OUT output file.
 
     Parameters
     ----------
-    nodes
     path: str, optional
         String with the name of the OBS_NODE out file. default is
         "OBS_NODE.OUT".
-    nodes: list of ints
+    nodes: list of ints, optional
+        nodes to imoport
     conc: boolean, optional
+    cols: list of strs, optional
+        List of strings with the columns to read.
 
     Returns
     -------
     data: dict
-        Dictionary with the node as a key and a Pandas DataFrame as a
-        value.
+        Dictionary with the node as a key and a Pandas.DataFrame as a value.
 
     """
     data = {}
@@ -230,9 +249,10 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False):
                 end = i
                 break
 
-    df1 = pd.read_csv(path, skiprows=start, index_col=0, nrows=end - start - 1,
-                      skipinitialspace=True, delim_whitespace=True, engine="c")
-    cols = ["h", "theta", "Temp"]
+    df1 = read_csv(path, skiprows=start, index_col=0, nrows=end - start - 1,
+                   skipinitialspace=True, delim_whitespace=True, engine="c")
+    if cols is None:
+        cols = ["h", "theta", "Temp"]
     if conc:
         cols.append("Conc")
 
@@ -256,18 +276,16 @@ def read_nod_inf(path="NOD_INF.OUT", times=None):
     Parameters
     ----------
     path: str, optional
-        String with the name of the NOD_INF out file. default is
-        "NOD_INF.OUT".
+        String with the name of the NOD_INF out file. default is "NOD_INF.OUT".
     times: int, optional
-        Create a DataFrame with nodal values of the pressure head,
-        the water content, the solution and sorbed concentrations, and
-        temperature, etc, at the time "times". default is None.
+        Create a DataFrame with nodal values of the pressure head, the water
+        content, the solution and sorbed concentrations, and temperature,
+        etc, at the time "times". default is None.
 
     Returns
     -------
     data: dict
-        Dictionary with the time as a key and a Pandas DataFrame as a
-        value.
+        Dictionary with the time as a key and a Pandas DataFrame as a value.
 
     """
     use_times = []
@@ -291,12 +309,12 @@ def read_nod_inf(path="NOD_INF.OUT", times=None):
         for s, e, time in zip(start, end, use_times):
             if time in times:
                 file.seek(0)  # Go back to start of file
-                data[time] = pd.read_csv(file, skiprows=s,
-                                         skipinitialspace=True,
-                                         delim_whitespace=True,
-                                         nrows=e - s - 2)
+                data[time] = read_csv(file, skiprows=s,
+                                      skipinitialspace=True,
+                                      delim_whitespace=True,
+                                      nrows=e - s - 2)
                 data[time] = data[time].drop([0])
-                data[time] = data[time].apply(pd.to_numeric)
+                data[time] = data[time].apply(to_numeric)
     if len(data) == 1:
         return next(iter(data.values()))
     else:
@@ -310,12 +328,11 @@ def read_balance(path="BALANCE.OUT", usecols=None):
     Parameters
     ----------
     path: str, optional
-        String with the name of the run_inf out file. default is
-        "BALANCE.OUT".
+        String with the name of the run_inf out file. default is "BALANCE.OUT".
     usecols: list of str optional
         List with the names of the columns to import. By default:
-        "Area","W-volume","In-flow","h Mean","Top Flux",
-        "Bot Flux","WatBalT","WatBalR".
+        ['Area','W-volume','In-flow','h Mean','Top Flux', 'Bot Flux',
+        'WatBalT','WatBalR'].
 
     Returns
     -------
@@ -352,7 +369,7 @@ def read_balance(path="BALANCE.OUT", usecols=None):
 
     data = {}
     for s, e, time in zip(start, end, use_times):
-        df = pd.DataFrame(lines[s:e]).set_index(0).T
+        df = DataFrame(lines[s:e]).set_index(0).T
         index = {}
         for x in range(int(subreg) + 1):
             index[x + 1] = x
