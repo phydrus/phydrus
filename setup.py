@@ -16,21 +16,21 @@ setup(
     long_description_content_type="text/markdown",
     url='https://github.com/phydrus/phydrus',
     license='GNU General public version 3.0',
-    author='Raoul Collenteur, Giuseppe Brunetti' 'Matevz Vremec',
-    author_email='raoul.collenteur@uni-graz.at, giuseppe.brunetti@boku.ac.at, '
-                 'matevz.vremec@uni-graz.at',
+    author='Raoul Collenteur, Matevz Vremec, Giuseppe Brunetti',
+    author_email='raoul.collenteur@uni-graz.at',
     project_urls={
         'Source': 'https://github.com/phydrus/phydrus',
         'Tracker': 'https://github.com/phydrus/phydrus/issues',
-        'Help': 'https://github.com/phydrus/phydrus/issues'
+        'Help': 'https://github.com/phydrus/phydrus/discussions'
     },
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 3 - Beta',
         'Intended Audience :: Science/Research',
         'Intended Audience :: Other Audience',
         'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Topic :: Scientific/Engineering :: Hydrology',
     ],
     platforms='Windows, Mac OS-X',
