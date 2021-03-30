@@ -1,3 +1,8 @@
+"""The profile module contains utility functions to help create the profile
+DataFrame.
+
+"""
+
 from os import path
 
 from numpy import linspace
@@ -13,17 +18,20 @@ def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,
     top: float, optional
         Top of the soil column.
     bot: float or list of float, optional
-        Bottom of the soil column. If a list is provided, multiple
-        layers are created and other arguments need to be of the same
-        length (e.g. mat).
-    dx: float: optional
+        Bottom of the soil column. If a list is provided, multiple layers are
+        created and other arguments need to be of the same length (e.g. mat).
+    dx: float, optional
         Size of each grid cell. Default 0.1 meter.
+    h: float, optional
+        Initial values of the pressure head.
     lay: int or list of int, optional
-        subregion number (for mass balance calculations).
+        Subregion number (for mass balance calculations).
     mat: int or list of int, optional
         Material number (for heterogeneity).
     beta: float or list of float, optional
-
+        Value of the water uptake distribution, b(x) [L-1], in the soil root
+        zone at node n. Set Beta(n) equal to zero if node n lies outside the
+        root zone.
     ah: float or list of float, optional
         Scaling factor for the pressure head (Axz in profile.dat).
     ak: float or list of float, optional
@@ -31,6 +39,10 @@ def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,
     ath: float or list of float, optional
         Scaling factor the the water content (Dxz in profile.dat).
     temp: float, optional
+        Initial value of the temperature at node n [oC] (do not specify if
+        both lTemp or lChem are equal to .false.; if lTemp=.false. and
+        lChem=.true. then set equal to 0 or any other initial value to be used
+        later for temperature dependent water flow and solute transport).
     conc: float, optional
     sconc: float, optional
 
@@ -63,17 +75,25 @@ def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,
 
 
 def profile_from_file(fname="PROFILE.DAT", ws=None):
-    """Method to read a profile.dat file
+    """Method to create a profile DataFrame from a profile.dat file
 
     Parameters
     ----------
-    fname
-    ws
+    fname: str, optional
+        String with the path to the PROFILE.DAT file.
+    ws: str, optional
+        String with the path to the workspace.
 
     Returns
     -------
-    profile: phydrus.profile.SoilProfile
+    data: pandas.DataFrame
+        Pandas DataFrame with the soil profile data.
 
+    Examples
+    --------
+
+    >>> profile = ps.create_profile(h=0.342)
+    
     """
     fname = path.join(ws, fname)
     path.exists(fname)
