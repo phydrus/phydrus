@@ -31,7 +31,6 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install codacy-coverage
         pip install pytest-cov
-        pip install codecov
         pip install -e .
           
     - name: Lint with flake8
@@ -43,7 +42,7 @@ jobs:
         
     - name: Test with pytest
       run: |
-          py.test ./tests
+          py.test ./tests --cov-report xml:coverage.xml --cov phydrus
           
     - name: Run codacy-coverage-reporter
       uses: codacy/codacy-coverage-reporter-action@master
