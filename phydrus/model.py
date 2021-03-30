@@ -41,6 +41,15 @@ class Model:
     print_screen: bool, optional
         Print the results to the screen during code execution.
 
+    Examples
+    --------
+    >>> import phydrus as ps
+    >>> ws = "example"
+    >>> exe = os.path.join(os.getcwd(), "hydrus")
+
+    >>> ml = ps.Model(exe_name=exe, ws_name=ws, mass_units="mmol",
+    >>>               time_unit="min", length_unit="cm")
+
     """
 
     def __init__(self, exe_name, ws_name, name="model", description=None,
@@ -64,7 +73,7 @@ class Model:
         self.profile = None
         self.materials = None
         self.obs_nodes = []
-        self.solutes = None
+        self.solutes = []
 
         self.atmosphere_info = None
         self.atmosphere = None
@@ -118,10 +127,7 @@ class Model:
 
     @property
     def n_solutes(self):
-        if self.solutes is None:
-            return 0
-        else:
-            return len(self.solutes)
+        return len(self.solutes)
 
     @property
     def n_layers(self):
@@ -180,6 +186,10 @@ class Model:
         >>> m = pd.DataFrame({1: [0.08, 0.3421, 0.03, 5, 1, -0.5]}, index=[1],
                              columns=["thr", "ths", "Alfa", "n" "Ks", "l"])
         >>> ml.add_material(m)
+
+        See Also
+        --------
+        phydrus.Model.get_empty_material_df
 
         """
         if material.columns.size != \
@@ -251,18 +261,18 @@ class Model:
             two successive iterations during a particular time step.
         tolh: float, optional
             Absolute pressure head tolerance for nodes in the saturated part of
-             the flow region [L] (its recommended value is 0.1 cm). TolH
-             represents the maximum desired absolute change in the value of the
-             pressure head, h, between two successive iterations during a
-             particular time step.
+            the flow region [L] (its recommended value is 0.1 cm). TolH
+            represents the maximum desired absolute change in the value of the
+            pressure head, h, between two successive iterations during a
+            particular time step.
         ha: float, optional
             Absolute value of the upper limit [L] of the pressure head interval
             below which a table of hydraulic properties will be generated
             internally for each material.
         hb: float, optional
             Absolute value of the lower limit [L] of the pressure head interval
-             for which a table of hydraulic properties will be generated
-             internally for each material.
+            for which a table of hydraulic properties will be generated
+            internally for each material.
         linitw: bool, optional
             Set to True if the initial condition is given in terms of the
             water content. Set to False if given in terms of pressure head.
@@ -378,15 +388,14 @@ class Model:
                           "the old information first.")
 
     def add_atmospheric_bc(self, atmosphere, ldailyvar=False, lsinusvar=False,
-                           llai=False, lbccycles=False, linterc=False,
-                           rextinct=0.463, hcrits=1e30, tatm=0, prec=0,
-                           rsoil=0, rroot=0, hcrita=1e5, rb=0, hb=0, ht=0,
-                           ttop=0, tbot=0, ampl=0):
+                           llai=False, rextinct=0.463, hcrits=1e30, tatm=0,
+                           prec=0, rsoil=0, rroot=0, hcrita=1e5, rb=0, hb=0,
+                           ht=0, ttop=0, tbot=0, ampl=0):
         """Method to add the atmospheric boundary condition to the model.
 
         Parameters
         ----------
-        atmosphere: Pandas.DataFrame
+        atmosphere: pandas.DataFrame
             Pandas DataFrame with at least the following columns: tAtm,
             Prec, rSoil, rRoot, hCritA, rB, hB, hT, tTop, tBot, and Ampl.
         ldailyvar: bool, optional
@@ -399,16 +408,46 @@ class Model:
             Boolean indicating that potential evapotranspiration is
             to be divided into potential evaporation and potential
             transpiration using eq. (2.75) of the manual.
-        lbccycles: bool, optional
-            ???
-        linterc: bool, optional
-            ???
         rextinct: float, optional
             A constant for the radiation extinction by the canopy
             (rExtinct=0.463) [-]. only used when lLai is True.
         hcrits: float, optional
             Maximum allowed pressure head at the soil surface [L]. Default is
             1e+30.
+        tatm: float, optional
+            Time for which the i-th data record is provided [T].
+        prec: float, optional
+            Precipitation rate [LT-1] (in absolute value).
+        rsoil: float, optional
+            Potential evaporation rate [LT-1] (in absolute value). rSoil(i) is
+            interpreted as KodTop when a time variable Dirichlet or Neumann
+            boundary condition is specified.
+        rroot: float, optional
+            Potential transpiration rate [LT-1] (in absolute value).
+        hcrita: float, optional
+            Absolute value of the minimum allowed pressure head at the soil
+            surface [L].
+        rb: float, optional
+            Bottom flux [LT-1] (set equal to 0 if KodBot is positive, or if
+            one of the logical variables qGWLF, FreeD or SeepF is .true.).
+        hb: float, optional
+            Groundwater level [L], or any other prescribed pressure head
+            boundary condition as indicated by a positive value of KodBot
+            (set equal to 0 if KodBot is negative, or if one of the logical
+            variables qGWLF, FreeD or SeepF is .true.).
+        ht: float, optional
+            Prescribed pressure head [L] at the surface (set equal to 0 if
+            KodBot is negative).
+        ttop: float, optional
+            Soil surface temperature [oC] (omit if both lTemp and lChem are
+            equal to .false.).
+        tbot: float, optional
+            Soil temperature at the bottom of the soil profile [oC] (omit if
+            both lTemp and lChem are equal to .false., set equal to zero if
+            kBotT=0).
+        ampl: float, optional
+            Temperature amplitude at the soil surface [K] (omit if both lTemp
+            and lChem are equal to .false.).
 
         Notes
         -----
@@ -421,18 +460,21 @@ class Model:
                 "lDailyVar": ldailyvar,
                 "lSinusVar": lsinusvar,
                 "lLai": llai,
-                "lBCCycles": lbccycles,
-                "lInterc": linterc,
+                "lBCCycles": False,
+                "lInterc": False,
                 "lExtinct": rextinct,
                 "hCritS": hcrits,
             }
         else:
+
             raise Warning("Atmospheric information was already provided. "
                           "Please delete the old information first through "
                           "ml.del_atmosphere().")
 
-        ctop = 0
-        cbot = 0
+        # Because carbon dioxide transport nor major ion chemistry are
+        # implemented
+        ctop = 0.0
+        cbot = 0.0
 
         data = {"tAtm": tatm, "Prec": prec, "rSoil": rsoil, "rRoot": rroot,
                 "hCritA": hcrita, "rB": rb, "hB": hb, "ht": ht, "tTop": ttop,
@@ -704,12 +746,17 @@ class Model:
         tpulse: float, optional
             Time duration of the concentration pulse [T].
 
+        See Also
+        --------
+        phydrus.Model.add_solute
+
         """
         if ltdep:
-            raise NotImplementedError("Temperature dependency not supported.")
+            self.logger.error("Temperature dependency not supported.")
+            raise NotImplementedError
         if lwatdep:
-            raise NotImplementedError("Water content dependency not "
-                                      "supported.")
+            self.logger.error("Water content dependency not supported.")
+            raise NotImplementedError
 
         if self.solute_transport is None:
             self.solute_transport = {
@@ -740,21 +787,30 @@ class Model:
                           "ml.del_solute_transport().")
 
     def add_solute(self, data, difw=0, difg=0, top_conc=0, bot_conc=0):
-        """Method to add a solute to the model
+        """Method to add a solute to the model.
 
         Parameters
         ----------
         data: pandas.DataFrame
-            Pandas DataFrame with
-        difw:
+            Pandas DataFrame with the material properties. Get an empty
+            DataFrame for this ml.get_empty_solute_df().
+        difw: float, optional
+            Ionic or molecular diffusion coefficient in free water, Dw [L2T-1].
+        difg: float, optional
+            Ionic or molecular diffusion coefficient in gas phase, Dg [L2T-1].
+        top_conc: float, optional
+            Concentration of the upper boundary, or concentration of the
+            incoming fluid [ML-3].
+        bot_conc: float, optional
+            Concentration of the lower boundary, or concentration of the
+            incoming fluid [ML-3].
 
-        Returns
-        -------
+        See Also
+        --------
+        phydrus.Model.get_empty_solute_df
+        phydrus.Model.add_solute_transport
 
         """
-        if self.solutes is None:
-            self.solutes = []
-
         self.solutes.append({"data": data, "difw": difw, "difg": difg,
                              "top_conc": top_conc, "bot_conc": bot_conc})
 
@@ -799,6 +855,10 @@ class Model:
         -----
         This method provides all the information necessary for "Block E -
         Heat transport information".
+
+        See Also
+        --------
+        phydrus.Model.get_empty_heat_df
 
         """
         if self.heat_transport is None:
@@ -907,6 +967,11 @@ class Model:
         """Method to call the Hydrus-1D executable.
 
         """
+        # Remove old Error.msg file
+        if os.path.exists(os.path.join(self.ws_name, "Error.msg")):
+            self.logger.info("Old 'Error.msg' file removed.")
+            os.remove(os.path.join(self.ws_name, "Error.msg"))
+
         # Run Hydrus executable.
         cmd = [self.exe_name, self.ws_name, "-1"]
         result = run(cmd)
@@ -931,17 +996,13 @@ class Model:
         if self.basic_info["AtmInf"]:
             self.write_atmosphere()
 
-        # 4. Write METEO.IN
-        if self.basic_info["lMeteo"]:
-            self.write_meteo()
-
     def write_selector(self, fname="SELECTOR.IN"):
-        """Write the selector.in file.
+        """Write the SELECTOR.IN file.
 
         Parameters
         ----------
         fname: str, optional
-            String with the filename. Assumed to be in the 'ws' folder.
+            String with the filename. Written to the workspace folder ('ws').
 
         """
         self._set_bc_settings()
@@ -1087,14 +1148,14 @@ class Model:
 
         # Write Block F - Solute transport information
         if self.basic_info["lChem"]:
-            lines.append(string.format("C: SOLUTE TRANSPORT INFORMATION ",
+            lines.append(string.format("F: SOLUTE TRANSPORT INFORMATION ",
                                        "*", "<", 72))
             lines.append(" Epsi lUpW lArtD lTDep cTolA cTolR MaxItC PeCr "
                          "No.Solutes lTort iBacter lFiltr nChPar\n"
                          "{} {} {} {} {} {} {} {} {} {} {} {} {}\n"
                          "iNonEqul lWatDep lDualNEq lInitM lInitEq lTort "
                          "lDummy lDummy lDummy lDummy lCFTr\n"
-                         "{} {} {} {} {} {} {} {} {} {} {}\n".format(
+                         "{} {} {} {} {} {} f f f f f\n".format(
                 self.solute_transport["Epsi"],
                 "t" if self.solute_transport["lUpW"] else "f",
                 "t" if self.solute_transport["lArtD"] else "f",
@@ -1112,8 +1173,7 @@ class Model:
                 "t" if self.solute_transport["lWatDep"] else "f",
                 "t" if self.solute_transport["lDualEq"] else "f",
                 "f", "f",
-                "t" if self.solute_transport["lTort"] else "f",
-                "f", "f", "f", "f", "f"
+                "t" if self.solute_transport["lTort"] else "f"
             ))
 
             # Write the material parameters
@@ -1127,13 +1187,9 @@ class Model:
             lines.append("kTopSolute SolTop kBotSolute SolBot\n"
                          "{} {} {} {}\n".format(
                 self.solute_transport["kTopCh"],
-                " ".join([f"{s['top_conc']}"
-                          for s in
-                          self.solutes]),
+                " ".join([f"{s['top_conc']}" for s in self.solutes]),
                 self.solute_transport["kBotCh"],
-                " ".join([f"{s['bot_conc']}"
-                          for s in
-                          self.solutes])))
+                " ".join([f"{s['bot_conc']}" for s in self.solutes])))
             if self.solute_transport["kTopCh"] == -2:
                 lines.append("dSurf cAtm\n""{} {}\n".format(
                     self.solute_transport["dSurf"],
@@ -1197,7 +1253,7 @@ class Model:
         Parameters
         ----------
         fname: str, optional
-            String with the filename. Assumed to be in the 'ws' folder.
+            String with the filename. Written to the workspace folder ('ws').
 
         """
         # 1 Write Header information
@@ -1243,7 +1299,7 @@ class Model:
         Parameters
         ----------
         fname: str, optional
-            String with the filename. Assumed to be in the 'ws' folder.
+            String with the filename. Written to the workspace folder ('ws').
 
         """
         # Write the actual file

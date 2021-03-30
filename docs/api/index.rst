@@ -16,6 +16,7 @@ left-hand menu you will find the different categories of the API documentation.
     read
     profile
     plot.Plots
+    utils
 
 .. toctree::
     :hidden:
