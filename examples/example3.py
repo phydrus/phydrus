@@ -28,7 +28,7 @@ ml.add_waterflow(maxit=20, tolh=1, linitw=False, top_bc=3, bot_bc=6, hseep=-60)
 
 # Add materials
 m = ml.get_empty_material_df(n=1)
-m.loc[[1, 1]] = [[0.095, 0.41, 0.019, 1.31, 3.4, 0.5]]
+m.loc[1, :] = [0.095, 0.41, 0.019, 1.31, 3.4, 0.5]
 ml.add_material(m)
 
 # Profile

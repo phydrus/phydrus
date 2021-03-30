@@ -4,6 +4,7 @@
 
 import os
 from subprocess import run
+from logging import getLogger
 
 from numpy import arange, linspace
 from pandas import DataFrame, DatetimeIndex, MultiIndex
@@ -45,16 +46,14 @@ class Model:
     def __init__(self, exe_name, ws_name, name="model", description=None,
                  length_unit="cm", time_unit="days", mass_units="mmol",
                  print_screen=False):
-        # Store the hydrus executable and the project workspace
-        if not os.path.exists(exe_name):
-            raise Warning("Path to the Hydrus-1D executable seems incorrect, "
-                          "please check the path to the executable.")
-        else:
-            self.exe_name = exe_name
+
+        # Set logger to log all events
+        self.logger = getLogger(__name__)
+        self.set_executable(exe_name)
 
         if not os.path.exists(ws_name):
             os.mkdir(ws_name)
-            print("Directory {} created".format(ws_name))
+            self.logger.info("Directory %s created", ws_name)
 
         self.ws_name = ws_name
 
@@ -130,6 +129,33 @@ class Model:
             return 0
         else:
             return len(self.profile.loc[:, "Lay"].unique())
+
+    def set_executable(self, exe_name):
+        """Method to set the path to the Hydrus-1D executable.
+
+        Parameters
+        ----------
+        exe_name: str
+            String with the path to the Hydrus-1D executable.
+
+        Examples
+        --------
+        >>> exe = os.path.join(os.getcwd(), 'hydrus.exe')
+        >>> ml.set_executable(exe)
+
+        Notes
+        -----
+        This method may also be used to re-set the path to the executable.
+
+        """
+        # Store the hydrus executable and the project workspace
+        if not os.path.exists(exe_name):
+            self.logger.error("Path to the Hydrus-1D executable seems "
+                              "incorrect, please check the path to the "
+                              "executable.")
+            raise FileNotFoundError
+        else:
+            self.exe_name = exe_name
 
     def add_profile(self, profile):
         """Method to add the soil profile to the model.
@@ -825,10 +851,10 @@ class Model:
             atmospheric boundary condition input data.
         dt: float, optional
             Initial time increment [T].
-        dtmin: int, optional
+        dtmin: float, optional
             Minimum permitted time increment [T].
-        dtmax: int, optional
-            Maximum permittedtime increment [T].
+        dtmax: float, optional
+            Maximum permitted time increment [T].
         print_array: array of float, optional
             Array of specified print-times.
 
@@ -885,28 +911,37 @@ class Model:
         cmd = [self.exe_name, self.ws_name, "-1"]
         result = run(cmd)
 
+        # Provide the user with some feedback about the simulation
+        if result.returncode == 0:
+            self.logger.info("Hydrus-1D Simulation Successful.")
+        else:
+            self.logger.warning("Hydrus-1D Simulation Unsuccessful.")
+
         return result
 
-    def write_input(self, verbose=True):
+    def write_input(self):
         """Method to write the input files for the HYDRUS-1D simulation."""
         # 1. Write SELECTOR.IN
-        self.write_selector(verbose=verbose)
+        self.write_selector()
 
         # 2. Write PROFILE.DAT
-        self.write_profile(verbose=verbose)
+        self.write_profile()
 
         # 3. Write ATMOSPH.IN
         if self.basic_info["AtmInf"]:
-            self.write_atmosphere(verbose=verbose)
+            self.write_atmosphere()
+
         # 4. Write METEO.IN
         if self.basic_info["lMeteo"]:
-            self.write_meteo(verbose=verbose)
-        # 5. Write FIT.IN
-        if self.basic_info["lInverse"]:
-            self.write_fit(verbose=verbose)
+            self.write_meteo()
 
-    def write_selector(self, fname="SELECTOR.IN", verbose=True):
+    def write_selector(self, fname="SELECTOR.IN"):
         """Write the selector.in file.
+
+        Parameters
+        ----------
+        fname: str, optional
+            String with the filename. Assumed to be in the 'ws' folder.
 
         """
         self._set_bc_settings()
@@ -958,8 +993,7 @@ class Model:
                            and not self.water_flow["BotInf"]
                            and not self.water_flow["qGWLF"]
                            and not self.water_flow["FreeD"]
-                           and not self.water_flow["SeepF"]
-                           )
+                           and not self.water_flow["SeepF"])
 
         if upper_condition or lower_condition:
             vars_list.append(["rTop", "rBot", "rRoot", "\n"])
@@ -985,10 +1019,11 @@ class Model:
                 else:
                     values.append(f"{val}")
             values.append("\n")
-            lines.append("     ".join(values))
+            lines.append(" ".join(values))
 
         if self.drains:
-            raise NotImplementedError
+            self.logger.error("Drains are currently not Implemented.")
+            raise
 
         # Write the material parameters
         lines.append(self.materials["water"].to_string(index=False))
@@ -1154,11 +1189,15 @@ class Model:
         with open(fname, "w") as file:
             file.writelines(lines)
 
-        if not verbose:
-            print("Successfully wrote {}".format(fname))
+        self.logger.info("Successfully wrote %s", fname)
 
-    def write_atmosphere(self, fname="ATMOSPH.IN", verbose=True):
+    def write_atmosphere(self, fname="ATMOSPH.IN"):
         """Method to write the ATMOSPH.IN file
+
+        Parameters
+        ----------
+        fname: str, optional
+            String with the filename. Assumed to be in the 'ws' folder.
 
         """
         # 1 Write Header information
@@ -1195,11 +1234,16 @@ class Model:
         fname = os.path.join(self.ws_name, fname)
         with open(fname, "w") as file:
             file.writelines(lines)
-        if not verbose:
-            print(f"Successfully wrote {fname}")
 
-    def write_profile(self, fname="PROFILE.DAT", verbose=True):
-        """Method to write the profile.dat file.
+        self.logger.info("Successfully wrote %s", fname)
+
+    def write_profile(self, fname="PROFILE.DAT"):
+        """Method to write the PROFILE.DAT file.
+
+        Parameters
+        ----------
+        fname: str, optional
+            String with the filename. Assumed to be in the 'ws' folder.
 
         """
         # Write the actual file
@@ -1219,14 +1263,7 @@ class Model:
                 [f"\n{len(self.obs_nodes)}\n",
                  "".join(["   {}".format(i) for i in self.obs_nodes])])
 
-        if not verbose:
-            print(f"Successfully wrote {fname}")
-
-    def write_fit(self, fname="FIT.IN", verbose=True):
-        raise NotImplementedError
-
-    def write_meteo(self, fname="METEO.IN", verbose=True):
-        raise NotImplementedError
+        self.logger.info("Successfully wrote %s", fname)
 
     def read_profile(self, fname="PROFILE.OUT"):
         path = os.path.join(self.ws_name, fname)
@@ -1323,7 +1360,7 @@ class Model:
         return data
 
     def get_empty_material_df(self, n=1):
-        """Returns an empty dataframe with the soil parameters as columns.
+        """Get an empty DataFrame with the soil parameters as columns.
 
         Parameters
         ----------
@@ -1334,6 +1371,15 @@ class Model:
         ----------
         pandas.DataFrame
             Pandas DataFrame with the soil parameters as columns.
+
+        Examples
+        --------
+
+        >>> m = ml.get_empty_material_df(n=2)
+        >>> m.loc[1:2] = [[0.08, 0.3421, 0.03, 5, 1, -0.5],
+        >>>               [0.08, 0.3421, 0.03, 5, 0.1, -0.5]]
+        >>> ml.add_material(m)
+
 
         """
         models = {
@@ -1377,7 +1423,7 @@ class Model:
                          data=0, dtype=float)
 
     def get_empty_heat_df(self):
-        """Returns an empty DataFrame to fill in the heat parameters.
+        """Get an empty DataFrame to fill in the heat parameters.
 
         """
         columns = ["thn", "tho", "lambda", "b1", "b2", "b3", "Cn", "C0", "Cw"]
@@ -1385,7 +1431,8 @@ class Model:
                          dtype=float)
 
     def get_empty_solute_df(self):
-        """Returns an empty DataFrame with the solute parameters as columns.
+        """Get an empty DataFrame with the solute parameters as columns.
+
         """
         models = {
             0: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
