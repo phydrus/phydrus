@@ -6,7 +6,7 @@
 <a href="https://pypi.python.org/pypi/phydrus"> <img src=https://img.shields.io/pypi/pyversions/phydrus> </a>
 <a href="https://github.com/pastas/phydrus/releases"> <img src=https://img.shields.io/github/release-pre/phydrus/phydrus> </a>
 <a href="https://phydrus.readthedocs.io/en/latest/?badge=latest"> <img src="https://readthedocs.org/projects/phydrus/badge/?version=latest"></a>
-[![Build Status](https://travis-ci.org/phydrus/phydrus.svg?branch=master)](https://travis-ci.org/raoulcollenteur/phydrus)
+[![Github CI](https://github.com/phydrus/phydrus/actions/workflows/ci.yml/badge.svg)](https://github.com/phydrus/phydrus/actions/workflows/ci.yml)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4235a7486bea41c8b09e2acfa5e93e5f)](https://www.codacy.com/gh/phydrus/phydrus?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=phydrus/phydrus&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/4235a7486bea41c8b09e2acfa5e93e5f)](https://www.codacy.com/gh/phydrus/phydrus?utm_source=github.com&utm_medium=referral&utm_content=phydrus/phydrus&utm_campaign=Badge_Coverage)
 <br>
