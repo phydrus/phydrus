@@ -13,7 +13,7 @@ workflow of your modeling process.
     :maxdepth: 2
     :hidden:
 
-    Getting Started <getting_started>
+    Getting Started <getting_started/index>
     Examples <examples/index>
     Development <developers/index>
     API Docs <api/index>

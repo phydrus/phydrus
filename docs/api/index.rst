@@ -17,10 +17,3 @@ left-hand menu you will find the different categories of the API documentation.
     profile
     plot.Plots
     utils
-
-.. toctree::
-    :hidden:
-    :maxdepth: 4
-    :glob:
-
-    ./*
