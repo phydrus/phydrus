@@ -24,7 +24,7 @@ setup(
         'Help': 'https://github.com/phydrus/phydrus/discussions'
     },
     classifiers=[
-        'Development Status :: 3 - Beta',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
         'Intended Audience :: Other Audience',
         'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
