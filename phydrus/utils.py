@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 def show_versions():
-    """Method to print the version of dependencies.
+    """
+    Method to print the version of dependencies.
 
     Examples
     --------
@@ -42,7 +43,8 @@ def show_versions():
 
 
 def _initialize_logger(logger=None, level=logging.INFO):
-    """Internal method to create a logger instance to log program output.
+    """
+    Internal method to create a logger instance to log program output.
 
     Parameters
     -------
@@ -62,7 +64,8 @@ def _initialize_logger(logger=None, level=logging.INFO):
 
 def set_console_handler(logger=None, level=logging.INFO,
                         fmt="%(levelname)s: %(message)s"):
-    """Method to add a console handler to the logger of Phydrus.
+    """
+    Method to add a console handler to the logger of Phydrus.
 
     Parameters
     -------
@@ -83,7 +86,8 @@ def set_console_handler(logger=None, level=logging.INFO,
 
 
 def set_log_level(level):
-    """Set the log-level for which to log Phydrus messages.
+    """
+    Set the log-level for which to log Phydrus messages.
 
     Parameters
     ----------
@@ -101,7 +105,8 @@ def set_log_level(level):
 
 
 def remove_console_handler(logger=None):
-    """Method to remove the console handler to the logger of Phydrus.
+    """
+    Method to remove the console handler to the logger of Phydrus.
 
     Parameters
     ----------
@@ -123,7 +128,8 @@ def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
                       levels=(logging.INFO, logging.ERROR), maxBytes=10485760,
                       backupCount=20, encoding='utf8', datefmt='%d %H:%M',
                       fmt='%(asctime)s-%(name)s-%(levelname)s-%(message)s'):
-    """Method to add file handlers in the logger of Phydrus.
+    """
+    Method to add file handlers in the logger of Phydrus.
 
     Parameters
     -------
@@ -149,7 +155,8 @@ def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
 
 
 def remove_file_handlers(logger=None):
-    """Method to remove any file handlers in the logger of Phydrus.
+    """
+    Method to remove any file handlers in the logger of Phydrus.
 
     Parameters
     -------

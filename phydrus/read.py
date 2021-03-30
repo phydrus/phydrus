@@ -20,7 +20,8 @@ from .decorators import check_file_path
 
 
 def read_profile(path="PROFILE.OUT"):
-    """Method to read the PROFILE.OUT output file.
+    """
+    Method to read the PROFILE.OUT output file.
 
     Parameters
     ----------
@@ -38,7 +39,8 @@ def read_profile(path="PROFILE.OUT"):
 
 
 def read_run_inf(path="RUN_INF.OUT", usecols=None):
-    """Method to read the RUN_INF.OUT output file.
+    """
+    Method to read the RUN_INF.OUT output file.
 
     Parameters
     ----------
@@ -60,7 +62,8 @@ def read_run_inf(path="RUN_INF.OUT", usecols=None):
 
 @check_file_path
 def read_i_check(path="I_CHECK.OUT"):
-    """Method to read the I_CHECK.OUT output file.
+    """
+    Method to read the I_CHECK.OUT output file.
 
     Parameters
     ----------
@@ -101,7 +104,8 @@ def read_i_check(path="I_CHECK.OUT"):
 
 
 def read_tlevel(path="T_LEVEL.OUT", usecols=None):
-    """Method to read the T_LEVEL.OUT output file.
+    """
+    Method to read the T_LEVEL.OUT output file.
 
     Parameters
     ----------
@@ -128,7 +132,8 @@ def read_tlevel(path="T_LEVEL.OUT", usecols=None):
 
 
 def read_alevel(path="A_LEVEL.OUT", usecols=None):
-    """Method to read the A_LEVEL.OUT output file.
+    """
+    Method to read the A_LEVEL.OUT output file.
 
     Parameters
     ----------
@@ -149,7 +154,8 @@ def read_alevel(path="A_LEVEL.OUT", usecols=None):
 
 
 def read_solute(path="SOLUTE1.OUT"):
-    """Method to read the SOLUTE.OUT output file.
+    """
+    Method to read the SOLUTE.OUT output file.
 
     Parameters
     ----------
@@ -170,7 +176,8 @@ def read_solute(path="SOLUTE1.OUT"):
 @check_file_path
 def _read_file(path, start, end="end", usecols=None, idx_col=None,
                remove_first_row=False):
-    """Internal method to read Hydrus output files.
+    """
+    Internal method to read Hydrus output files.
 
     Parameters
     ----------
@@ -219,7 +226,8 @@ def _read_file(path, start, end="end", usecols=None, idx_col=None,
 
 @check_file_path
 def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
-    """Method to read the OBS_NODE.OUT output file.
+    """
+    Method to read the OBS_NODE.OUT output file.
 
     Parameters
     ----------
@@ -270,7 +278,8 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
 
 @check_file_path
 def read_nod_inf(path="NOD_INF.OUT", times=None):
-    """Method to read the NOD_INF.OUT output file.
+    """
+    Method to read the NOD_INF.OUT output file.
 
     Parameters
     ----------
@@ -322,7 +331,8 @@ def read_nod_inf(path="NOD_INF.OUT", times=None):
 
 @check_file_path
 def read_balance(path="BALANCE.OUT", usecols=None):
-    """Method to read the BALANCE.OUT output file.
+    """
+    Method to read the BALANCE.OUT output file.
 
     Parameters
     ----------

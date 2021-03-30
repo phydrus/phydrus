@@ -11,7 +11,8 @@ from pandas import read_csv, DataFrame
 
 def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,
                    ak=1.0, ath=1.0, temp=20.0, conc=None, sconc=None):
-    """Method to create a DataFrame describing the soil profile.
+    """
+    Method to create a DataFrame describing the soil profile.
 
     Parameters
     ----------
@@ -75,7 +76,8 @@ def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,
 
 
 def profile_from_file(fname="PROFILE.DAT", ws=None):
-    """Method to create a profile DataFrame from a profile.dat file
+    """
+    Method to create a profile DataFrame from a profile.dat file
 
     Parameters
     ----------

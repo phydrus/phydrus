@@ -2,7 +2,13 @@ import matplotlib.pyplot as plt
 
 
 class Plots:
-    """Class that contains all the methods to plot a Phydrus Model.
+    """
+    Class that contains all the methods to plot a Phydrus Model.
+
+    Parameters
+    ----------
+    ml: phydrus.Model
+        Phydrus Model Instance to connect the methods to the model.
 
     Examples
     --------
@@ -14,14 +20,17 @@ class Plots:
     def __init__(self, ml):
         self.ml = ml
 
-    def profile(self, figsize=(3, 6), title="Soil Profile", cmap="YlOrBr",
+    def profile(self, figsize=(3, 6), title=None, cmap="YlOrBr",
                 color_by="Ks", show_grid=True, **kwargs):
-        """Method to plot the soil profile.
+        """
+        Method to plot the soil profile.
 
         Parameters
         ----------
         figsize: tuple, optional
+            Tuple with the size of the figure in inches.
         title: str, optional
+            String with the title of the Figure.
         cmap: str, optional
             String with a named Matplotlib colormap.
         color_by: str, optional
@@ -35,7 +44,7 @@ class Plots:
         ax: matplotlib axes instance
 
         """
-        fig, ax = plt.subplots(figsize=figsize, **kwargs)
+        _, ax = plt.subplots(figsize=figsize, **kwargs)
 
         top = self.ml.profile.loc[:, "x"].max()
         w = self.ml.profile.loc[:, "h"].max()
@@ -69,7 +78,9 @@ class Plots:
                     self.ml.profile.loc[:, "x"].max())
         ax.set_xlabel(f"h [{self.ml.basic_info['LUnit']}]")
         ax.set_ylabel(f"depth [{self.ml.basic_info['LUnit']}]")
-        ax.set_title(title)
+
+        if title is not None:
+            ax.set_title(title)
 
         legend_elements = [line[0]]
         for i, color in enumerate(colors):
@@ -82,7 +93,8 @@ class Plots:
 
     def profile_information(self, data="Pressure Head", times=None,
                             legend=True, figsize=(5, 3), **kwargs):
-        """Method to plot the soil profile information.
+        """
+        Method to plot the soil profile information.
 
         Parameters
         ----------
@@ -119,7 +131,7 @@ class Plots:
             units.extend([f"c [{m_unit}/{l_unit}*3]", "sorb."])
 
         col = col_names.index(data)
-        fig, ax = plt.subplots(figsize=figsize, **kwargs)
+        _, ax = plt.subplots(figsize=figsize, **kwargs)
         dfs = self.ml.read_nod_inf(times=times)
 
         if times is None or len(times) > 1:
@@ -140,7 +152,8 @@ class Plots:
 
     def water_flow(self, data="Potential Surface Flux", figsize=(6, 3),
                    **kwargs):
-        """Method to plot the water flow information.
+        """
+        Method to plot the water flow information.
 
         Parameters
         ----------
@@ -175,7 +188,7 @@ class Plots:
         col = col_names.index(data)
 
         if col < 5:
-            fig, axes = plt.subplots(1, 2, figsize=figsize, **kwargs)
+            _, axes = plt.subplots(1, 2, figsize=figsize, **kwargs)
             df.plot(y=cols[col], ax=axes[0], use_index=True)
             axes[0].set_ylabel(data)
             axes[0].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
@@ -184,16 +197,18 @@ class Plots:
             df.plot(y=f"sum({cols[col]})", ax=axes[1], use_index=True)
             axes[1].set_ylabel(f"Cum. {data}")
             axes[1].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
-            fig.tight_layout()
         else:
-            fig, axes = plt.subplots(1, 1, figsize=figsize, **kwargs)
+            _, axes = plt.subplots(1, 1, figsize=figsize, **kwargs)
             axes.plot(df.index, df[cols[col]])
             axes.set_ylabel(data)
             axes.set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
+
+        plt.tight_layout()
         return axes
 
     def soil_properties(self, data="Water Content", figsize=(6, 3), **kwargs):
-        """Method to plot the soil hydraulic properties.
+        """
+        Method to plot the soil hydraulic properties.
 
         Parameters
         ----------
@@ -233,7 +248,8 @@ class Plots:
         return axes
 
     def obs_points(self, data="h", figsize=(4, 3), **kwargs):
-        """Method to plot the pressure heads, water contents and water fluxes.
+        """
+        Method to plot the pressure heads, water contents and water fluxes.
 
         Parameters
         ----------

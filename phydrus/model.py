@@ -16,7 +16,8 @@ from .version import __version__
 
 
 class Model:
-    """Basic Phydrus model container.
+    """
+    Basic Phydrus model container.
 
     Parameters
     ----------
@@ -137,7 +138,8 @@ class Model:
             return len(self.profile.loc[:, "Lay"].unique())
 
     def set_executable(self, exe_name):
-        """Method to set the path to the Hydrus-1D executable.
+        """
+        Method to set the path to the Hydrus-1D executable.
 
         Parameters
         ----------
@@ -164,13 +166,15 @@ class Model:
             self.exe_name = exe_name
 
     def add_profile(self, profile):
-        """Method to add the soil profile to the model.
+        """
+        Method to add the soil profile to the model.
 
         """
         self.profile = profile
 
     def add_material(self, material):
-        """Method to add a material to the model.
+        """
+        Method to add a material to the model.
 
         Parameters
         ----------
@@ -201,7 +205,8 @@ class Model:
             self.materials = material
 
     def add_drains(self):
-        """Method to add a drain to the model.
+        """
+        Method to add a drain to the model.
 
         Returns
         -------
@@ -210,7 +215,8 @@ class Model:
         return NotImplementedError
 
     def add_obs_nodes(self, depths):
-        """Method to add observation points.
+        """
+        Method to add observation points.
 
         Parameters
         ----------
@@ -230,7 +236,8 @@ class Model:
                       hb=1e4, linitw=False, top_bc=0, bot_bc=0, hseep=0,
                       rtop=None, rbot=None, rroot=None, gw_level=None,
                       aqh=None, bqh=None, hysteresis=0, ikappa=-1):
-        """Method to add a water_flow module to the model.
+        """
+        Method to add a water_flow module to the model.
 
         Parameters
         ----------
@@ -391,7 +398,8 @@ class Model:
                            llai=False, rextinct=0.463, hcrits=1e30, tatm=0,
                            prec=0, rsoil=0, rroot=0, hcrita=1e5, rb=0, hb=0,
                            ht=0, ttop=0, tbot=0, ampl=0):
-        """Method to add the atmospheric boundary condition to the model.
+        """
+        Method to add the atmospheric boundary condition to the model.
 
         Parameters
         ----------
@@ -489,7 +497,8 @@ class Model:
     def add_root_uptake(self, model=0, crootmax=0, omegac=0.5, p0=-10,
                         p2h=-200, p2l=-800, p3=-8000, r2h=0.5, r2l=0.1,
                         poptm=None, p50=-800, pexp=3, lsolred=False):
-        """Method to add rootwater update modeule to the model.
+        """
+        Method to add rootwater update modeule to the model.
 
         Parameters
         ----------
@@ -576,7 +585,8 @@ class Model:
                         rootdepth=None, irfak=None, trmin=None, trmed=None,
                         trmax=None, xrmin=None, xrmed=None, xrmax=None,
                         trperiod=None):
-        """Method to add root growth to the model.
+        """
+        Method to add root growth to the model.
 
         Parameters
         ----------
@@ -669,7 +679,8 @@ class Model:
                              ltdep=False, ctola=0, ctolr=0, maxit=0, pecr=2,
                              ltort=True, lwatdep=False, top_bc=-1, bot_bc=0,
                              dsurf=None, catm=None, tpulse=1):
-        """Method to add solute transport to the model.
+        """
+        Method to add solute transport to the model.
 
         Parameters
         ----------
@@ -787,7 +798,8 @@ class Model:
                           "ml.del_solute_transport().")
 
     def add_solute(self, data, difw=0, difg=0, top_conc=0, bot_conc=0):
-        """Method to add a solute to the model.
+        """
+        Method to add a solute to the model.
 
         Parameters
         ----------
@@ -816,7 +828,8 @@ class Model:
 
     def add_heat_transport(self, parameters, ampl, top_bc, top_temp, bot_bc,
                            bot_temp, tperiod=1, icampbell=1, snowmelt=0.43):
-        """Method to add heat transport to the model.
+        """
+        Method to add heat transport to the model.
 
         Parameters
         ----------
@@ -883,7 +896,8 @@ class Model:
                       print_times=False, printinit=None, printmax=None,
                       dtprint=None, nsteps=None, from_atmo=False,
                       print_array=None):
-        """Method to produce time information.
+        """
+        Method to produce time information.
 
         Parameters
         ----------
@@ -964,9 +978,7 @@ class Model:
         return self.times
 
     def simulate(self):
-        """Method to call the Hydrus-1D executable.
-
-        """
+        """Method to call the Hydrus-1D executable."""
         # Remove old Error.msg file
         if os.path.exists(os.path.join(self.ws_name, "Error.msg")):
             self.logger.info("Old 'Error.msg' file removed.")
@@ -997,7 +1009,8 @@ class Model:
             self.write_atmosphere()
 
     def write_selector(self, fname="SELECTOR.IN"):
-        """Write the SELECTOR.IN file.
+        """
+        Write the SELECTOR.IN file.
 
         Parameters
         ----------
@@ -1248,7 +1261,8 @@ class Model:
         self.logger.info("Successfully wrote %s", fname)
 
     def write_atmosphere(self, fname="ATMOSPH.IN"):
-        """Method to write the ATMOSPH.IN file
+        """
+        Method to write the ATMOSPH.IN file
 
         Parameters
         ----------
@@ -1294,7 +1308,8 @@ class Model:
         self.logger.info("Successfully wrote %s", fname)
 
     def write_profile(self, fname="PROFILE.DAT"):
-        """Method to write the PROFILE.DAT file.
+        """
+        Method to write the PROFILE.DAT file.
 
         Parameters
         ----------
@@ -1416,7 +1431,8 @@ class Model:
         return data
 
     def get_empty_material_df(self, n=1):
-        """Get an empty DataFrame with the soil parameters as columns.
+        """
+        Get an empty DataFrame with the soil parameters as columns.
 
         Parameters
         ----------
@@ -1479,17 +1495,13 @@ class Model:
                          data=0, dtype=float)
 
     def get_empty_heat_df(self):
-        """Get an empty DataFrame to fill in the heat parameters.
-
-        """
+        """Get an empty DataFrame to fill in the heat parameters."""
         columns = ["thn", "tho", "lambda", "b1", "b2", "b3", "Cn", "C0", "Cw"]
         return DataFrame(columns=columns, index=self.materials.index,
                          dtype=float)
 
     def get_empty_solute_df(self):
-        """Get an empty DataFrame with the solute parameters as columns.
-
-        """
+        """Get an empty DataFrame with the solute parameters as columns."""
         models = {
             0: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
                 "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
@@ -1513,7 +1525,8 @@ class Model:
         return df
 
     def _set_bc_settings(self):
-        """Internal method to set the boundary condition settings.
+        """
+        Internal method to set the boundary condition settings.
 
         Returns
         -------
