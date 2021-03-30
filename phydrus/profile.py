@@ -93,7 +93,7 @@ def profile_from_file(fname="PROFILE.DAT", ws=None):
     --------
 
     >>> profile = ps.create_profile(h=0.342)
-    
+
     """
     fname = path.join(ws, fname)
     path.exists(fname)

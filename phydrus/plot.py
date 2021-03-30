@@ -1,17 +1,16 @@
-"""The Plots class contains all the plot methods that are available for a
-Phydrus Model.
-
-Examples
---------
-
->>> ml.plots.profile()
-
-"""
-
 import matplotlib.pyplot as plt
 
 
 class Plots:
+    """Class that contains all the methods to plot a Phydrus Model.
+
+    Examples
+    --------
+
+    >>> ml.plots.profile()
+
+    """
+
     def __init__(self, ml):
         self.ml = ml
 
@@ -68,8 +67,8 @@ class Plots:
         ax.set_xlim(0, w)
         ax.set_ylim(self.ml.profile.loc[:, "x"].min(),
                     self.ml.profile.loc[:, "x"].max())
-        ax.set_xlabel("h [{}]".format(self.ml.basic_info["LUnit"]))
-        ax.set_ylabel("depth [{}]".format(self.ml.basic_info["LUnit"]))
+        ax.set_xlabel(f"h [{self.ml.basic_info['LUnit']}]")
+        ax.set_ylabel(f"depth [{self.ml.basic_info['LUnit']}]")
         ax.set_title(title)
 
         legend_elements = [line[0]]
@@ -110,16 +109,14 @@ class Plots:
         col_names = ("Pressure Head", "Water Content",
                      "Hydraulic Conductivity", "Hydraulic Capacity",
                      "Water Flux", "Root Uptake", "Temperature")
-        units = ["h [{}]".format(l_unit),
-                 "Theta [-]", "K [{}/days]".format(l_unit),
-                 "C [1/{}]".format(l_unit),
-                 "v [{}/{}]".format(l_unit, t_unit),
-                 "S [1/{}]".format(t_unit), "T [°C]"]
+        units = ["h [{}]".format(l_unit), "Theta [-]", f"K [{l_unit}/days]",
+                 f"C [1/{l_unit}]", f"v [{l_unit}/{t_unit}]",
+                 f"S [1/{t_unit}]", "T [°C]"]
 
         if self.ml.basic_info["lChem"]:
             use_cols = use_cols + ("Conc(1..NS)", "Sorb(1...NS)")
             col_names = col_names + ("Concentration", "Sorbtion")
-            units.extend(["c [{}/{}*3]".format(m_unit, l_unit), "sorb."])
+            units.extend([f"c [{m_unit}/{l_unit}*3]", "sorb."])
 
         col = col_names.index(data)
         fig, ax = plt.subplots(figsize=figsize, **kwargs)
@@ -127,14 +124,12 @@ class Plots:
 
         if times is None or len(times) > 1:
             for key, df in dfs.items():
-                df.plot(x=use_cols[col], y="Depth", ax=ax,
-                        label="time= " + str(key))
+                df.plot(x=use_cols[col], y="Depth", ax=ax, label=f"time={key}")
         else:
-            dfs.plot(x=use_cols[col], y="Depth", ax=ax,
-                     label="T " + str(times))
+            dfs.plot(x=use_cols[col], y="Depth", ax=ax, label=f"T {times}")
 
         ax.set_xlabel(units[col])
-        ax.set_ylabel("Depth [{}]".format(self.ml.basic_info["LUnit"]))
+        ax.set_ylabel(f"Depth [{self.ml.basic_info['LUnit']}]")
         ax.grid(linestyle='--')
 
         if legend:
@@ -183,18 +178,18 @@ class Plots:
             fig, axes = plt.subplots(1, 2, figsize=figsize, **kwargs)
             df.plot(y=cols[col], ax=axes[0], use_index=True)
             axes[0].set_ylabel(data)
-            axes[0].set_xlabel("Time [{}]".format(self.ml.basic_info["TUnit"]))
+            axes[0].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
 
             # Cumulative sum
-            df.plot(y="sum(" + cols[col] + ")", ax=axes[1], use_index=True)
-            axes[1].set_ylabel("Cum. {}".format(data))
-            axes[1].set_xlabel("Time [{}]".format(self.ml.basic_info["TUnit"]))
+            df.plot(y=f"sum({cols[col]})", ax=axes[1], use_index=True)
+            axes[1].set_ylabel(f"Cum. {data}")
+            axes[1].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
             fig.tight_layout()
         else:
             fig, axes = plt.subplots(1, 1, figsize=figsize, **kwargs)
             axes.plot(df.index, df[cols[col]])
             axes.set_ylabel(data)
-            axes.set_xlabel("Time [{}]".format(self.ml.basic_info["TUnit"]))
+            axes.set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
         return axes
 
     def soil_properties(self, data="Water Content", figsize=(6, 3), **kwargs):
@@ -227,7 +222,7 @@ class Plots:
                                sharey=True, **kwargs)
 
         for i, df in dfs.items():
-            name = "Node {}".format(i)
+            name = f"Node {i}"
             df.plot(x="h", y=cols[col], ax=axes[0], label=name)
             df.plot(x="log_h", y=cols[col], ax=axes[1], label=name)
 
@@ -256,9 +251,8 @@ class Plots:
 
         _, ax = plt.subplots(figsize=figsize, **kwargs)
         for i, df in dfs.items():
-            name = "Node {}".format(i)
-            df.plot(y=data, ax=ax, label=name, use_index=True)
+            df.plot(y=data, ax=ax, label=f"Node {i}", use_index=True)
 
-        ax.set_xlabel("Time [{}]".format(self.ml.basic_info["TUnit"]))
+        ax.set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
         ax.set_ylabel(data)
         return ax

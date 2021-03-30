@@ -1,8 +1,7 @@
 """
 The read module contains methods that can be used to read in- and output
-files from Hydrus-1D models. The methods can be used stand-alone but are
-also available from the Model object. All the methods return the data as
-Pandas DataFrames.
+files. The methods can be used stand-alone but are also available from the
+Model object. All the methods return the data as Pandas DataFrames.
 
 Examples
 --------

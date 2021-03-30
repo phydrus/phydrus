@@ -1,3 +1,7 @@
+"""The utils module contains utility funtions for Phydrus.
+
+"""
+
 import logging
 from logging import handlers
 
@@ -6,6 +10,18 @@ logger = logging.getLogger(__name__)
 
 def show_versions():
     """Method to print the version of dependencies.
+
+    Examples
+    --------
+    >>> import phydrus as ps
+    >>> ps.show_versions()
+
+    Python version: 3.8.2 (default, Mar 25 2020, 11:22:43)
+    [Clang 4.0.1 (tags/RELEASE_401/final)]
+    Numpy version: 1.19.2
+    Pandas version: 1.2.1
+    Phydrus version: 0.1.0
+    Matplotlib version: 3.3.2
 
     """
     from phydrus import __version__ as ps_version
