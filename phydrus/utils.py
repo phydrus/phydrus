@@ -170,3 +170,41 @@ def remove_file_handlers(logger=None):
     for handler in logger.handlers:
         if isinstance(handler, handlers.RotatingFileHandler):
             logger.removeHandler(handler)
+            
+def partitioning_grass(P, ET, a=0.45, ch=5, k = 0.463, return_SCF=False):
+    
+    """
+    Partitioning according to equation 2.75 in the Manual v4.0 and 
+    Sutanto, Wenninger, Coenders and Uhlenbrook [2021]
+    
+    Parameters
+    ----------
+    P - precipitation [cm]
+    ET - potential evapotranspiration (Penman-Monteith) [cm]
+    a - constant [cm]
+    ch - cropheight (5-15 for clipped grass) [cm]
+    k - radiation extinction by canopy (rExtinct) (0.463) [-]
+    
+    Internal variables
+    ----------
+    LAI - Leaf Area Index (0.24*ch) [cm/cm]
+    SCF - Soil Cover Fraction (b) [-]
+   
+    Standard Output
+    ----------
+    Pnet - Net Precipitation (P - I) [cm]
+    I - Interception [cm]
+    Et,p - Potential Transpiration (rRoot) [cm]
+    Es,p - Potential Soil Evaporation (rSoil) [cm]
+    """
+    
+    LAI = 0.24 * ch
+    SCF = 1 - np.exp(-k * LAI)
+    I = a * LAI * (1 - 1 / (1 + SCF * P / (a * LAI)))
+    Pnet = np.maximum(P - I, 0)
+    Etp = ET * SCF
+    Esp = ET * (1 - SCF)
+    if return_SCF==True:
+        return Pnet, I, Etp, Esp, SCF
+    else:
+        return Pnet, I, Etp, Esp
