@@ -121,7 +121,7 @@ class Plots:
         col_names = ("Pressure Head", "Water Content",
                      "Hydraulic Conductivity", "Hydraulic Capacity",
                      "Water Flux", "Root Uptake", "Temperature")
-        units = ["h [{}]".format(l_unit), "Theta [-]", f"K [{l_unit}/days]",
+        units = [f"h [{l_unit}]", "Theta [-]", f"K [{l_unit}/days]",
                  f"C [1/{l_unit}]", f"v [{l_unit}/{t_unit}]",
                  f"S [1/{t_unit}]", "T [°C]"]
 
@@ -151,7 +151,7 @@ class Plots:
         return ax
 
     def water_flow(self, data="Potential Surface Flux", figsize=(6, 3),
-                   **kwargs):
+                   axes=None, **kwargs):
         """
         Method to plot the water flow information.
 
@@ -187,26 +187,22 @@ class Plots:
         df = self.ml.read_tlevel()
         col = col_names.index(data)
 
-        if col < 5:
+        if axes is None:
             _, axes = plt.subplots(1, 2, figsize=figsize, **kwargs)
-            df.plot(y=cols[col], ax=axes[0], use_index=True)
-            axes[0].set_ylabel(data)
-            axes[0].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
+        df.plot(y=cols[col], ax=axes[0], use_index=True)
+        axes[0].set_ylabel(data)
+        axes[0].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
 
-            # Cumulative sum
-            df.plot(y=f"sum({cols[col]})", ax=axes[1], use_index=True)
-            axes[1].set_ylabel(f"Cum. {data}")
-            axes[1].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
-        else:
-            _, axes = plt.subplots(1, 1, figsize=figsize, **kwargs)
-            axes.plot(df.index, df[cols[col]])
-            axes.set_ylabel(data)
-            axes.set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
+        # Cumulative sum
+        df.plot(y=f"sum({cols[col]})", ax=axes[1], use_index=True)
+        axes[1].set_ylabel(f"Cum. {data}")
+        axes[1].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
 
         plt.tight_layout()
         return axes
 
-    def soil_properties(self, data="Water Content", figsize=(6, 3), **kwargs):
+    def soil_properties(self, data="Water Content", figsize=(6, 3),
+                        axes=None, **kwargs):
         """
         Method to plot the soil hydraulic properties.
 
@@ -233,8 +229,9 @@ class Plots:
 
         dfs = self.ml.read_i_check()
 
-        _, axes = plt.subplots(figsize=figsize, nrows=1, ncols=2,
-                               sharey=True, **kwargs)
+        if axes is None:
+            _, axes = plt.subplots(figsize=figsize, nrows=1, ncols=2,
+                                   sharey=True, **kwargs)
 
         for i, df in dfs.items():
             name = f"Node {i}"
