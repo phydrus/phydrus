@@ -232,3 +232,31 @@ def get_recharge(nodinf, recharge_depth):
     for i in list(nodinf.keys()):
         recharge.append(nodinf[i]['Flux'].iloc[idx])
     return array(recharge)
+
+def get_gwt(nodinf):
+    """
+    Extract the location of the groundwater table from the NOD_INF.OUT file.
+    The location of the groundwater table is taken where the pressure head = 0 (bottom up approach)
+    
+    INPUT:
+    nodinf - Dictionary of the NOD_INF.OUT file with the timesteps as keys. 
+             The data in the dictionary contains a DataFrame for each timestep 
+             with the column 'Depth' and 'Head'.
+    
+    OUTPUT:
+    gwl - Numpy array with the location of the groundwater table.
+    """
+    gwl = []
+    for i in list(nodinf.keys()):
+        j = 0
+        while flip(nodinf[i]['Head'].values)[j] > 0 and j < len(nodinf[i])-1:
+            j += 1
+        idx = len(nodinf[0]['Head']) - j
+        if idx == 0:
+            gwl_new = nodinf[i]['Head'][idx]
+        elif idx == len(nodinf[i]['Head']):
+            gwl_new = nodinf[i]['Depth'].iloc[-1]
+        else:
+            gwl_new = (0-nodinf[i]['Head'].iloc[idx-1])*(nodinf[i]['Depth'].iloc[idx]-nodinf[i]['Depth'].iloc[idx-1])/(nodinf[i]['Head'].iloc[idx]-nodinf[i]['Head'].iloc[idx-1]) + nodinf[i]['Depth'].iloc[idx-1]
+        gwl.append(gwl_new)
+    return array(gwl)
