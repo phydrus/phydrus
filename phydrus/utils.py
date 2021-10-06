@@ -4,6 +4,8 @@
 
 import logging
 from logging import handlers
+from numpy import exp, maximum, asarray
+
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +173,7 @@ def remove_file_handlers(logger=None):
         if isinstance(handler, handlers.RotatingFileHandler):
             logger.removeHandler(handler)
             
-def partitioning_grass(P, ET, a=0.45, ch=5, k = 0.463, return_SCF=False):
+def partitioning_grass(P, ET, a=0.45, ch=5, k=0.463, return_SCF=False):
     
     """
     Partitioning according to equation 2.75 in the Manual v4.0 and 
@@ -199,12 +201,14 @@ def partitioning_grass(P, ET, a=0.45, ch=5, k = 0.463, return_SCF=False):
     """
     
     LAI = 0.24 * ch
-    SCF = 1 - np.exp(-k * LAI)
+    SCF = 1 - exp(-k * LAI)
     I = a * LAI * (1 - 1 / (1 + SCF * P / (a * LAI)))
-    Pnet = np.maximum(P - I, 0)
+    Pnet = maximum(P - I, 0)
+    Ep = maximum(ET - I, 0)
     Etp = ET * SCF
     Esp = ET * (1 - SCF)
     if return_SCF==True:
         return Pnet, I, Etp, Esp, SCF
     else:
         return Pnet, I, Etp, Esp
+    
