@@ -4,7 +4,7 @@
 
 import logging
 from logging import handlers
-from numpy import exp, maximum, argmin, array
+from numpy import exp, maximum, argmin, array, flip
 
 
 logger = logging.getLogger(__name__)
@@ -205,8 +205,8 @@ def partitioning_grass(P, ET, a=0.45, ch=5, k=0.463, return_SCF=False):
     I = a * LAI * (1 - 1 / (1 + SCF * P / (a * LAI)))
     Pnet = maximum(P - I, 0)
     Ep = maximum(ET - I, 0)
-    Etp = ET * SCF
-    Esp = ET * (1 - SCF)
+    Etp = Ep * SCF
+    Esp = Ep * (1 - SCF)
     if return_SCF==True:
         return Pnet, I, Etp, Esp, SCF
     else:
