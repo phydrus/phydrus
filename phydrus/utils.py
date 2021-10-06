@@ -4,7 +4,7 @@
 
 import logging
 from logging import handlers
-from numpy import exp, maximum, asarray
+from numpy import exp, maximum, argmin, array
 
 
 logger = logging.getLogger(__name__)
@@ -212,3 +212,23 @@ def partitioning_grass(P, ET, a=0.45, ch=5, k=0.463, return_SCF=False):
     else:
         return Pnet, I, Etp, Esp
     
+def get_recharge(nodinf, recharge_depth):
+    """
+    Function to obtain the flux at a certain depth from the NOD_INF.OUT file.
+    
+    INPUT:
+    nodinf - Dictionary of the NOD_INF.OUT file with the timesteps as keys. 
+             The data in the dictionary contains a DataFrame for each timestep 
+             with the column 'Depth' and 'Flux'. 
+             Take a look at read.read_nodinf()
+    recharge_depth - Depth at which the recharge is extracted.
+
+    OUTPUT:
+    recharge - Numpy array with the recharge at a defined depth.
+    """
+    # recharge depth has to be negative
+    idx = argmin(abs(nodinf[0]['Depth'].values-recharge_depth))
+    recharge = []
+    for i in list(nodinf.keys()):
+        recharge.append(nodinf[i]['Flux'].iloc[idx])
+    return array(recharge)
