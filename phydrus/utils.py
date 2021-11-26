@@ -181,11 +181,11 @@ def partitioning_grass(P, ET, a=0.45, ch=5, k=0.463, return_SCF=False):
 
     Parameters
     ----------
-    P - precipitation [cm]
-    ET - potential evapotranspiration (Penman-Monteith) [cm]
-    a - constant [cm]
-    ch - cropheight (5-15 for clipped grass) [cm]
-    k - radiation extinction by canopy (rExtinct) (0.463) [-]
+    P (array) - precipitation [cm]
+    ET (array) - potential evapotranspiration (Penman-Monteith) [cm]
+    a (float) - constant [cm]
+    ch (float) - cropheight (5-15 for clipped grass) [cm]
+    k (float) - radiation extinction by canopy (rExtinct) (0.463) [-]
 
     Internal variables
     ----------
@@ -194,10 +194,10 @@ def partitioning_grass(P, ET, a=0.45, ch=5, k=0.463, return_SCF=False):
 
     Standard Output
     ----------
-    Pnet - Net Precipitation (P - I) [cm]
-    I - Interception [cm]
-    Et,p - Potential Transpiration (rRoot) [cm]
-    Es,p - Potential Soil Evaporation (rSoil) [cm]
+    Pnet (array) - Net Precipitation (P - I) [cm]
+    I (array) - Interception [cm]
+    Et,p (array) - Potential Transpiration (rRoot) [cm]
+    Es,p (array) - Potential Soil Evaporation (rSoil) [cm]
     """
 
     LAI = 0.24 * ch
@@ -214,20 +214,24 @@ def partitioning_grass(P, ET, a=0.45, ch=5, k=0.463, return_SCF=False):
 
 
 def get_recharge(nodinf, recharge_depth):
-    """
-    Function to obtain the flux at a certain depth from the NOD_INF.OUT file.
+    """ Function to obtain the flux at a certain depth 
+    from the NOD_INF.OUT file.
 
-    INPUT:
-    nodinf - Dictionary of the NOD_INF.OUT file with the timesteps as keys. 
-             The data in the dictionary contains a DataFrame for each timestep 
-             with the column 'Depth' and 'Flux'. 
-             Take a look at read.read_nodinf()
-    recharge_depth - Depth at which the recharge is extracted.
+    Parameters
+    ----------
+    nodinf (dictionary) - Dictionary of the NOD_INF.OUT file 
+    with the timesteps as keys. The data in the dictionary 
+    contains a DataFrame for each timestep with the column 
+    'Depth' and 'Flux'. Take a look at read.read_nodinf()
+    
+    recharge depth (float) - Float to indicate depth from which
+    the recharge can be extracted.
 
-    OUTPUT:
-    recharge - Numpy array with the recharge at a defined depth.
-    """
-    # recharge depth has to be negative
+    Standard Output
+    ----------
+    recharge (array) - Numpy array with the recharge at a defined depth.
+
+    """    
     idx = argmin(abs(nodinf[0]['Depth'].values - recharge_depth))
     recharge = []
     for i in list(nodinf.keys()):
@@ -236,17 +240,16 @@ def get_recharge(nodinf, recharge_depth):
 
 
 def get_gwt(nodinf):
-    """
-    Extract the location of the groundwater table from the NOD_INF.OUT file.
+    """ Extract the location of the groundwater table from the NOD_INF.OUT file. 
     The location of the groundwater table is taken where the pressure head = 0 (bottom up approach)
 
-    INPUT:
-    nodinf - Dictionary of the NOD_INF.OUT file with the timesteps as keys. 
-             The data in the dictionary contains a DataFrame for each timestep 
-             with the column 'Depth' and 'Head'.
+    Parameters
+    ----------
+    nodinf (dictionary) - Dictionary of the NOD_INF.OUT file with the timesteps as keys. The data in the dictionary contains a DataFrame for each timestep with the column 'Depth' and 'Head'.
 
-    OUTPUT:
-    gwl - Numpy array with the location of the groundwater table.
+    Standard Output
+    ----------
+    groundwater table (array) - numpy array with the location of the groundwater table.
     """
     gwl = []
     for i in list(nodinf.keys()):
