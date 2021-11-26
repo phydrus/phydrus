@@ -388,10 +388,11 @@ def read_balance(path="BALANCE.OUT", usecols=None):
 
     return data
 
+
 def read_nodinf(path='NOD_INF.OUT', ml=[0], proflength=False):
     """
     Improved function to read NODINF.out. Requires ml.add_time_info(print_times=True)
-    
+
     Parameters
     ----------
     path: str, optional
@@ -402,35 +403,35 @@ def read_nodinf(path='NOD_INF.OUT', ml=[0], proflength=False):
     proflength: Boolean, optional
         If true reads PROFILE.OUT to obtain the profile length. 
         This helps estimating the total amount of print times.
-    
 
     Returns
     -------
     data: dict
         Dictionary with the time as a key and a Pandas DataFrame as a value.
-    
+
     """
-    
+
     num_lines = sum(1 for line in open(path))
     with open(path) as fo:
-        f = fo.readlines() 
+        f = fo.readlines()
     sidx = 9
-    if proflength==True:
-        proflen = len(read_csv('PROFILE.OUT', skiprows=6, skipfooter=0, delim_whitespace=True))
+    if proflength == True:
+        proflen = len(read_csv('PROFILE.OUT', skiprows=6,
+                      skipfooter=0, delim_whitespace=True))
         rows = proflen + 2
     else:
-        rows = len(ml.profile) + 3 # elements + 4
+        rows = len(ml.profile) + 3  # elements + 4
     new = sidx + rows
     s = StringIO('\n'.join(f[sidx:new]))
     d = {}
-    d[0] = read_csv(s, skiprows=[1,2], delim_whitespace=True).astype(float)
-    if proflength==True:
-        timesteps = int(floor(num_lines/(proflen+sidx))-1)
+    d[0] = read_csv(s, skiprows=[1, 2], delim_whitespace=True).astype(float)
+    if proflength == True:
+        timesteps = int(floor(num_lines / (proflen + sidx)) - 1)
     else:
-        timesteps = int(floor(num_lines/(len(ml.profile)+sidx))-1)
+        timesteps = int(floor(num_lines / (len(ml.profile) + sidx)) - 1)
     for i in range(timesteps):
         idx = new + 6
         new = idx + rows
         s = StringIO('\n'.join(f[idx:new]))
-        d[i+1] = read_csv(s, delim_whitespace=True).drop([0]).astype(float)
+        d[i + 1] = read_csv(s, delim_whitespace=True).drop([0]).astype(float)
     return d
