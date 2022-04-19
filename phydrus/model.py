@@ -1032,28 +1032,25 @@ class Model:
             f"{self.basic_info['TUnit']}\n{self.basic_info['MUnit']}\n"
         ]
 
-        vars_list = [["lWat", "lChem", "lTemp", "lSink", "lRoot", "lShort",
-                      "lWDep", "lScreen", "AtmInf", "lEquil", "lInverse",
-                      "\n"],
-                     ["lSnow", "lHP1", "lMeteo", "lVapor", "lActRSU", "lFlux",
-                      "lIrrig", "\n"]]
+        vars_list = [["lWat   ", "lChem ", "lTemp ", "lSink ", "lRoot ", "lShort ",
+                      "lWDep ", "lScreen", "AtmInf", "lEquil ", "lInverse", "\n"],
+                     ["lSnow ", "lHP1  ", "lMeteo", "lVapor", "lActRSU", 
+                     "lFlux", "lIrrig", "\n"]]
 
         for variables in vars_list:
             lines.append("  ".join(variables))
-            lines.append("  ".join("t" if self.basic_info[var] else "f" for
+            lines.append("  ".join("t      " if self.basic_info[var.strip()] else "f     " for
                                    var in variables[:-1]))
             lines.append("\n")
 
-        lines.append(f"NMat NLay CosAlfa \n{self.n_materials}"
-                     f" {self.n_layers} {self.basic_info['CosAlfa']}\n")
+        lines.append(f"NMat   NLay   CosAlfa\n{self.n_materials}      "
+                     f"{self.n_layers}      {self.basic_info['CosAlfa']}\n")
 
         # Write block B: WATER FLOW INFORMATION
         lines.append(string.format("B: WATER FLOW INFORMATION ", "*", "<", 72))
-        lines.append("MaxIt  TolTh  TolH   (maximum number of iterations and "
+        lines.append("MaxIt  TolTh   TolH   (maximum number of iterations and "
                      "tolerances)\n")
-        variables = ["MaxIt", "TolTh", "TolH"]
-        lines.append(
-            "   ".join([str(self.water_flow[var]) for var in variables]))
+        lines.append("  ".join([f"{self.water_flow[var]} " for var in ("MaxIt", "TolTh", "TolH")]))
         lines.append("\n")
 
         vars_list = [["TopInf", "WLayer", "KodTop", "lInitW", "\n"],
@@ -1087,11 +1084,11 @@ class Model:
             for var in variables[:-1]:
                 val = self.water_flow[var]
                 if val is True:
-                    values.append("t")
+                    values.append("t      ")
                 elif val is False:
-                    values.append("f")
+                    values.append("f      ")
                 else:
-                    values.append(f"{val}")
+                    values.append(f"{val}      ")
             values.append("\n")
             lines.append(" ".join(values))
 
