@@ -389,7 +389,7 @@ def read_balance(path="BALANCE.OUT", usecols=None):
     return data
 
 
-def read_nodinf(path='NOD_INF.OUT', ml=[0], proflength=False):
+def read_nodinf(path='NOD_INF.OUT', ml=None):
     """
     Improved function to read NODINF.out. Requires ml.add_time_info(print_times=True)
 
@@ -415,8 +415,9 @@ def read_nodinf(path='NOD_INF.OUT', ml=[0], proflength=False):
     with open(path) as fo:
         f = fo.readlines()
     sidx = 9
-    if proflength == True:
-        proflen = len(read_csv('PROFILE.OUT', skiprows=6,
+    if ml is None:
+        path.split('/')[0]
+        proflen = len(read_csv(f"{path.split('/')[0]}/PROFILE.OUT", skiprows=6,
                       skipfooter=0, delim_whitespace=True))
         rows = proflen + 2
     else:
@@ -425,7 +426,7 @@ def read_nodinf(path='NOD_INF.OUT', ml=[0], proflength=False):
     s = StringIO('\n'.join(f[sidx:new]))
     d = {}
     d[0] = read_csv(s, skiprows=[1, 2], delim_whitespace=True).astype(float)
-    if proflength == True:
+    if ml is None:
         timesteps = int(floor(num_lines / (proflen + sidx)) - 1)
     else:
         timesteps = int(floor(num_lines / (len(ml.profile) + sidx)) - 1)
