@@ -2,8 +2,7 @@ import matplotlib.pyplot as plt
 
 
 class Plots:
-    """
-    Class that contains all the methods to plot a Phydrus Model.
+    """Class that contains all the methods to plot a Phydrus Model.
 
     Parameters
     ----------
@@ -12,83 +11,83 @@ class Plots:
 
     Examples
     --------
-
-    >>> ml.plots.profile()
+    ml.plots.profile()
 
     """
 
     def __init__(self, ml):
         self.ml = ml
 
-    def profile(self, figsize=(3, 6), title=None, cmap="YlOrBr",
-                color_by="Ks", show_grid=True, **kwargs):
-        """
-        Method to plot the soil profile.
+    def profile(self, figsize=(3, 6), cmap="YlOrBr_r", color_by="Ks",
+                show_grid=True, ax=None, legend=False, material_labels=None):
+        """Method to plot the soil profyle
 
         Parameters
         ----------
-        figsize: tuple, optional
-            Tuple with the size of the figure in inches.
-        title: str, optional
-            String with the title of the Figure.
-        cmap: str, optional
-            String with a named Matplotlib colormap.
-        color_by: str, optional
-            Column from the material properties sed to color the materials.
-            Default is "Ks".
-        show_grid: bool, optional
-            Show the grid in the plot. Default is True.
+        figsize : tuple, optional
+            Tuple with the size of the figure, by default (3, 6)
+        cmap : str, optional
+            String with a named Matplotlib colormap, by default 'YlOrBr_r'
+        color_by : str, optional
+            Column from the material properties to color by, by default 'Ks'
+        show_grid : bool, optional
+            Show the grid lines of dx, by default True
+        ax : Matplotlib.Axes, optional
+            Axes to plot the profile in, by default None which creates an Axes
+        legend : bool, optional
+            Add legend, by default False
+        material_labels : list, optional
+            Material labels to add in legend, by default None which numbers the materials
 
         Returns
         -------
         ax: matplotlib axes instance
 
         """
-        _, ax = plt.subplots(figsize=figsize, **kwargs)
 
-        top = self.ml.profile.loc[:, "x"].max()
-        w = self.ml.profile.loc[:, "h"].max()
-        w = w + 0.2 * w
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize)
+
+        x = self.ml.profile.loc[:, "x"]
+        top = x.max()
+        hmax = self.ml.profile.loc[:, "h"].max()
+        hmin = self.ml.profile.loc[:, "h"].min()
 
         # Set colors by color_by
         col = self.ml.materials["water"][color_by]
-        col = (col - col.min()) / (col.max() - col.min())
-        colors = plt.cm.get_cmap(cmap, 7)(col.values)
+        coln = (col - col.min()) / (col.max() - col.min())
+        colors = plt.cm.get_cmap(cmap, len(col))(coln.values)
 
         if show_grid:
-            edgecolor = "darkgray"
+            edgecolor = (.169, .169, .169, 0.2)
         else:
             edgecolor = None
 
         for i in self.ml.profile.index[1:]:
-            bot = self.ml.profile.loc[i, "x"]
+            bot = x.loc[i]
             h = bot - top
             color = colors[self.ml.profile.loc[i, "Mat"] - 1]
-            patch = plt.Rectangle(xy=(0, top), width=w, height=h, linewidth=1,
+            patch = plt.Rectangle(xy=(-1e6, top), width=1e11, height=h, linewidth=1,
                                   edgecolor=edgecolor, facecolor=color)
             ax.add_patch(patch)
             top = bot
 
-        line = ax.plot(self.ml.profile.loc[:, ["h"]].values,
-                       self.ml.profile.loc[:, ["x"]].values,
-                       label="Initial head")
+        line = ax.plot(self.ml.profile.loc[:, ["h"]].values, x.values, label="Initial Pressure Head")
 
-        ax.set_xlim(0, w)
-        ax.set_ylim(self.ml.profile.loc[:, "x"].min(),
-                    self.ml.profile.loc[:, "x"].max())
-        ax.set_xlabel(f"h [{self.ml.basic_info['LUnit']}]")
-        ax.set_ylabel(f"depth [{self.ml.basic_info['LUnit']}]")
+        ax.set_xlim(hmin - 0.2 * abs(hmin), hmax + 0.2 * abs(hmax))
+        ax.set_ylim(x.min(), x.max())
 
-        if title is not None:
-            ax.set_title(title)
+        if legend:
+            legend_elements = [line[0]]
+            for i, color in enumerate(colors):
+                if material_labels:
+                    label = material_labels[i]
+                else:
+                    label = f"Material {i}"
+                legend_elements.append(plt.Rectangle((0, 0), 0, 0, color=color,
+                                                     label=label))
+            ax.legend(handles=legend_elements, loc="best")
 
-        legend_elements = [line[0]]
-        for i, color in enumerate(colors):
-            legend_elements.append(plt.Rectangle((0, 0), 0, 0, color=color,
-                                                 label=f"material {i}"))
-
-        plt.legend(handles=legend_elements, loc="best")
-        plt.tight_layout()
         return ax
 
     def profile_information(self, data="Pressure Head", times=None,
@@ -99,12 +98,12 @@ class Plots:
         Parameters
         ----------
         data: str, optional
-            String with the variable of the profile information to plot. 
-            You can choose between: "Pressure Head", "Water Content", 
-            "Hydraulic Conductivity","Hydraulic Capacity", "Water Flux", 
+            String with the variable of the profile information to plot.
+            You can choose between: "Pressure Head", "Water Content",
+            "Hydraulic Conductivity","Hydraulic Capacity", "Water Flux",
             "Root Uptake", "Temperature". Default is "Pressure Head".
         times: list of int
-            List of integers of the time step to plot.       
+            List of integers of the time step to plot.
         figsize: tuple, optional
         legend: boolean, optional
 
@@ -160,9 +159,9 @@ class Plots:
         data: str, optional
             String with the variable of the water flow information to plot.
             You can choose between: "Potential Surface Flux",
-            "Potential Root Water Uptake", "Actual Surface Flux", 
-            "Actual Root Water Uptake", "Bottom Flux", 
-            "Pressure head at the soil surface", 
+            "Potential Root Water Uptake", "Actual Surface Flux",
+            "Actual Root Water Uptake", "Bottom Flux",
+            "Pressure head at the soil surface",
             "Mean value of the pressure head over the region",
             "Pressure head at the Bottom of the soil profile",
             "Surface runoff", "Volume of water in the entire flow domain".
@@ -213,7 +212,7 @@ class Plots:
         Parameters
         ----------
         data: str, optional
-            String with the variable of the water flow information to plot. 
+            String with the variable of the water flow information to plot.
             You can choose between: "Water Content", "Pressure head",
             "log Pressure head", "Hydraulic Capacity", "Hydraulic
             Conductivity", "log Hydraulic Conductivity", "Effective Water
