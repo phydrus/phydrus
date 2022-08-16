@@ -22,12 +22,13 @@ from .decorators import check_file_path
 
 def read_profile(path="PROFILE.OUT"):
     """
-    Method to read the PROFILE.OUT output file.
+    Method to read the PROFILE.OUT output file or PROFILE.DAT file.
 
     Parameters
     ----------
     path: str, optional
-        String with the name of the profile out file. default is "PROFILE.OUT".
+        String with the name of the profile out or dat file.
+        Default is "PROFILE.OUT".
 
     Returns
     -------
@@ -35,7 +36,17 @@ def read_profile(path="PROFILE.OUT"):
         Pandas with the profile data
 
     """
-    data = _read_file(path=path, start="depth", idx_col="n")
+    ftype = path.split('.')[-1]
+    if ftype == 'OUT':
+        data = _read_file(path=path, start="depth", idx_col="n")
+    elif ftype == 'DAT':
+        cols = ['491', '0', '0.1', '0.2', 'x', 'h', 'Mat', 'Lay',
+                'Beta', 'Axz', 'Bxz', 'Dxz', 'Temp', 'Conc', 'SConc']
+        data = read_csv(path, skiprows=2, skipfooter=1,
+                        index_col=cols[0], usecols=cols[:-5],
+                        delim_whitespace=True, engine='python')
+        data = data.rename(columns=dict(
+            zip(cols[1:-5], cols[4:]))).reindex(data.index.rename('n'))
     return data
 
 
@@ -389,19 +400,14 @@ def read_balance(path="BALANCE.OUT", usecols=None):
     return data
 
 
-def read_nodinf(path='NOD_INF.OUT', ml=None):
+def read_nodinf(path=None):
     """
     Improved function to read NODINF.out. Requires ml.add_time_info(print_times=True)
 
     Parameters
     ----------
-    path: str, optional
-        String with the name of the NOD_INF out file. default is "NOD_INF.OUT".
-    ml: ml, optional
+    path: path to model workspace, optional
         Needed to obtain the profile length.
-        This helps estimating the total amount of print times.
-    proflength: Boolean, optional
-        If true reads PROFILE.OUT to obtain the profile length. 
         This helps estimating the total amount of print times.
 
     Returns
@@ -411,25 +417,18 @@ def read_nodinf(path='NOD_INF.OUT', ml=None):
 
     """
 
-    num_lines = sum(1 for line in open(path))
-    with open(path) as fo:
+    profile = read_profile(path=f'{path}/PROFILE.OUT')
+
+    num_lines = sum(1 for _ in open(f'{path}/NOD_INF.OUT'))
+    with open(f'{path}/NOD_INF.OUT') as fo:
         f = fo.readlines()
     sidx = 9
-    if ml is None:
-        path.split('/')[0]
-        proflen = len(read_csv(f"{path.split('/')[0]}/PROFILE.OUT", skiprows=6,
-                      skipfooter=0, delim_whitespace=True))
-        rows = proflen + 2
-    else:
-        rows = len(ml.profile) + 3  # elements + 4
+    rows = len(profile) + 3  # elements + 4
     new = sidx + rows
     s = StringIO('\n'.join(f[sidx:new]))
     d = {}
     d[0] = read_csv(s, skiprows=[1, 2], delim_whitespace=True).astype(float)
-    if ml is None:
-        timesteps = int(floor(num_lines / (proflen + sidx)) - 1)
-    else:
-        timesteps = int(floor(num_lines / (len(ml.profile) + sidx)) - 1)
+    timesteps = int(floor(num_lines / (len(profile) + sidx)) - 1)
     for i in range(timesteps):
         idx = new + 6
         new = idx + rows
