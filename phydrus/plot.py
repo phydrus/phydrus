@@ -19,7 +19,7 @@ class Plots:
         self.ml = ml
 
     def profile(self, figsize=(3, 6), cmap="YlOrBr_r", color_by="Ks",
-                show_grid=True, ax=None, legend=False, material_labels=None):
+                show_grid=True, ax=None):
         """Method to plot the soil profyle
 
         Parameters
@@ -34,10 +34,6 @@ class Plots:
             Show the grid lines of dx, by default True
         ax : Matplotlib.Axes, optional
             Axes to plot the profile in, by default None which creates an Axes
-        legend : bool, optional
-            Add legend, by default False
-        material_labels : list, optional
-            Material labels to add in legend, by default None which numbers the materials
 
         Returns
         -------
@@ -48,8 +44,8 @@ class Plots:
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
 
-        x = self.ml.profile.loc[:, "x"]
-        top = x.max()
+        y = self.ml.profile.loc[:, "x"]
+        top = y.max()
         hmax = self.ml.profile.loc[:, "h"].max()
         hmin = self.ml.profile.loc[:, "h"].min()
 
@@ -64,29 +60,19 @@ class Plots:
             edgecolor = None
 
         for i in self.ml.profile.index[1:]:
-            bot = x.loc[i]
+            bot = y.loc[i]
             h = bot - top
-            color = colors[self.ml.profile.loc[i, "Mat"] - 1]
+            j = self.ml.profile.loc[i, "Mat"] - 1
             patch = plt.Rectangle(xy=(-1e6, top), width=1e11, height=h, linewidth=1,
-                                  edgecolor=edgecolor, facecolor=color)
+                                  edgecolor=edgecolor, facecolor=colors[j],
+                                  label=f"Material {j}")
             ax.add_patch(patch)
             top = bot
 
-        line = ax.plot(self.ml.profile.loc[:, ["h"]].values, x.values, label="Initial Pressure Head")
+        ax.plot(self.ml.profile.loc[:, ["h"]].values, y.values, label=r"$\psi_i$")
 
         ax.set_xlim(hmin - 0.2 * abs(hmin), hmax + 0.2 * abs(hmax))
-        ax.set_ylim(x.min(), x.max())
-
-        if legend:
-            legend_elements = [line[0]]
-            for i, color in enumerate(colors):
-                if material_labels:
-                    label = material_labels[i]
-                else:
-                    label = f"Material {i}"
-                legend_elements.append(plt.Rectangle((0, 0), 0, 0, color=color,
-                                                     label=label))
-            ax.legend(handles=legend_elements, loc="best")
+        ax.set_ylim(y.min(), y.max())
 
         return ax
 
