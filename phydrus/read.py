@@ -15,18 +15,20 @@ or
 """
 
 from pandas import read_csv, DataFrame, to_numeric
-
+from numpy import floor
+from io import StringIO
 from .decorators import check_file_path
 
 
 def read_profile(path="PROFILE.OUT"):
     """
-    Method to read the PROFILE.OUT output file.
+    Method to read the PROFILE.OUT output file or PROFILE.DAT file.
 
     Parameters
     ----------
     path: str, optional
-        String with the name of the profile out file. default is "PROFILE.OUT".
+        String with the name of the profile out or dat file.
+        Default is "PROFILE.OUT".
 
     Returns
     -------
@@ -34,7 +36,17 @@ def read_profile(path="PROFILE.OUT"):
         Pandas with the profile data
 
     """
-    data = _read_file(path=path, start="depth", idx_col="n")
+    ftype = path.split('.')[-1]
+    if ftype == 'OUT':
+        data = _read_file(path=path, start="depth", idx_col="n")
+    elif ftype == 'DAT':
+        cols = ['491', '0', '0.1', '0.2', 'x', 'h', 'Mat', 'Lay',
+                'Beta', 'Axz', 'Bxz', 'Dxz', 'Temp', 'Conc', 'SConc']
+        data = read_csv(path, skiprows=2, skipfooter=1,
+                        index_col=cols[0], usecols=cols[:-5],
+                        delim_whitespace=True, engine='python')
+        data = data.rename(columns=dict(
+            zip(cols[1:-5], cols[4:]))).reindex(data.index.rename('n'))
     return data
 
 
@@ -386,3 +398,40 @@ def read_balance(path="BALANCE.OUT", usecols=None):
         data[time] = df
 
     return data
+
+
+def read_nodinf(path=None):
+    """
+    Improved function to read NODINF.out. Requires ml.add_time_info(print_times=True)
+
+    Parameters
+    ----------
+    path: path to model workspace, optional
+        Needed to obtain the profile length.
+        This helps estimating the total amount of print times.
+
+    Returns
+    -------
+    data: dict
+        Dictionary with the time as a key and a Pandas DataFrame as a value.
+
+    """
+
+    profile = read_profile(path=f'{path}/PROFILE.OUT')
+
+    num_lines = sum(1 for _ in open(f'{path}/NOD_INF.OUT'))
+    with open(f'{path}/NOD_INF.OUT') as fo:
+        f = fo.readlines()
+    sidx = 9
+    rows = len(profile) + 3  # elements + 4
+    new = sidx + rows
+    s = StringIO('\n'.join(f[sidx:new]))
+    d = {}
+    d[0] = read_csv(s, skiprows=[1, 2], delim_whitespace=True).astype(float)
+    timesteps = int(floor(num_lines / (len(profile) + sidx)) - 1)
+    for i in range(timesteps):
+        idx = new + 6
+        new = idx + rows
+        s = StringIO('\n'.join(f[idx:new]))
+        d[i + 1] = read_csv(s, delim_whitespace=True).drop([0]).astype(float)
+    return d
