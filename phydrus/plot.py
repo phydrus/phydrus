@@ -18,8 +18,17 @@ class Plots:
     def __init__(self, ml):
         self.ml = ml
 
-    def profile(self, figsize=(3, 6), cmap="YlOrBr_r", color_by="Ks",
-                show_grid=True, ax=None):
+    def profile(
+        self,
+        figsize=(3, 6),
+        cmap="YlOrBr_r",
+        color_by="Ks",
+        vmin=None,
+        vmax=None,
+        show_grid=True,
+        plot_h=True,
+        ax=None,
+    ):
         """Method to plot the soil profyle
 
         Parameters
@@ -51,11 +60,15 @@ class Plots:
 
         # Set colors by color_by
         col = self.ml.materials["water"][color_by]
-        coln = (col - col.min()) / (col.max() - col.min())
+        if vmin is None:
+            vmin = col.min()
+        if vmax is None:
+            vmax = col.max()
+        coln = (col - vmin) / (vmax - vmin)
         colors = plt.cm.get_cmap(cmap, len(col))(coln.values)
 
         if show_grid:
-            edgecolor = (.169, .169, .169, 0.2)
+            edgecolor = (0.169, 0.169, 0.169, 0.2)
         else:
             edgecolor = None
 
@@ -63,21 +76,29 @@ class Plots:
             bot = y.loc[i]
             h = bot - top
             j = self.ml.profile.loc[i, "Mat"] - 1
-            patch = plt.Rectangle(xy=(-1e6, top), width=1e11, height=h, linewidth=1,
-                                  edgecolor=edgecolor, facecolor=colors[j],
-                                  label=f"Material {j}")
+            patch = plt.Rectangle(
+                xy=(-1e6, top),
+                width=1e11,
+                height=h,
+                linewidth=1,
+                edgecolor=edgecolor,
+                facecolor=colors[j],
+                label=f"Material {j}",
+            )
             ax.add_patch(patch)
             top = bot
 
-        ax.plot(self.ml.profile.loc[:, ["h"]].values, y.values, label=r"$\psi_i$")
+        if plot_h:
+            ax.plot(self.ml.profile.loc[:, ["h"]].values, y.values, label=r"$\psi_i$")
 
         ax.set_xlim(hmin - 0.2 * abs(hmin), hmax + 0.2 * abs(hmax))
         ax.set_ylim(y.min(), y.max())
 
         return ax
 
-    def profile_information(self, data="Pressure Head", times=None,
-                            legend=True, figsize=(5, 3), **kwargs):
+    def profile_information(
+        self, data="Pressure Head", times=None, legend=True, figsize=(5, 3), **kwargs
+    ):
         """
         Method to plot the soil profile information.
 
@@ -103,12 +124,24 @@ class Plots:
         m_unit = self.ml.basic_info["MUnit"]
 
         use_cols = ("Head", "Moisture", "K", "C", "Flux", "Sink", "Temp")
-        col_names = ("Pressure Head", "Water Content",
-                     "Hydraulic Conductivity", "Hydraulic Capacity",
-                     "Water Flux", "Root Uptake", "Temperature")
-        units = ["h [{}]".format(l_unit), "Theta [-]", f"K [{l_unit}/days]",
-                 f"C [1/{l_unit}]", f"v [{l_unit}/{t_unit}]",
-                 f"S [1/{t_unit}]", "T [°C]"]
+        col_names = (
+            "Pressure Head",
+            "Water Content",
+            "Hydraulic Conductivity",
+            "Hydraulic Capacity",
+            "Water Flux",
+            "Root Uptake",
+            "Temperature",
+        )
+        units = [
+            "h [{}]".format(l_unit),
+            "Theta [-]",
+            f"K [{l_unit}/days]",
+            f"C [1/{l_unit}]",
+            f"v [{l_unit}/{t_unit}]",
+            f"S [1/{t_unit}]",
+            "T [°C]",
+        ]
 
         if self.ml.basic_info["lChem"]:
             use_cols = use_cols + ("Conc(1..NS)", "Sorb(1...NS)")
@@ -127,7 +160,7 @@ class Plots:
 
         ax.set_xlabel(units[col])
         ax.set_ylabel(f"Depth [{self.ml.basic_info['LUnit']}]")
-        ax.grid(linestyle='--')
+        ax.grid(linestyle="--")
 
         if legend:
             ax.legend(bbox_to_anchor=(1, 1), loc="upper left")
@@ -135,8 +168,7 @@ class Plots:
         plt.tight_layout()
         return ax
 
-    def water_flow(self, data="Potential Surface Flux", figsize=(6, 3),
-                   **kwargs):
+    def water_flow(self, data="Potential Surface Flux", figsize=(6, 3), **kwargs):
         """
         Method to plot the water flow information.
 
@@ -159,16 +191,31 @@ class Plots:
         ax: matplotlib axes instance
 
         """
-        col_names = ("Potential Surface Flux", "Potential Root Water Uptake",
-                     "Actual Surface Flux", "Actual Root Water Uptake",
-                     "Bottom Flux", "Pressure head at the soil surface",
-                     "Mean value of the pressure head over the region",
-                     "Pressure head at the Bottom of the soil profile",
-                     "Surface runoff",
-                     "Volume of water in the entire flow domain")
+        col_names = (
+            "Potential Surface Flux",
+            "Potential Root Water Uptake",
+            "Actual Surface Flux",
+            "Actual Root Water Uptake",
+            "Bottom Flux",
+            "Pressure head at the soil surface",
+            "Mean value of the pressure head over the region",
+            "Pressure head at the Bottom of the soil profile",
+            "Surface runoff",
+            "Volume of water in the entire flow domain",
+        )
 
-        cols = ("rTop", "rRoot", "vTop", "vRoot", "vBot", "hTop", "hRoot",
-                "hBot", "RunOff", "Volume")
+        cols = (
+            "rTop",
+            "rRoot",
+            "vTop",
+            "vRoot",
+            "vBot",
+            "hTop",
+            "hRoot",
+            "hBot",
+            "RunOff",
+            "Volume",
+        )
         df = self.ml.read_tlevel()
         col = col_names.index(data)
 
@@ -210,16 +257,21 @@ class Plots:
         axes: matplotlib axes instance
 
         """
-        col_names = ("Water Content", "Pressure head", "log Pressure head",
-                     "Hydraulic Capacity", "Hydraulic Conductivity",
-                     "log Hydraulic Conductivity", "Effective Water Content")
+        col_names = (
+            "Water Content",
+            "Pressure head",
+            "log Pressure head",
+            "Hydraulic Capacity",
+            "Hydraulic Conductivity",
+            "log Hydraulic Conductivity",
+            "Effective Water Content",
+        )
         cols = ("theta", "h", "log_h", "C", "K", "log_K", "S", "Kv")
         col = col_names.index(data)
 
         dfs = self.ml.read_i_check()
 
-        _, axes = plt.subplots(figsize=figsize, nrows=1, ncols=2,
-                               sharey=True, **kwargs)
+        _, axes = plt.subplots(figsize=figsize, nrows=1, ncols=2, sharey=True, **kwargs)
 
         for i, df in dfs.items():
             name = f"Node {i}"
