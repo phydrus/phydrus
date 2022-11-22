@@ -1122,7 +1122,7 @@ class Model:
             lines.append(" ".join(values))
 
         lines.append("TPrint(1),TPrint(2),...,TPrint(MPL)\n")
-        for i in range(int(len(self.times) / 6) + 1):
+        for i in range(int(len(self.times) / 6.001) + 1):
             lines.append(
                 " ".join([str(time) for time in self.times[i * 6:i * 6 + 6]]))
             lines.append("\n")
