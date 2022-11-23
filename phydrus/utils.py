@@ -218,3 +218,36 @@ def partitioning_grass(P, ET, a=0.45, ch=5, k=0.463, return_SCF=False):
         return Pnet, I, Etp, Esp, SCF
     else:
         return Pnet, I, Etp, Esp
+
+
+def get_gwt(pressure_head, depth):
+    """Function to get the groundwater table depth given a
+    pressure head array and an depth array
+
+    Parameters
+    ----------
+    pressure_head : array
+        array of the pressure head
+    depth : array
+        array of the elevation
+
+    Returns
+    -------
+    float
+        Depth of the groundwater table
+    """
+    sign = signbit(pressure_head)
+    if sign.any() == False:
+        gwt = depth[0]  # take top elevation
+    elif sign.sum() == len(pressure_head):
+        gwt = depth[-1]  # take bottom elevation
+    else:
+        idx = where(diff(sign))[0]
+        if len(idx) > 1:
+            idx = idx[0]
+        gwt = (0 - pressure_head[idx + 1]) * (depth[idx] - depth[idx + 1]) / (
+            pressure_head[idx] - pressure_head[idx + 1]
+        ) + depth[
+            idx + 1
+        ]  # linearly interpolate
+    return gwt
