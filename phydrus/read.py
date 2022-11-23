@@ -383,52 +383,17 @@ def read_nod_inf(path="NOD_INF.OUT"):
     end_pointers = arange(end_count[0], total_size, byte_diff)
 
     d = {}
-    if option == 1:  # BytesIO
-        with open(path, "rb") as fo:
-            for t, h, e in zip(times_pointers, header_pointers, end_pointers):
-                fo.seek(t)
-                time = float(fo.read(h - t).split()[-1])
-                data = fo.read(e - h)
-                d[time] = read_csv(
-                    BytesIO(data),
-                    delim_whitespace=True,
-                    skiprows=[1],
-                    index_col=0,
-                ).astype(float)
-
-    elif option == 2:  # StringIO
-        with open(path, "r+") as fo:
-            for t, h, e in zip(times_pointers, header_pointers, end_pointers):
-                fo.seek(t)
-                timelines = fo.readline()
-                while fo.tell() < h:
-                    timelines += fo.readline()
-                time = float(timelines.split()[-1])
-                data = fo.readline()
-                while fo.tell() < e:
-                    data += fo.readline()
-                d[time] = read_csv(
-                    StringIO(data),
-                    delim_whitespace=True,
-                    skiprows=[1],
-                    index_col=0,
-                ).astype(float)
-
-    elif option == 3:  # file object with pointer
-        with open(path, "r+") as fo:
-            for t, h in zip(times_pointers, header_pointers):
-                fo.seek(t)
-                timelines = fo.readline()
-                while fo.tell() < h:
-                    timelines += fo.readline()
-                time = float(timelines.split()[-1])
-                d[time] = read_csv(
-                    fo,
-                    nrows=line_count,
-                    delim_whitespace=True,
-                    skiprows=[1],
-                    index_col=0,
-                ).astype(float)
+    with open(path, "rb") as fo:
+        for t, h, e in zip(times_pointers, header_pointers, end_pointers):
+            fo.seek(t)
+            time = float(fo.read(h - t).split()[-1])
+            data = fo.read(e - h)
+            d[time] = read_csv(
+                BytesIO(data),
+                delim_whitespace=True,
+                skiprows=[1],
+                index_col=0,
+            ).astype(float)
 
     return d
 
