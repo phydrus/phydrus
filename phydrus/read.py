@@ -14,9 +14,11 @@ or
 
 """
 
-from pandas import read_csv, DataFrame, to_numeric
-from numpy import floor
-from io import StringIO
+from pandas import read_csv, DataFrame, to_numeric, concat
+from numpy import floor, arange
+from io import StringIO, BytesIO
+import linecache
+import os
 from .decorators import check_file_path
 
 
@@ -36,17 +38,39 @@ def read_profile(path="PROFILE.OUT"):
         Pandas with the profile data
 
     """
-    ftype = path.split('.')[-1]
-    if ftype == 'OUT':
+    ftype = path.split(".")[-1]
+    if ftype == "OUT":
         data = _read_file(path=path, start="depth", idx_col="n")
-    elif ftype == 'DAT':
-        cols = ['491', '0', '0.1', '0.2', 'x', 'h', 'Mat', 'Lay',
-                'Beta', 'Axz', 'Bxz', 'Dxz', 'Temp', 'Conc', 'SConc']
-        data = read_csv(path, skiprows=2, skipfooter=1,
-                        index_col=cols[0], usecols=cols[:-5],
-                        delim_whitespace=True, engine='python')
-        data = data.rename(columns=dict(
-            zip(cols[1:-5], cols[4:]))).reindex(data.index.rename('n'))
+    elif ftype == "DAT":
+        cols = [
+            "491",
+            "0",
+            "0.1",
+            "0.2",
+            "x",
+            "h",
+            "Mat",
+            "Lay",
+            "Beta",
+            "Axz",
+            "Bxz",
+            "Dxz",
+            "Temp",
+            "Conc",
+            "SConc",
+        ]
+        data = read_csv(
+            path,
+            skiprows=2,
+            skipfooter=1,
+            index_col=cols[0],
+            usecols=cols[:-5],
+            delim_whitespace=True,
+            engine="python",
+        )
+        data = data.rename(columns=dict(zip(cols[1:-5], cols[4:]))).reindex(
+            data.index.rename("n")
+        )
     return data
 
 
@@ -67,8 +91,7 @@ def read_run_inf(path="RUN_INF.OUT", usecols=None):
         Pandas with the run_inf data
 
     """
-    data = _read_file(path=path, start="TLevel", idx_col="TLevel",
-                      usecols=usecols)
+    data = _read_file(path=path, start="TLevel", idx_col="TLevel", usecols=usecols)
     return data
 
 
@@ -108,9 +131,15 @@ def read_i_check(path="I_CHECK.OUT"):
 
             # Read data into a Pandas DataFrame
             nrows = e - start - 2
-            data[i] = read_csv(file, skiprows=start + 1, nrows=nrows,
-                               skipinitialspace=True, delim_whitespace=True,
-                               names=names, dtype=float)
+            data[i] = read_csv(
+                file,
+                skiprows=start + 1,
+                nrows=nrows,
+                skipinitialspace=True,
+                delim_whitespace=True,
+                names=names,
+                dtype=float,
+            )
             start = e
         return data
 
@@ -137,9 +166,10 @@ def read_tlevel(path="T_LEVEL.OUT", usecols=None):
         Pandas with the t_level data
 
     """
-    data = _read_file(path=path, start="rTop", idx_col="Time",
-                      remove_first_row=True, usecols=usecols)
-    data = data.set_index(to_numeric(data.index, errors='coerce'))
+    data = _read_file(
+        path=path, start="rTop", idx_col="Time", remove_first_row=True, usecols=usecols
+    )
+    data = data.set_index(to_numeric(data.index, errors="coerce"))
     return data
 
 
@@ -160,8 +190,9 @@ def read_alevel(path="A_LEVEL.OUT", usecols=None):
         Pandas with the a_level data
 
     """
-    data = _read_file(path=path, start="Time", idx_col="Time",
-                      remove_first_row=True, usecols=usecols)
+    data = _read_file(
+        path=path, start="Time", idx_col="Time", remove_first_row=True, usecols=usecols
+    )
     return data
 
 
@@ -180,14 +211,14 @@ def read_solute(path="SOLUTE1.OUT"):
         Pandas with the a_level data
 
     """
-    data = _read_file(path=path, start="Time", idx_col="Time",
-                      remove_first_row=True)
+    data = _read_file(path=path, start="Time", idx_col="Time", remove_first_row=True)
     return data
 
 
 @check_file_path
-def _read_file(path, start, end="end", usecols=None, idx_col=None,
-               remove_first_row=False):
+def _read_file(
+    path, start, end="end", usecols=None, idx_col=None, remove_first_row=False
+):
     """
     Internal method to read Hydrus output files.
 
@@ -223,13 +254,18 @@ def _read_file(path, start, end="end", usecols=None, idx_col=None,
         file.seek(0)  # Go back to start of file
 
         # Read data into a Pandas DataFrame
-        data = read_csv(file, skiprows=s, nrows=e - s - 2, usecols=usecols,
-                        index_col=idx_col, skipinitialspace=True,
-                        delim_whitespace=True)
+        data = read_csv(
+            file,
+            skiprows=s,
+            nrows=e - s - 2,
+            usecols=usecols,
+            index_col=idx_col,
+            skipinitialspace=True,
+            delim_whitespace=True,
+        )
 
         if remove_first_row:
-            data = data.drop(index=data.index[0]).apply(to_numeric,
-                                                        errors="ignore")
+            data = data.drop(index=data.index[0]).apply(to_numeric, errors="ignore")
         else:
             data = data.apply(to_numeric, errors="ignore")
 
@@ -268,8 +304,15 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
                 end = i
                 break
 
-    df1 = read_csv(path, skiprows=start, index_col=0, nrows=end - start - 1,
-                   skipinitialspace=True, delim_whitespace=True, engine="c")
+    df1 = read_csv(
+        path,
+        skiprows=start,
+        index_col=0,
+        nrows=end - start - 1,
+        skipinitialspace=True,
+        delim_whitespace=True,
+        engine="c",
+    )
     if cols is None:
         cols = ["h", "theta", "Temp"]
     if conc:
@@ -289,7 +332,7 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
 
 
 @check_file_path
-def read_nod_inf(path="NOD_INF.OUT", times=None):
+def read_nod_inf(path="NOD_INF.OUT"):
     """
     Method to read the NOD_INF.OUT output file.
 
@@ -308,37 +351,86 @@ def read_nod_inf(path="NOD_INF.OUT", times=None):
         Dictionary with the time as a key and a Pandas DataFrame as a value.
 
     """
-    use_times = []
-    start = []
-    end = []
-
-    with open(path) as file:
-        # Find the starting times to read the information
-        for i, line in enumerate(file.readlines()):
-            if "Time" in line and "Date" not in line:
-                time = line.replace(" ", "").split(":")[1].replace("\n", "")
-                use_times.append(float(time))
+    # identify file
+    total_size = os.stat(path).st_size
+    byte_count = []
+    header_count = []
+    end_count = []
+    time_count = []
+    line_count = None
+    with open(path, "r+") as fo:
+        line = fo.readline()
+        while line:
+            if "Time:" in line[0:7]:
+                time_count.append(byte_count[-1])
+                if len(time_count) == 2:
+                    break
             elif "Node" in line:
-                start.append(i)
+                header_count.append(byte_count[-1])
+                line_count = 1
             elif "end" in line:
-                end.append(i)
-        if times is None:
-            times = use_times
-        # Read the data into a Pandas DataFrame
-        data = {}
-        for s, e, time in zip(start, end, use_times):
-            if time in times:
-                file.seek(0)  # Go back to start of file
-                data[time] = read_csv(file, skiprows=s,
-                                      skipinitialspace=True,
-                                      delim_whitespace=True,
-                                      nrows=e - s - 2)
-                data[time] = data[time].drop([0])
-                data[time] = data[time].apply(to_numeric)
-    if len(data) == 1:
-        return next(iter(data.values()))
-    else:
-        return data
+                end_count.append(byte_count[-1])
+            else:
+                if line_count is not None:
+                    line_count += 1
+            byte_count.append(fo.tell())
+            line = fo.readline()
+        byte_diff = time_count[1] - time_count[0]
+
+    # create pointers that indicate the file
+    times_pointers = arange(time_count[0], total_size, byte_diff)
+    header_pointers = arange(header_count[0], total_size, byte_diff)
+    end_pointers = arange(end_count[0], total_size, byte_diff)
+
+    d = {}
+    if option == 1:  # BytesIO
+        with open(path, "rb") as fo:
+            for t, h, e in zip(times_pointers, header_pointers, end_pointers):
+                fo.seek(t)
+                time = float(fo.read(h - t).split()[-1])
+                data = fo.read(e - h)
+                d[time] = read_csv(
+                    BytesIO(data),
+                    delim_whitespace=True,
+                    skiprows=[1],
+                    index_col=0,
+                ).astype(float)
+
+    elif option == 2:  # StringIO
+        with open(path, "r+") as fo:
+            for t, h, e in zip(times_pointers, header_pointers, end_pointers):
+                fo.seek(t)
+                timelines = fo.readline()
+                while fo.tell() < h:
+                    timelines += fo.readline()
+                time = float(timelines.split()[-1])
+                data = fo.readline()
+                while fo.tell() < e:
+                    data += fo.readline()
+                d[time] = read_csv(
+                    StringIO(data),
+                    delim_whitespace=True,
+                    skiprows=[1],
+                    index_col=0,
+                ).astype(float)
+
+    elif option == 3:  # file object with pointer
+        with open(path, "r+") as fo:
+            for t, h in zip(times_pointers, header_pointers):
+                fo.seek(t)
+                timelines = fo.readline()
+                while fo.tell() < h:
+                    timelines += fo.readline()
+                time = float(timelines.split()[-1])
+                d[time] = read_csv(
+                    fo,
+                    nrows=line_count,
+                    delim_whitespace=True,
+                    skiprows=[1],
+                    index_col=0,
+                ).astype(float)
+
+    return d
 
 
 @check_file_path
@@ -362,8 +454,16 @@ def read_balance(path="BALANCE.OUT", usecols=None):
 
     """
     if usecols is None:
-        usecols = ["Area", "W-volume", "In-flow", "h Mean", "Top Flux",
-                   "Bot Flux", "WatBalT", "WatBalR"]
+        usecols = [
+            "Area",
+            "W-volume",
+            "In-flow",
+            "h Mean",
+            "Top Flux",
+            "Bot Flux",
+            "WatBalT",
+            "WatBalR",
+        ]
 
     lines = open(path).readlines()
     use_times = []
@@ -378,8 +478,7 @@ def read_balance(path="BALANCE.OUT", usecols=None):
                 lines[i] = [line1, line2, line3]
 
         if "Time" in line and "Date" not in line:
-            time = float(
-                line.replace(" ", "").split("]")[1].replace("\n", ""))
+            time = float(line.replace(" ", "").split("]")[1].replace("\n", ""))
             use_times.append(time)
         if "Area" in line:
             start.append(i)
@@ -417,21 +516,146 @@ def read_nodinf(path=None):
 
     """
 
-    profile = read_profile(path=f'{path}/PROFILE.OUT')
+    profile = read_profile(path=f"{path}/PROFILE.OUT")
 
-    num_lines = sum(1 for _ in open(f'{path}/NOD_INF.OUT'))
-    with open(f'{path}/NOD_INF.OUT') as fo:
+    num_lines = sum(1 for _ in open(f"{path}/NOD_INF.OUT"))
+    with open(f"{path}/NOD_INF.OUT") as fo:
         f = fo.readlines()
     sidx = 9
     rows = len(profile) + 3  # elements + 4
     new = sidx + rows
-    s = StringIO('\n'.join(f[sidx:new]))
+    s = StringIO("\n".join(f[sidx:new]))
     d = {}
     d[0] = read_csv(s, skiprows=[1, 2], delim_whitespace=True).astype(float)
     timesteps = int(floor(num_lines / (len(profile) + sidx)) - 1)
     for i in range(timesteps):
         idx = new + 6
         new = idx + rows
-        s = StringIO('\n'.join(f[idx:new]))
+        s = StringIO("\n".join(f[idx:new]))
         d[i + 1] = read_csv(s, delim_whitespace=True).drop([0]).astype(float)
+    return d
+
+
+def read_nodinf2(path="NODINF.out", option=1):
+    """
+    Improved function to read NODINF.out. Requires ml.add_time_info(print_times=True)
+
+    Parameters
+    ----------
+    path: path to model workspace, optional
+        Needed to obtain the profile length.
+        This helps estimating the total amount of print times.
+
+    Returns
+    -------
+    data: dict
+        Dictionary with the time as a key and a Pandas DataFrame as a value.
+
+    """
+    d = {}
+
+    if option in (1, 2, 3):
+
+        def blocks(files, size=65536):
+            while True:
+                b = files.read(size)
+                if not b:
+                    break
+                yield b
+
+        with open(path, "r", encoding="utf-8", errors="ignore") as fo:
+            num_lines = sum(bl.count("\n") for bl in blocks(fo))
+
+        # identify file
+        with open(path) as fo:
+            byte_count = 0
+            time_count = 0
+            line_count = 0
+            time_lines = []
+            byte_lines = []
+            for l in fo:
+                line_count += 1
+                if "Time:" in l:
+                    time_count += 1
+                    time_lines.append(line_count)
+                elif "end" in l:
+                    byte_lines.append(byte_count)
+                if time_count == 3:
+                    break
+
+    if option == 1:
+        with open(path) as fo:
+            f = fo.readlines()
+        sidx = 9
+        time_diff = time_lines[2] - time_lines[1]
+        lr = arange(7, num_lines, time_diff) - 1
+        times = [float(f[i].split()[-1]) for i in lr]
+        rows = time_diff - 6
+        new = sidx + rows
+        s = StringIO("\n".join(f[sidx:new]))
+        d[times[0]] = read_csv(s, skiprows=[1, 2], delim_whitespace=True).astype(float)
+        for t in times[1:]:
+            idx = new + 6
+            new = idx + rows
+            s = StringIO("\n".join(f[idx:new]))
+            d[t] = read_csv(s, delim_whitespace=True).drop([0]).astype(float)
+
+    elif option == 2:
+
+        for i in range(len(lr) - 1):
+            keyline = linecache.getline(path, lineno=lr[i])
+            key = float(keyline.split()[-1])
+            lines = [
+                linecache.getline(path, lineno=j)
+                for j in range(lr[i] + 3, lr[i + 1] - 3)
+            ]
+            s = StringIO("\n".join(lines))
+            d[key] = read_csv(s, delim_whitespace=True).drop([0]).astype(float)
+
+    elif option == 3:
+
+        lines = "\n"
+        with open(path) as fo:
+            while chunk := fo.read(1024 * 8):
+                lines += chunk
+
+        time_diff = time_lines[2] - time_lines[1]
+        lr = arange(7, num_lines + time_diff, time_diff)
+        lines = lines.splitlines()
+        for i in range(len(lr) - 1):
+            keyline = lines[lr[i]]
+            key = float(keyline.split()[-1])
+            s = StringIO("\n".join(lines[lr[i] + 3 : lr[i + 1] - 3]))
+            d[key] = read_csv(s, delim_whitespace=True).drop([0]).astype(float)
+
+    elif option == 4:
+        names = [
+            "Node",
+            "Depth",
+            "Head",
+            "Moisture",
+            "K",
+            "C",
+            "Flux",
+            "Sink",
+            "Kappa",
+            "v/KsTop",
+            "Temp",
+        ]
+        with open(path) as fo:
+            st = fo.read()
+        df = read_csv(
+            StringIO(st),
+            delim_whitespace=True,
+            names=names,
+            on_bad_lines="skip",  # skip, warn or error
+            header=None,
+            index_col=0,
+        )
+        times = df.loc["Time:"].dropna(axis=1).values.ravel().astype(float)
+        nodes = [item for item in df.index.unique() if item.isdigit()]
+
+        for i, t in enumerate(times):
+            d[t] = concat([df.loc[n].iloc[[i]] for n in nodes])
+
     return d
