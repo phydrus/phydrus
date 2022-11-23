@@ -107,7 +107,7 @@ def read_obsnod_out(path="ObsNod.out", col="hNew"):
         df = read_csv(
             f, delim_whitespace=True, index_col=0, skipfooter=1, engine="python"
         )
-    dtf = df.loc[:, [string for string in df.columns if col in string]].copy()
+    dtf = df.loc[:, [x for x in df.columns if col in x]].copy()
     dtf.columns = nodes
     return dtf
 
