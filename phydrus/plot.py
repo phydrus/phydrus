@@ -39,6 +39,10 @@ class Plots:
             String with a named Matplotlib colormap, by default 'YlOrBr_r'
         color_by : str, optional
             Column from the material properties to color by, by default 'Ks'
+        vmin : str, optional
+            Minimum value for the colormap, if None use minimum of color_by
+        vmax : str, optional
+            Maximum value for the colormap, if None use minimum of color_by
         show_grid : bool, optional
             Show the grid lines of dx, by default True
         ax : Matplotlib.Axes, optional
@@ -97,7 +101,13 @@ class Plots:
         return ax
 
     def profile_information(
-        self, data="Pressure Head", times=None, legend=True, figsize=(5, 3), **kwargs
+        self,
+        data="Pressure Head",
+        times=None,
+        legend=True,
+        figsize=(5, 3),
+        ax=None,
+        **kwargs,
     ):
         """
         Method to plot the soil profile information.
@@ -113,6 +123,8 @@ class Plots:
             List of integers of the time step to plot.
         figsize: tuple, optional
         legend: boolean, optional
+        ax : Matplotlib.Axes, optional
+            Axes to plot the profile in, by default None which creates an Axes
 
         Returns
         -------
@@ -125,12 +137,24 @@ class Plots:
 
         use_cols = ("Head", "Moisture", "K", "C", "Flux", "Sink", "Temp")
 
-        col_names = ("Pressure Head", "Water Content",
-                     "Hydraulic Conductivity", "Hydraulic Capacity",
-                     "Water Flux", "Root Uptake", "Temperature")
-        units = [f"h [{l_unit}]", "Theta [-]", f"K [{l_unit}/days]",
-                 f"C [1/{l_unit}]", f"v [{l_unit}/{t_unit}]",
-                 f"S [1/{t_unit}]", "T [°C]"]
+        col_names = (
+            "Pressure Head",
+            "Water Content",
+            "Hydraulic Conductivity",
+            "Hydraulic Capacity",
+            "Water Flux",
+            "Root Uptake",
+            "Temperature",
+        )
+        units = [
+            f"h [{l_unit}]",
+            "Theta [-]",
+            f"K [{l_unit}/days]",
+            f"C [1/{l_unit}]",
+            f"v [{l_unit}/{t_unit}]",
+            f"S [1/{t_unit}]",
+            "T [°C]",
+        ]
 
         if self.ml.basic_info["lChem"]:
             use_cols = use_cols + ("Conc(1..NS)", "Sorb(1...NS)")
@@ -138,7 +162,8 @@ class Plots:
             units.extend([f"c [{m_unit}/{l_unit}*3]", "sorb."])
 
         col = col_names.index(data)
-        _, ax = plt.subplots(figsize=figsize, **kwargs)
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize, **kwargs)
         dfs = self.ml.read_nod_inf(times=times)
 
         if times is None or len(times) > 1:
@@ -157,9 +182,9 @@ class Plots:
         plt.tight_layout()
         return ax
 
-
-    def water_flow(self, data="Potential Surface Flux", figsize=(6, 3),
-                   axes=None, **kwargs):
+    def water_flow(
+        self, data="Potential Surface Flux", figsize=(6, 3), ax=None, **kwargs
+    ):
 
         """
         Method to plot the water flow information.
@@ -211,22 +236,21 @@ class Plots:
         df = self.ml.read_tlevel()
         col = col_names.index(data)
 
-        if axes is None:
-            _, axes = plt.subplots(1, 2, figsize=figsize, **kwargs)
-        df.plot(y=cols[col], ax=axes[0], use_index=True)
-        axes[0].set_ylabel(data)
-        axes[0].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
+        if ax is None:
+            _, ax = plt.subplots(1, 2, figsize=figsize, **kwargs)
+        df.plot(y=cols[col], ax=ax[0], use_index=True)
+        ax[0].set_ylabel(data)
+        ax[0].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
 
         # Cumulative sum
-        df.plot(y=f"sum({cols[col]})", ax=axes[1], use_index=True)
-        axes[1].set_ylabel(f"Cum. {data}")
-        axes[1].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
+        df.plot(y=f"sum({cols[col]})", ax=ax[1], use_index=True)
+        ax[1].set_ylabel(f"Cum. {data}")
+        ax[1].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
 
         plt.tight_layout()
-        return axes
+        return ax
 
-    def soil_properties(self, data="Water Content", figsize=(6, 3),
-                        axes=None, **kwargs):
+    def soil_properties(self, data="Water Content", figsize=(6, 3), ax=None, **kwargs):
         """
         Method to plot the soil hydraulic properties.
 
@@ -259,21 +283,22 @@ class Plots:
 
         dfs = self.ml.read_i_check()
 
-        if axes is None:
-            _, axes = plt.subplots(figsize=figsize, nrows=1, ncols=2,
-                                   sharey=True, **kwargs)
+        if ax is None:
+            _, ax = plt.subplots(
+                figsize=figsize, nrows=1, ncols=2, sharey=True, **kwargs
+            )
         for i, df in dfs.items():
             name = f"Node {i}"
-            df.plot(x="h", y=cols[col], ax=axes[0], label=name)
-            df.plot(x="log_h", y=cols[col], ax=axes[1], label=name)
+            df.plot(x="h", y=cols[col], ax=ax[0], label=name)
+            df.plot(x="log_h", y=cols[col], ax=ax[1], label=name)
 
-        axes[0].set_xlabel(xlabel="h")
-        axes[1].set_xlabel(xlabel="log_h")
-        axes[0].set_ylabel(cols[col])
+        ax[0].set_xlabel(xlabel="h")
+        ax[1].set_xlabel(xlabel="log_h")
+        ax[0].set_ylabel(cols[col])
 
-        return axes
+        return ax
 
-    def obs_points(self, data="h", figsize=(4, 3), **kwargs):
+    def obs_points(self, data="h", figsize=(4, 3), ax=None, **kwargs):
         """
         Method to plot the pressure heads, water contents and water fluxes.
 
@@ -283,6 +308,8 @@ class Plots:
             String with the variable of the variable to plot.
             You can choose between: "h", "theta", "Temp", "Conc".
         figsize: tuple, optional
+        ax : Matplotlib.Axes, optional
+            Axes to plot the obs_points in, by default None which creates an Axes
 
         Returns
         -------
@@ -290,8 +317,8 @@ class Plots:
 
         """
         dfs = self.ml.read_obs_node()
-
-        _, ax = plt.subplots(figsize=figsize, **kwargs)
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize, **kwargs)
         for i, df in dfs.items():
             df.plot(y=data, ax=ax, label=f"Node {i}", use_index=True)
 
