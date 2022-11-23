@@ -1,4 +1,19 @@
 import matplotlib.pyplot as plt
+import numpy as np
+
+
+def share_xaxes(axes):
+    """share x-axes.
+    Parameters
+    ----------
+    axes : list of matplotlib.Axes
+        list of axes objects
+    """
+    for i, iax in enumerate(axes):
+        if i < (len(axes) - 1):
+            iax.sharex(axes[-1])
+            for t in iax.get_xticklabels():
+                t.set_visible(False)
 
 
 class Plots:
@@ -324,4 +339,70 @@ class Plots:
 
         ax.set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
         ax.set_ylabel(data)
+        return ax
+
+    def simulation(
+        self,
+    ):
+
+        tlevel = self.ml.read_tlevel(
+            usecols=[
+                "Time",
+                "rRoot",
+                "vBot",
+                "sum(rTop)",
+                "sum(rRoot)",
+                "sum(vTop)",
+                "sum(vRoot)",
+                "sum(vBot)",
+                "sum(RunOff)",
+                "Volume",
+                "sum(Infil)",
+                "sum(Evap)",
+                "TLevel",
+            ]
+        )
+
+        mosaic = [
+            ["P", "RP", "RP", "RP", "RP"],
+            ["P", "vT", "vT", "vT", "vT"],
+            ["P", "vR", "vR", "vR", "vR"],
+            ["P", "vB", "vB", "vB", "vB"],
+            ["P", "Vo", "Vo", "Vo", "Vo"],
+        ]
+        axes = [i[-1] for i in mosaic]
+        f, ax = plt.subplot_mosaic(mosaic, figsize=(10, 7))
+        self.profile(ax=ax["P"])
+
+        ax["RP"].plot(
+            tlevel.index,
+            np.diff(np.append(0, tlevel["sum(RunOff)"].values)),
+            label="RunOff",
+        )
+
+        ax["vT"].plot(
+            tlevel.index, np.diff(np.append(0, tlevel["sum(rTop)"])), label="rTop"
+        )
+        ax["vT"].plot(
+            tlevel.index, np.diff(np.append(0, tlevel["sum(vTop)"])), label="vTop"
+        )
+
+        ax["vR"].plot(
+            tlevel.index, np.diff(np.append(0, tlevel["sum(rRoot)"])), label="rRoot"
+        )
+        ax["vR"].plot(
+            tlevel.index, np.diff(np.append(0, tlevel["sum(vRoot)"])), label="vRoot"
+        )
+
+        ax["Vo"].plot(
+            tlevel.index, np.diff(np.append(0, tlevel["Volume"])), label="Volume"
+        )
+
+        ax["vB"].plot(
+            tlevel.index, np.diff(np.append(0, tlevel["sum(vBot)"])), label="vBot"
+        )
+
+        [(ax[x].grid(True), ax[x].legend(ncol=2)) for x in axes]
+        share_xaxes([ax[x] for x in axes])
+        f.tight_layout(w_pad=0.4)
         return ax
