@@ -1342,10 +1342,9 @@ class Model:
         data = read_profile(path=path)
         return data
 
-    def read_nod_inf(self, fname="NOD_INF.OUT", times=None):
+    def read_nod_inf(self, fname="NOD_INF.OUT"):
         path = os.path.join(self.ws_name, fname)
-        data = read_nod_inf(path=path, times=times)
-        return data
+        return read_nod_inf(path=path)
 
     def read_run_inf(self, fname="RUN_INF.OUT", usecols=None):
         path = os.path.join(self.ws_name, fname)
