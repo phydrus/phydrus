@@ -964,7 +964,7 @@ class Model:
                 if printmax is None:
                     printmax = tmax
                 if nsteps is None:
-                    times = arange(printinit, printmax, step=dtprint)
+                    times = arange(printinit, printmax+1, step=dtprint)
                 else:
                     times = linspace(printinit, printmax, num=nsteps + 1)
                 if printinit == tinit:
@@ -977,7 +977,7 @@ class Model:
                 self.times = [self.time_info["tMax"]]
         return self.times
 
-    def simulate(self):
+    def simulate(self, silent=False):
         """Method to call the Hydrus-1D executable."""
         # Remove old Error.msg file
         if os.path.exists(os.path.join(self.ws_name, "Error.msg")):
@@ -987,28 +987,29 @@ class Model:
         # Run Hydrus executable.
         cmd = [self.exe_name, self.ws_name, "-1"]
         result = run(cmd)
-
-        # Provide the user with some feedback about the simulation
-        if result.returncode == 0:
-            self.logger.info("Hydrus-1D Simulation Successful.")
-        else:
-            self.logger.warning("Hydrus-1D Simulation Unsuccessful.")
+        
+        if silent == False:
+            # Provide the user with some feedback about the simulation
+            if result.returncode == 0:
+                self.logger.info("Hydrus-1D Simulation Successful.")
+            else:
+                self.logger.warning("Hydrus-1D Simulation Unsuccessful.")
 
         return result
 
-    def write_input(self):
+    def write_input(self, silent=False):
         """Method to write the input files for the HYDRUS-1D simulation."""
         # 1. Write SELECTOR.IN
-        self.write_selector()
+        self.write_selector(silent=silent)
 
         # 2. Write PROFILE.DAT
-        self.write_profile()
+        self.write_profile(silent=silent)
 
         # 3. Write ATMOSPH.IN
         if self.basic_info["AtmInf"]:
-            self.write_atmosphere()
+            self.write_atmosphere(silent=silent)
 
-    def write_selector(self, fname="SELECTOR.IN"):
+    def write_selector(self, fname="SELECTOR.IN", silent=False):
         """
         Write the SELECTOR.IN file.
 
@@ -1032,28 +1033,25 @@ class Model:
             f"{self.basic_info['TUnit']}\n{self.basic_info['MUnit']}\n"
         ]
 
-        vars_list = [["lWat", "lChem", "lTemp", "lSink", "lRoot", "lShort",
-                      "lWDep", "lScreen", "AtmInf", "lEquil", "lInverse",
-                      "\n"],
-                     ["lSnow", "lHP1", "lMeteo", "lVapor", "lActRSU", "lFlux",
-                      "lIrrig", "\n"]]
+        vars_list = [["lWat   ", "lChem ", "lTemp ", "lSink ", "lRoot ", "lShort ",
+                      "lWDep ", "lScreen", "AtmInf", "lEquil ", "lInverse", "\n"],
+                     ["lSnow ", "lHP1  ", "lMeteo", "lVapor", "lActRSU", 
+                     "lFlux", "lIrrig", "\n"]]
 
         for variables in vars_list:
             lines.append("  ".join(variables))
-            lines.append("  ".join("t" if self.basic_info[var] else "f" for
+            lines.append("  ".join("t      " if self.basic_info[var.strip()] else "f     " for
                                    var in variables[:-1]))
             lines.append("\n")
 
-        lines.append(f"NMat NLay CosAlfa \n{self.n_materials}"
-                     f" {self.n_layers} {self.basic_info['CosAlfa']}\n")
+        lines.append(f"NMat   NLay   CosAlfa\n{self.n_materials}      "
+                     f"{self.n_layers}      {self.basic_info['CosAlfa']}\n")
 
         # Write block B: WATER FLOW INFORMATION
         lines.append(string.format("B: WATER FLOW INFORMATION ", "*", "<", 72))
-        lines.append("MaxIt  TolTh  TolH   (maximum number of iterations and "
+        lines.append("MaxIt  TolTh   TolH   (maximum number of iterations and "
                      "tolerances)\n")
-        variables = ["MaxIt", "TolTh", "TolH"]
-        lines.append(
-            "   ".join([str(self.water_flow[var]) for var in variables]))
+        lines.append("  ".join([f"{self.water_flow[var]} " for var in ("MaxIt", "TolTh", "TolH")]))
         lines.append("\n")
 
         vars_list = [["TopInf", "WLayer", "KodTop", "lInitW", "\n"],
@@ -1087,11 +1085,11 @@ class Model:
             for var in variables[:-1]:
                 val = self.water_flow[var]
                 if val is True:
-                    values.append("t")
+                    values.append("t      ")
                 elif val is False:
-                    values.append("f")
+                    values.append("f      ")
                 else:
-                    values.append(f"{val}")
+                    values.append(f"{val}      ")
             values.append("\n")
             lines.append(" ".join(values))
 
@@ -1258,9 +1256,10 @@ class Model:
         with open(fname, "w") as file:
             file.writelines(lines)
 
-        self.logger.info("Successfully wrote %s", fname)
+        if silent == False:
+            self.logger.info("Successfully wrote %s", fname)
 
-    def write_atmosphere(self, fname="ATMOSPH.IN"):
+    def write_atmosphere(self, fname="ATMOSPH.IN", silent=False):
         """
         Method to write the ATMOSPH.IN file
 
@@ -1305,9 +1304,10 @@ class Model:
         with open(fname, "w") as file:
             file.writelines(lines)
 
-        self.logger.info("Successfully wrote %s", fname)
+        if silent == False:
+            self.logger.info("Successfully wrote %s", fname)
 
-    def write_profile(self, fname="PROFILE.DAT"):
+    def write_profile(self, fname="PROFILE.DAT", silent=False):
         """
         Method to write the PROFILE.DAT file.
 
@@ -1334,17 +1334,17 @@ class Model:
                 [f"\n{len(self.obs_nodes)}\n",
                  "".join(["   {}".format(i) for i in self.obs_nodes])])
 
-        self.logger.info("Successfully wrote %s", fname)
+        if silent == False:
+            self.logger.info("Successfully wrote %s", fname)
 
     def read_profile(self, fname="PROFILE.OUT"):
         path = os.path.join(self.ws_name, fname)
         data = read_profile(path=path)
         return data
 
-    def read_nod_inf(self, fname="NOD_INF.OUT", times=None):
+    def read_nod_inf(self, fname="NOD_INF.OUT"):
         path = os.path.join(self.ws_name, fname)
-        data = read_nod_inf(path=path, times=times)
-        return data
+        return read_nod_inf(path=path)
 
     def read_run_inf(self, fname="RUN_INF.OUT", usecols=None):
         path = os.path.join(self.ws_name, fname)

@@ -14,19 +14,23 @@ or
 
 """
 
-from pandas import read_csv, DataFrame, to_numeric
-
+from pandas import read_csv, DataFrame, to_numeric, concat
+from numpy import floor, arange
+from io import StringIO, BytesIO
+import linecache
+import os
 from .decorators import check_file_path
 
 
 def read_profile(path="PROFILE.OUT"):
     """
-    Method to read the PROFILE.OUT output file.
+    Method to read the PROFILE.OUT output file or PROFILE.DAT file.
 
     Parameters
     ----------
     path: str, optional
-        String with the name of the profile out file. default is "PROFILE.OUT".
+        String with the name of the profile out or dat file.
+        Default is "PROFILE.OUT".
 
     Returns
     -------
@@ -34,7 +38,39 @@ def read_profile(path="PROFILE.OUT"):
         Pandas with the profile data
 
     """
-    data = _read_file(path=path, start="depth", idx_col="n")
+    ftype = path.split(".")[-1]
+    if ftype == "OUT":
+        data = _read_file(path=path, start="depth", idx_col="n")
+    elif ftype == "DAT":
+        cols = [
+            "491",
+            "0",
+            "0.1",
+            "0.2",
+            "x",
+            "h",
+            "Mat",
+            "Lay",
+            "Beta",
+            "Axz",
+            "Bxz",
+            "Dxz",
+            "Temp",
+            "Conc",
+            "SConc",
+        ]
+        data = read_csv(
+            path,
+            skiprows=2,
+            skipfooter=1,
+            index_col=cols[0],
+            usecols=cols[:-5],
+            delim_whitespace=True,
+            engine="python",
+        )
+        data = data.rename(columns=dict(zip(cols[1:-5], cols[4:]))).reindex(
+            data.index.rename("n")
+        )
     return data
 
 
@@ -55,8 +91,7 @@ def read_run_inf(path="RUN_INF.OUT", usecols=None):
         Pandas with the run_inf data
 
     """
-    data = _read_file(path=path, start="TLevel", idx_col="TLevel",
-                      usecols=usecols)
+    data = _read_file(path=path, start="TLevel", idx_col="TLevel", usecols=usecols)
     return data
 
 
@@ -96,9 +131,15 @@ def read_i_check(path="I_CHECK.OUT"):
 
             # Read data into a Pandas DataFrame
             nrows = e - start - 2
-            data[i] = read_csv(file, skiprows=start + 1, nrows=nrows,
-                               skipinitialspace=True, delim_whitespace=True,
-                               names=names, dtype=float)
+            data[i] = read_csv(
+                file,
+                skiprows=start + 1,
+                nrows=nrows,
+                skipinitialspace=True,
+                delim_whitespace=True,
+                names=names,
+                dtype=float,
+            )
             start = e
         return data
 
@@ -125,9 +166,10 @@ def read_tlevel(path="T_LEVEL.OUT", usecols=None):
         Pandas with the t_level data
 
     """
-    data = _read_file(path=path, start="rTop", idx_col="Time",
-                      remove_first_row=True, usecols=usecols)
-    data = data.set_index(to_numeric(data.index, errors='coerce'))
+    data = _read_file(
+        path=path, start="rTop", idx_col="Time", remove_first_row=True, usecols=usecols
+    )
+    data = data.set_index(to_numeric(data.index, errors="coerce"))
     return data
 
 
@@ -148,8 +190,9 @@ def read_alevel(path="A_LEVEL.OUT", usecols=None):
         Pandas with the a_level data
 
     """
-    data = _read_file(path=path, start="Time", idx_col="Time",
-                      remove_first_row=True, usecols=usecols)
+    data = _read_file(
+        path=path, start="Time", idx_col="Time", remove_first_row=True, usecols=usecols
+    )
     return data
 
 
@@ -168,14 +211,14 @@ def read_solute(path="SOLUTE1.OUT"):
         Pandas with the a_level data
 
     """
-    data = _read_file(path=path, start="Time", idx_col="Time",
-                      remove_first_row=True)
+    data = _read_file(path=path, start="Time", idx_col="Time", remove_first_row=True)
     return data
 
 
 @check_file_path
-def _read_file(path, start, end="end", usecols=None, idx_col=None,
-               remove_first_row=False):
+def _read_file(
+    path, start, end="end", usecols=None, idx_col=None, remove_first_row=False
+):
     """
     Internal method to read Hydrus output files.
 
@@ -211,13 +254,18 @@ def _read_file(path, start, end="end", usecols=None, idx_col=None,
         file.seek(0)  # Go back to start of file
 
         # Read data into a Pandas DataFrame
-        data = read_csv(file, skiprows=s, nrows=e - s - 2, usecols=usecols,
-                        index_col=idx_col, skipinitialspace=True,
-                        delim_whitespace=True)
+        data = read_csv(
+            file,
+            skiprows=s,
+            nrows=e - s - 2,
+            usecols=usecols,
+            index_col=idx_col,
+            skipinitialspace=True,
+            delim_whitespace=True,
+        )
 
         if remove_first_row:
-            data = data.drop(index=data.index[0]).apply(to_numeric,
-                                                        errors="ignore")
+            data = data.drop(index=data.index[0]).apply(to_numeric, errors="ignore")
         else:
             data = data.apply(to_numeric, errors="ignore")
 
@@ -256,8 +304,15 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
                 end = i
                 break
 
-    df1 = read_csv(path, skiprows=start, index_col=0, nrows=end - start - 1,
-                   skipinitialspace=True, delim_whitespace=True, engine="c")
+    df1 = read_csv(
+        path,
+        skiprows=start,
+        index_col=0,
+        nrows=end - start - 1,
+        skipinitialspace=True,
+        delim_whitespace=True,
+        engine="c",
+    )
     if cols is None:
         cols = ["h", "theta", "Temp"]
     if conc:
@@ -277,7 +332,7 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
 
 
 @check_file_path
-def read_nod_inf(path="NOD_INF.OUT", times=None):
+def read_nod_inf(path="NOD_INF.OUT"):
     """
     Method to read the NOD_INF.OUT output file.
 
@@ -296,37 +351,51 @@ def read_nod_inf(path="NOD_INF.OUT", times=None):
         Dictionary with the time as a key and a Pandas DataFrame as a value.
 
     """
-    use_times = []
-    start = []
-    end = []
-
-    with open(path) as file:
-        # Find the starting times to read the information
-        for i, line in enumerate(file.readlines()):
-            if "Time" in line and "Date" not in line:
-                time = line.replace(" ", "").split(":")[1].replace("\n", "")
-                use_times.append(float(time))
+    # identify file
+    total_size = os.stat(path).st_size
+    byte_count = []
+    header_count = []
+    end_count = []
+    time_count = []
+    line_count = None
+    with open(path, "r+") as fo:
+        line = fo.readline()
+        while line:
+            if "Time:" in line[0:7]:
+                time_count.append(byte_count[-1])
+                if len(time_count) == 2:
+                    break
             elif "Node" in line:
-                start.append(i)
+                header_count.append(byte_count[-1])
+                line_count = 1
             elif "end" in line:
-                end.append(i)
-        if times is None:
-            times = use_times
-        # Read the data into a Pandas DataFrame
-        data = {}
-        for s, e, time in zip(start, end, use_times):
-            if time in times:
-                file.seek(0)  # Go back to start of file
-                data[time] = read_csv(file, skiprows=s,
-                                      skipinitialspace=True,
-                                      delim_whitespace=True,
-                                      nrows=e - s - 2)
-                data[time] = data[time].drop([0])
-                data[time] = data[time].apply(to_numeric)
-    if len(data) == 1:
-        return next(iter(data.values()))
-    else:
-        return data
+                end_count.append(byte_count[-1])
+            else:
+                if line_count is not None:
+                    line_count += 1
+            byte_count.append(fo.tell())
+            line = fo.readline()
+        byte_diff = time_count[1] - time_count[0]
+
+    # create pointers that indicate the file
+    times_pointers = arange(time_count[0], total_size, byte_diff)
+    header_pointers = arange(header_count[0], total_size, byte_diff)
+    end_pointers = arange(end_count[0], total_size, byte_diff)
+
+    d = {}
+    with open(path, "rb") as fo:
+        for t, h, e in zip(times_pointers, header_pointers, end_pointers):
+            fo.seek(t)
+            time = float(fo.read(h - t).split()[-1])
+            data = fo.read(e - h)
+            d[time] = read_csv(
+                BytesIO(data),
+                delim_whitespace=True,
+                skiprows=[1],
+                index_col=0,
+            ).astype(float)
+
+    return d
 
 
 @check_file_path
@@ -350,8 +419,16 @@ def read_balance(path="BALANCE.OUT", usecols=None):
 
     """
     if usecols is None:
-        usecols = ["Area", "W-volume", "In-flow", "h Mean", "Top Flux",
-                   "Bot Flux", "WatBalT", "WatBalR"]
+        usecols = [
+            "Area",
+            "W-volume",
+            "In-flow",
+            "h Mean",
+            "Top Flux",
+            "Bot Flux",
+            "WatBalT",
+            "WatBalR",
+        ]
 
     lines = open(path).readlines()
     use_times = []
@@ -366,8 +443,7 @@ def read_balance(path="BALANCE.OUT", usecols=None):
                 lines[i] = [line1, line2, line3]
 
         if "Time" in line and "Date" not in line:
-            time = float(
-                line.replace(" ", "").split("]")[1].replace("\n", ""))
+            time = float(line.replace(" ", "").split("]")[1].replace("\n", ""))
             use_times.append(time)
         if "Area" in line:
             start.append(i)

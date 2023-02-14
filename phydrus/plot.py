@@ -1,9 +1,23 @@
 import matplotlib.pyplot as plt
+import numpy as np
+
+
+def share_xaxes(axes):
+    """share x-axes.
+    Parameters
+    ----------
+    axes : list of matplotlib.Axes
+        list of axes objects
+    """
+    for i, iax in enumerate(axes):
+        if i < (len(axes) - 1):
+            iax.sharex(axes[-1])
+            for t in iax.get_xticklabels():
+                t.set_visible(False)
 
 
 class Plots:
-    """
-    Class that contains all the methods to plot a Phydrus Model.
+    """Class that contains all the methods to plot a Phydrus Model.
 
     Parameters
     ----------
@@ -12,101 +26,120 @@ class Plots:
 
     Examples
     --------
-
-    >>> ml.plots.profile()
+    ml.plots.profile()
 
     """
 
     def __init__(self, ml):
         self.ml = ml
 
-    def profile(self, figsize=(3, 6), title=None, cmap="YlOrBr",
-                color_by="Ks", show_grid=True, **kwargs):
-        """
-        Method to plot the soil profile.
+    def profile(
+        self,
+        figsize=(3, 6),
+        cmap="YlOrBr_r",
+        color_by="Ks",
+        vmin=None,
+        vmax=None,
+        show_grid=True,
+        plot_h=True,
+        ax=None,
+    ):
+        """Method to plot the soil profyle
 
         Parameters
         ----------
-        figsize: tuple, optional
-            Tuple with the size of the figure in inches.
-        title: str, optional
-            String with the title of the Figure.
-        cmap: str, optional
-            String with a named Matplotlib colormap.
-        color_by: str, optional
-            Column from the material properties sed to color the materials.
-            Default is "Ks".
-        show_grid: bool, optional
-            Show the grid in the plot. Default is True.
+        figsize : tuple, optional
+            Tuple with the size of the figure, by default (3, 6)
+        cmap : str, optional
+            String with a named Matplotlib colormap, by default 'YlOrBr_r'
+        color_by : str, optional
+            Column from the material properties to color by, by default 'Ks'
+        vmin : str, optional
+            Minimum value for the colormap, if None use minimum of color_by
+        vmax : str, optional
+            Maximum value for the colormap, if None use minimum of color_by
+        show_grid : bool, optional
+            Show the grid lines of dx, by default True
+        ax : Matplotlib.Axes, optional
+            Axes to plot the profile in, by default None which creates an Axes
 
         Returns
         -------
         ax: matplotlib axes instance
 
         """
-        _, ax = plt.subplots(figsize=figsize, **kwargs)
 
-        top = self.ml.profile.loc[:, "x"].max()
-        w = self.ml.profile.loc[:, "h"].max()
-        w = w + 0.2 * w
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize)
+
+        y = self.ml.profile.loc[:, "x"]
+        top = y.max()
+        hmax = self.ml.profile.loc[:, "h"].max()
+        hmin = self.ml.profile.loc[:, "h"].min()
 
         # Set colors by color_by
         col = self.ml.materials["water"][color_by]
-        col = (col - col.min()) / (col.max() - col.min())
-        colors = plt.cm.get_cmap(cmap, 7)(col.values)
+        if vmin is None:
+            vmin = col.min()
+        if vmax is None:
+            vmax = col.max()
+        coln = (col - vmin) / (vmax - vmin)
+        colors = plt.cm.get_cmap(cmap, len(col))(coln.values)
 
         if show_grid:
-            edgecolor = "darkgray"
+            edgecolor = (0.169, 0.169, 0.169, 0.2)
         else:
             edgecolor = None
 
         for i in self.ml.profile.index[1:]:
-            bot = self.ml.profile.loc[i, "x"]
+            bot = y.loc[i]
             h = bot - top
-            color = colors[self.ml.profile.loc[i, "Mat"] - 1]
-            patch = plt.Rectangle(xy=(0, top), width=w, height=h, linewidth=1,
-                                  edgecolor=edgecolor, facecolor=color)
+            j = self.ml.profile.loc[i, "Mat"] - 1
+            patch = plt.Rectangle(
+                xy=(-1e6, top),
+                width=1e11,
+                height=h,
+                linewidth=1,
+                edgecolor=edgecolor,
+                facecolor=colors[j],
+                label=f"Material {j}",
+            )
             ax.add_patch(patch)
             top = bot
 
-        line = ax.plot(self.ml.profile.loc[:, ["h"]].values,
-                       self.ml.profile.loc[:, ["x"]].values,
-                       label="Initial head")
+        if plot_h:
+            ax.plot(self.ml.profile.loc[:, ["h"]].values, y.values, label=r"$\psi_i$")
 
-        ax.set_xlim(0, w)
-        ax.set_ylim(self.ml.profile.loc[:, "x"].min(),
-                    self.ml.profile.loc[:, "x"].max())
-        ax.set_xlabel(f"h [{self.ml.basic_info['LUnit']}]")
-        ax.set_ylabel(f"depth [{self.ml.basic_info['LUnit']}]")
+        ax.set_xlim(hmin - 0.2 * abs(hmin), hmax + 0.2 * abs(hmax))
+        ax.set_ylim(y.min(), y.max())
 
-        if title is not None:
-            ax.set_title(title)
-
-        legend_elements = [line[0]]
-        for i, color in enumerate(colors):
-            legend_elements.append(plt.Rectangle((0, 0), 0, 0, color=color,
-                                                 label=f"material {i}"))
-
-        plt.legend(handles=legend_elements, loc="best")
-        plt.tight_layout()
         return ax
 
-    def profile_information(self, data="Pressure Head", times=None,
-                            legend=True, figsize=(5, 3), **kwargs):
+    def profile_information(
+        self,
+        data="Pressure Head",
+        times=None,
+        legend=True,
+        figsize=(5, 3),
+        ax=None,
+        **kwargs,
+    ):
         """
         Method to plot the soil profile information.
 
         Parameters
         ----------
         data: str, optional
-            String with the variable of the profile information to plot. 
-            You can choose between: "Pressure Head", "Water Content", 
-            "Hydraulic Conductivity","Hydraulic Capacity", "Water Flux", 
+            String with the variable of the profile information to plot.
+            You can choose between: "Pressure Head", "Water Content",
+            "Hydraulic Conductivity","Hydraulic Capacity", "Water Flux",
             "Root Uptake", "Temperature". Default is "Pressure Head".
         times: list of int
-            List of integers of the time step to plot.       
+            List of integers of the time step to plot.
         figsize: tuple, optional
         legend: boolean, optional
+        ax : Matplotlib.Axes, optional
+            Axes to plot the profile in, by default None which creates an Axes
 
         Returns
         -------
@@ -118,12 +151,25 @@ class Plots:
         m_unit = self.ml.basic_info["MUnit"]
 
         use_cols = ("Head", "Moisture", "K", "C", "Flux", "Sink", "Temp")
-        col_names = ("Pressure Head", "Water Content",
-                     "Hydraulic Conductivity", "Hydraulic Capacity",
-                     "Water Flux", "Root Uptake", "Temperature")
-        units = [f"h [{l_unit}]", "Theta [-]", f"K [{l_unit}/days]",
-                 f"C [1/{l_unit}]", f"v [{l_unit}/{t_unit}]",
-                 f"S [1/{t_unit}]", "T [°C]"]
+
+        col_names = (
+            "Pressure Head",
+            "Water Content",
+            "Hydraulic Conductivity",
+            "Hydraulic Capacity",
+            "Water Flux",
+            "Root Uptake",
+            "Temperature",
+        )
+        units = [
+            f"h [{l_unit}]",
+            "Theta [-]",
+            f"K [{l_unit}/days]",
+            f"C [1/{l_unit}]",
+            f"v [{l_unit}/{t_unit}]",
+            f"S [1/{t_unit}]",
+            "T [°C]",
+        ]
 
         if self.ml.basic_info["lChem"]:
             use_cols = use_cols + ("Conc(1..NS)", "Sorb(1...NS)")
@@ -131,7 +177,8 @@ class Plots:
             units.extend([f"c [{m_unit}/{l_unit}*3]", "sorb."])
 
         col = col_names.index(data)
-        _, ax = plt.subplots(figsize=figsize, **kwargs)
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize, **kwargs)
         dfs = self.ml.read_nod_inf(times=times)
 
         if times is None or len(times) > 1:
@@ -142,7 +189,7 @@ class Plots:
 
         ax.set_xlabel(units[col])
         ax.set_ylabel(f"Depth [{self.ml.basic_info['LUnit']}]")
-        ax.grid(linestyle='--')
+        ax.grid(linestyle="--")
 
         if legend:
             ax.legend(bbox_to_anchor=(1, 1), loc="upper left")
@@ -150,8 +197,10 @@ class Plots:
         plt.tight_layout()
         return ax
 
-    def water_flow(self, data="Potential Surface Flux", figsize=(6, 3),
-                   axes=None, **kwargs):
+    def water_flow(
+        self, data="Potential Surface Flux", figsize=(6, 3), ax=None, **kwargs
+    ):
+
         """
         Method to plot the water flow information.
 
@@ -160,9 +209,9 @@ class Plots:
         data: str, optional
             String with the variable of the water flow information to plot.
             You can choose between: "Potential Surface Flux",
-            "Potential Root Water Uptake", "Actual Surface Flux", 
-            "Actual Root Water Uptake", "Bottom Flux", 
-            "Pressure head at the soil surface", 
+            "Potential Root Water Uptake", "Actual Surface Flux",
+            "Actual Root Water Uptake", "Bottom Flux",
+            "Pressure head at the soil surface",
             "Mean value of the pressure head over the region",
             "Pressure head at the Bottom of the soil profile",
             "Surface runoff", "Volume of water in the entire flow domain".
@@ -174,42 +223,56 @@ class Plots:
         ax: matplotlib axes instance
 
         """
-        col_names = ("Potential Surface Flux", "Potential Root Water Uptake",
-                     "Actual Surface Flux", "Actual Root Water Uptake",
-                     "Bottom Flux", "Pressure head at the soil surface",
-                     "Mean value of the pressure head over the region",
-                     "Pressure head at the Bottom of the soil profile",
-                     "Surface runoff",
-                     "Volume of water in the entire flow domain")
+        col_names = (
+            "Potential Surface Flux",
+            "Potential Root Water Uptake",
+            "Actual Surface Flux",
+            "Actual Root Water Uptake",
+            "Bottom Flux",
+            "Pressure head at the soil surface",
+            "Mean value of the pressure head over the region",
+            "Pressure head at the Bottom of the soil profile",
+            "Surface runoff",
+            "Volume of water in the entire flow domain",
+        )
 
-        cols = ("rTop", "rRoot", "vTop", "vRoot", "vBot", "hTop", "hRoot",
-                "hBot", "RunOff", "Volume")
+        cols = (
+            "rTop",
+            "rRoot",
+            "vTop",
+            "vRoot",
+            "vBot",
+            "hTop",
+            "hRoot",
+            "hBot",
+            "RunOff",
+            "Volume",
+        )
         df = self.ml.read_tlevel()
         col = col_names.index(data)
 
-        if axes is None:
-            _, axes = plt.subplots(1, 2, figsize=figsize, **kwargs)
-        df.plot(y=cols[col], ax=axes[0], use_index=True)
-        axes[0].set_ylabel(data)
-        axes[0].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
+        if ax is None:
+            _, ax = plt.subplots(1, 2, figsize=figsize, **kwargs)
+        df.plot(y=cols[col], ax=ax[0], use_index=True)
+        ax[0].set_ylabel(data)
+        ax[0].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
 
         # Cumulative sum
-        df.plot(y=f"sum({cols[col]})", ax=axes[1], use_index=True)
-        axes[1].set_ylabel(f"Cum. {data}")
-        axes[1].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
+        df.plot(y=f"sum({cols[col]})", ax=ax[1], use_index=True)
+        ax[1].set_ylabel(f"Cum. {data}")
+        ax[1].set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
 
         plt.tight_layout()
-        return axes
+        return ax
 
-    def soil_properties(self, data="Water Content", figsize=(6, 3),
-                        axes=None, **kwargs):
+    def soil_properties(self, data="Water Content", figsize=(6, 3), ax=None, **kwargs):
         """
         Method to plot the soil hydraulic properties.
 
         Parameters
         ----------
         data: str, optional
-            String with the variable of the water flow information to plot. 
+            String with the variable of the water flow information to plot.
             You can choose between: "Water Content", "Pressure head",
             "log Pressure head", "Hydraulic Capacity", "Hydraulic
             Conductivity", "log Hydraulic Conductivity", "Effective Water
@@ -221,30 +284,36 @@ class Plots:
         axes: matplotlib axes instance
 
         """
-        col_names = ("Water Content", "Pressure head", "log Pressure head",
-                     "Hydraulic Capacity", "Hydraulic Conductivity",
-                     "log Hydraulic Conductivity", "Effective Water Content")
+        col_names = (
+            "Water Content",
+            "Pressure head",
+            "log Pressure head",
+            "Hydraulic Capacity",
+            "Hydraulic Conductivity",
+            "log Hydraulic Conductivity",
+            "Effective Water Content",
+        )
         cols = ("theta", "h", "log_h", "C", "K", "log_K", "S", "Kv")
         col = col_names.index(data)
 
         dfs = self.ml.read_i_check()
 
-        if axes is None:
-            _, axes = plt.subplots(figsize=figsize, nrows=1, ncols=2,
-                                   sharey=True, **kwargs)
-
+        if ax is None:
+            _, ax = plt.subplots(
+                figsize=figsize, nrows=1, ncols=2, sharey=True, **kwargs
+            )
         for i, df in dfs.items():
             name = f"Node {i}"
-            df.plot(x="h", y=cols[col], ax=axes[0], label=name)
-            df.plot(x="log_h", y=cols[col], ax=axes[1], label=name)
+            df.plot(x="h", y=cols[col], ax=ax[0], label=name)
+            df.plot(x="log_h", y=cols[col], ax=ax[1], label=name)
 
-        axes[0].set_xlabel(xlabel="h")
-        axes[1].set_xlabel(xlabel="log_h")
-        axes[0].set_ylabel(cols[col])
+        ax[0].set_xlabel(xlabel="h")
+        ax[1].set_xlabel(xlabel="log_h")
+        ax[0].set_ylabel(cols[col])
 
-        return axes
+        return ax
 
-    def obs_points(self, data="h", figsize=(4, 3), **kwargs):
+    def obs_points(self, data="h", figsize=(4, 3), ax=None, **kwargs):
         """
         Method to plot the pressure heads, water contents and water fluxes.
 
@@ -254,6 +323,8 @@ class Plots:
             String with the variable of the variable to plot.
             You can choose between: "h", "theta", "Temp", "Conc".
         figsize: tuple, optional
+        ax : Matplotlib.Axes, optional
+            Axes to plot the obs_points in, by default None which creates an Axes
 
         Returns
         -------
@@ -261,11 +332,77 @@ class Plots:
 
         """
         dfs = self.ml.read_obs_node()
-
-        _, ax = plt.subplots(figsize=figsize, **kwargs)
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize, **kwargs)
         for i, df in dfs.items():
             df.plot(y=data, ax=ax, label=f"Node {i}", use_index=True)
 
         ax.set_xlabel(f"Time [{self.ml.basic_info['TUnit']}]")
         ax.set_ylabel(data)
+        return ax
+
+    def simulation(
+        self,
+    ):
+
+        tlevel = self.ml.read_tlevel(
+            usecols=[
+                "Time",
+                "rRoot",
+                "vBot",
+                "sum(rTop)",
+                "sum(rRoot)",
+                "sum(vTop)",
+                "sum(vRoot)",
+                "sum(vBot)",
+                "sum(RunOff)",
+                "Volume",
+                "sum(Infil)",
+                "sum(Evap)",
+                "TLevel",
+            ]
+        )
+
+        mosaic = [
+            ["P", "RP", "RP", "RP", "RP"],
+            ["P", "vT", "vT", "vT", "vT"],
+            ["P", "vR", "vR", "vR", "vR"],
+            ["P", "vB", "vB", "vB", "vB"],
+            ["P", "Vo", "Vo", "Vo", "Vo"],
+        ]
+        axes = [i[-1] for i in mosaic]
+        f, ax = plt.subplot_mosaic(mosaic, figsize=(10, 7))
+        self.profile(ax=ax["P"])
+
+        ax["RP"].plot(
+            tlevel.index,
+            np.diff(np.append(0, tlevel["sum(RunOff)"].values)),
+            label="RunOff",
+        )
+
+        ax["vT"].plot(
+            tlevel.index, np.diff(np.append(0, tlevel["sum(rTop)"])), label="rTop"
+        )
+        ax["vT"].plot(
+            tlevel.index, np.diff(np.append(0, tlevel["sum(vTop)"])), label="vTop"
+        )
+
+        ax["vR"].plot(
+            tlevel.index, np.diff(np.append(0, tlevel["sum(rRoot)"])), label="rRoot"
+        )
+        ax["vR"].plot(
+            tlevel.index, np.diff(np.append(0, tlevel["sum(vRoot)"])), label="vRoot"
+        )
+
+        ax["Vo"].plot(
+            tlevel.index, np.diff(np.append(0, tlevel["Volume"])), label="Volume"
+        )
+
+        ax["vB"].plot(
+            tlevel.index, np.diff(np.append(0, tlevel["sum(vBot)"])), label="vBot"
+        )
+
+        [(ax[x].grid(True), ax[x].legend(ncol=2)) for x in axes]
+        share_xaxes([ax[x] for x in axes])
+        f.tight_layout(w_pad=0.4)
         return ax

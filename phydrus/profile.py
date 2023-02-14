@@ -5,7 +5,7 @@ DataFrame.
 
 from os import path
 
-from numpy import linspace
+from numpy import linspace, full
 from pandas import read_csv, DataFrame
 
 
@@ -59,7 +59,7 @@ def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,
     variables = [h, mat, lay, beta, ah, ak, ath, temp, conc, sconc]
 
     if len(bot) == 1:
-        data[cols[1:]] = variables
+        data.loc[:, cols[1:]] = full((len(grid), len(cols[1:])), variables)
     else:
         # If there are multiple layers
         for i, arg in enumerate(variables):

@@ -4,6 +4,8 @@
 
 import logging
 from logging import handlers
+from numpy import exp, maximum, argmin, array, signbit, where, diff
+
 
 logger = logging.getLogger(__name__)
 
@@ -55,15 +57,16 @@ def _initialize_logger(logger=None, level=logging.INFO):
 
     """
     if logger is None:
-        logger = logging.getLogger('phydrus')
+        logger = logging.getLogger("phydrus")
 
     logger.setLevel(level)
     remove_file_handlers(logger)
     set_console_handler(logger)
 
 
-def set_console_handler(logger=None, level=logging.INFO,
-                        fmt="%(levelname)s: %(message)s"):
+def set_console_handler(
+    logger=None, level=logging.INFO, fmt="%(levelname)s: %(message)s"
+):
     """
     Method to add a console handler to the logger of Phydrus.
 
@@ -76,7 +79,7 @@ def set_console_handler(logger=None, level=logging.INFO,
 
     """
     if logger is None:
-        logger = logging.getLogger('phydrus')
+        logger = logging.getLogger("phydrus")
     remove_console_handler(logger)
     ch = logging.StreamHandler()
     ch.setLevel(level)
@@ -117,17 +120,23 @@ def remove_console_handler(logger=None):
 
     """
     if logger is None:
-        logger = logging.getLogger('phydrus')
+        logger = logging.getLogger("phydrus")
 
     for handler in logger.handlers:
         if isinstance(handler, logging.StreamHandler):
             logger.removeHandler(handler)
 
 
-def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
-                      levels=(logging.INFO, logging.ERROR), maxBytes=10485760,
-                      backupCount=20, encoding='utf8', datefmt='%d %H:%M',
-                      fmt='%(asctime)s-%(name)s-%(levelname)s-%(message)s'):
+def add_file_handlers(
+    logger=None,
+    filenames=("info.log", "errors.log"),
+    levels=(logging.INFO, logging.ERROR),
+    maxBytes=10485760,
+    backupCount=20,
+    encoding="utf8",
+    datefmt="%d %H:%M",
+    fmt="%(asctime)s-%(name)s-%(levelname)s-%(message)s",
+):
     """
     Method to add file handlers in the logger of Phydrus.
 
@@ -140,15 +149,15 @@ def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
 
     """
     if logger is None:
-        logger = logging.getLogger('phydrus')
+        logger = logging.getLogger("phydrus")
     # create formatter
     formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
 
     # create file handlers, set the level & formatter, and add it to the logger
     for filename, level in zip(filenames, levels):
-        fh = handlers.RotatingFileHandler(filename, maxBytes=maxBytes,
-                                          backupCount=backupCount,
-                                          encoding=encoding)
+        fh = handlers.RotatingFileHandler(
+            filename, maxBytes=maxBytes, backupCount=backupCount, encoding=encoding
+        )
         fh.setLevel(level)
         fh.setFormatter(formatter)
         logger.addHandler(fh)
@@ -166,7 +175,79 @@ def remove_file_handlers(logger=None):
         and packages.
     """
     if logger is None:
-        logger = logging.getLogger('phydrus')
+        logger = logging.getLogger("phydrus")
     for handler in logger.handlers:
         if isinstance(handler, handlers.RotatingFileHandler):
             logger.removeHandler(handler)
+
+
+def partitioning_grass(P, ET, a=0.45, ch=5, k=0.463, return_SCF=False):
+    """
+    Partitioning according to equation 2.75 in the Manual v4.0 and
+    Sutanto, Wenninger, Coenders and Uhlenbrook [2021]
+
+    Parameters
+    ----------
+    P (array) - precipitation [cm]
+    ET (array) - potential evapotranspiration (Penman-Monteith) [cm]
+    a (float) - constant [cm]
+    ch (float) - cropheight (5-15 for clipped grass) [cm]
+    k (float) - radiation extinction by canopy (rExtinct) (0.463) [-]
+
+    Internal variables
+    ----------
+    LAI - Leaf Area Index (0.24*ch) [cm/cm]
+    SCF - Soil Cover Fraction (b) [-]
+
+    Standard Output
+    ----------
+    Pnet (array) - Net Precipitation (P - I) [cm]
+    I (array) - Interception [cm]
+    Et,p (array) - Potential Transpiration (rRoot) [cm]
+    Es,p (array) - Potential Soil Evaporation (rSoil) [cm]
+    """
+
+    LAI = 0.24 * ch
+    SCF = 1 - exp(-k * LAI)
+    I = a * LAI * (1 - 1 / (1 + SCF * P / (a * LAI)))
+    Pnet = maximum(P - I, 0)
+    Ep = maximum(ET - I, 0)
+    Etp = Ep * SCF
+    Esp = Ep * (1 - SCF)
+    if return_SCF == True:
+        return Pnet, I, Etp, Esp, SCF
+    else:
+        return Pnet, I, Etp, Esp
+
+
+def get_gwt(pressure_head, depth):
+    """Function to get the groundwater table depth given a
+    pressure head array and an depth array
+
+    Parameters
+    ----------
+    pressure_head : array
+        array of the pressure head
+    depth : array
+        array of the elevation
+
+    Returns
+    -------
+    float
+        Depth of the groundwater table
+    """
+    sign = signbit(pressure_head)
+    if sign.any() == False:
+        gwt = depth[0]  # take top elevation
+    elif sign.sum() == len(pressure_head):
+        gwt = depth[-1]  # take bottom elevation
+    else:
+        idx = where(diff(sign))[0]
+        if len(idx) > 1:
+            idx = idx[0]
+        gwt = (0 - pressure_head[idx + 1]) * (depth[idx] - depth[idx + 1]) / (
+            pressure_head[idx] - pressure_head[idx + 1]
+        ) + depth[
+            idx + 1
+        ]  # linearly interpolate
+    return gwt
