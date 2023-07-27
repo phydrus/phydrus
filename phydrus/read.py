@@ -259,7 +259,7 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
     df1 = read_csv(path, skiprows=start, index_col=0, nrows=end - start - 1,
                    skipinitialspace=True, delim_whitespace=True, engine="c")
     if cols is None:
-        cols = ["h", "theta", "Temp"]
+        cols = ["h", "theta", "Flux"]
     if conc:
         cols.append("Conc")
 
