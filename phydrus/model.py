@@ -91,7 +91,7 @@ class Model:
         self.root_growth = None
 
         self.basic_info = {
-            "iVer": "4",
+            "iVer": "5",
             "Hed": f"Created with Pydrus version {__version__}",
             "LUnit": length_unit,
             "TUnit": time_unit,
