@@ -91,7 +91,7 @@ class Model:
         self.root_growth = None
 
         self.basic_info = {
-            "iVer": "4",
+            "iVer": "5",
             "Hed": f"Created with Pydrus version {__version__}",
             "LUnit": length_unit,
             "TUnit": time_unit,
@@ -105,15 +105,18 @@ class Model:
             "lWDep": False,
             "lScreen": print_screen,
             "AtmInf": False,
+            "lVariabBC": False,
             "lEquil": True,
             "lInverse": False,
             "lSnow": False,
             "lHP1": False,
             "lMeteo": False,
             "lVapor": False,
-            "lActRSU": False,
-            "lFlux": False,
+            "lActiveU": False,
+            "lFluxes": False,
             "lIrrig": False,
+            "lPart": False,
+            "lCosmic": False,
             "CosAlfa": 1,
         }
 
@@ -366,7 +369,7 @@ class Model:
                 "TopInf": True,
                 "WLayer": False,
                 "KodTop": -1,
-                "lInitW": linitw,
+                "InitCond": linitw,
                 "top_bc": top_bc,
                 "bot_bc": bot_bc,
                 "BotInf": False,
@@ -374,7 +377,7 @@ class Model:
                 "FreeD": False,
                 "SeepF": False,
                 "KodBot": -1,  # Depends on boundary condition
-                "qDrain": False,
+                "DrainF": False,
                 "hSeep": hseep,  # [L]
                 "rTop": rtop,  # [LT-1]
                 "rBot": rbot,  # [LT-1]
@@ -382,10 +385,10 @@ class Model:
                 "GWL0L": gw_level,  # [L]
                 "Aqh": aqh,  # [LT-1]
                 "Bqh": bqh,  # [L-1]
-                "ha": ha,  # [L]
-                "hb": hb,  # [L]
-                "iModel": model,
-                "iHyst": hysteresis,
+                "hTab1": ha,  # [L]
+                "hTabN": hb,  # [L]
+                "Model": model,
+                "Hysteresis": hysteresis,
                 "iKappa": ikappa,
             }
 
@@ -465,11 +468,12 @@ class Model:
         """
         if self.atmosphere_info is None:
             self.atmosphere_info = {
-                "lDailyVar": ldailyvar,
-                "lSinusVar": lsinusvar,
-                "lLai": llai,
+                "DailyVar": ldailyvar,
+                "SinusVar": lsinusvar,
+                "lLay": llai,
                 "lBCCycles": False,
                 "lInterc": False,
+                "lHeadInt": False,
                 "lExtinct": rextinct,
                 "hCritS": hcrits,
             }
@@ -677,8 +681,10 @@ class Model:
 
     def add_solute_transport(self, model=0, epsi=0.5, lupw=False, lartd=False,
                              ltdep=False, ctola=0, ctolr=0, maxit=0, pecr=2,
-                             ltort=True, lwatdep=False, top_bc=-1, bot_bc=0,
+                             ltort=True, lwatdep=False, lHP1BC=False, lFumigant=False, 
+                             lPFAS=False, lSurfact = False, lCFTr= False, top_bc=-1, bot_bc=0,
                              dsurf=None, catm=None, tpulse=1):
+        
         """
         Method to add solute transport to the model.
 
@@ -737,6 +743,11 @@ class Model:
         lwatdep: bool, optional
             True if at least one degradation coefficient (ChPar) is water
             content dependent.
+        lHP1BC: bool
+        lFumigant: bool
+        lPFAS: bool
+        lSurfact: bool
+        lCFTr: bool
         top_bc: int, optional
             Code which specifies the type of upper boundary condition
             1 = Dirichlet boundary condition,
@@ -789,7 +800,12 @@ class Model:
                 "kBotCh": bot_bc,
                 "dSurf": dsurf,
                 "cAtm": catm,
-                "tPulse": tpulse
+                "tPulse": tpulse,
+                "lHP1BC": lHP1BC,  
+                "lFumigant": lFumigant, 
+                "lPFAS": lPFAS,
+                "lSurfact": lSurfact,
+                "lCFTr":lCFTr
             }
             self.basic_info["lChem"] = True
         else:
@@ -935,7 +951,7 @@ class Model:
         """
 
         self.time_info = {"dt": dt, "dtMin": dtmin, "dtMax": dtmax,
-                          "dMul": 1.3, "dMul2": 0.7, "ItMin": 3, "ItMax": 7,
+                          "DMul": 1.3, "DMul2": 0.7, "ItMin": 3, "ItMax": 7,
                           "MPL": None, "tInit": tinit, "tMax": tmax,
                           "lPrint": print_times, "nPrintSteps": 1,
                           "tPrintInterval": 1, "lEnter": False,
@@ -1033,10 +1049,10 @@ class Model:
             f"{self.basic_info['TUnit']}\n{self.basic_info['MUnit']}\n"
         ]
 
-        vars_list = [["lWat   ", "lChem ", "lTemp ", "lSink ", "lRoot ", "lShort ",
-                      "lWDep ", "lScreen", "AtmInf", "lEquil ", "lInverse", "\n"],
-                     ["lSnow ", "lHP1  ", "lMeteo", "lVapor", "lActRSU", 
-                     "lFlux", "lIrrig", "\n"]]
+        vars_list = [["lWat", "lChem", "lTemp", "lSink", "lRoot", "lShort",
+                      "lWDep", "lScreen", "lVariableBC", "lEquil", "lInverse", "\n"],
+                     ["lSnow", "lHP1", "lMeteo", "lVapor", "lActiveU", 
+                     "lFluxes", "lIrrig", "lPart", "lCosmic", "\n"]]
 
         for variables in vars_list:
             lines.append("  ".join(variables))
@@ -1054,8 +1070,8 @@ class Model:
         lines.append("  ".join([f"{self.water_flow[var]} " for var in ("MaxIt", "TolTh", "TolH")]))
         lines.append("\n")
 
-        vars_list = [["TopInf", "WLayer", "KodTop", "lInitW", "\n"],
-                     ["BotInf", "qGWLF", "FreeD", "SeepF", "KodBot", "qDrain",
+        vars_list = [["TopInf", "WLayer", "KodTop", "InitCond", "\n"],
+                     ["BotInf", "qGWLF", "FreeD", "SeepF", "KodBot", "DrainF",
                       "hSeep", "\n"]]
 
         upper_condition = (self.water_flow["KodTop"] < 0
@@ -1073,10 +1089,10 @@ class Model:
         if self.water_flow["qGWLF"]:
             vars_list.append(["GWL0L", "Aqh", "Bqh", "\n"])
 
-        vars_list.append(["ha", "hb", "\n"])
-        vars_list.append(["iModel", "iHyst", "\n"])
+        vars_list.append(["hTab1", "hTabN", "\n"])
+        vars_list.append(["Model", "Hysteresis", "\n"])
 
-        if self.water_flow["iHyst"] > 0:
+        if self.water_flow["Hysteresis"] > 0:
             vars_list.append(["iKappa", "\n"])
 
         for variables in vars_list:
@@ -1104,7 +1120,7 @@ class Model:
         # Write BLOCK C: TIME INFORMATION
         lines.append(string.format("C: TIME INFORMATION ", "*", "<", 72))
         vars_list = [
-            ["dt", "dtMin", "dtMax", "dMul", "dMul2", "ItMin", "ItMax",
+            ["dt", "dtMin", "dtMax", "DMul", "DMul2", "ItMin", "ItMax",
              "MPL", "\n"], ["tInit", "tMax", "\n"],
             ["lPrint", "nPrintSteps", "tPrintInterval", "lEnter", "\n"]]
         for variables in vars_list:
@@ -1161,12 +1177,12 @@ class Model:
         if self.basic_info["lChem"]:
             lines.append(string.format("F: SOLUTE TRANSPORT INFORMATION ",
                                        "*", "<", 72))
-            lines.append(" Epsi lUpW lArtD lTDep cTolA cTolR MaxItC PeCr "
+            lines.append("Epsi lUpW lArtD ltDep cTolA cTolR MaxItC PeCr "
                          "No.Solutes lTort iBacter lFiltr nChPar\n"
                          "{} {} {} {} {} {} {} {} {} {} {} {} {}\n"
                          "iNonEqul lWatDep lDualNEq lInitM lInitEq lTort "
-                         "lDummy lDummy lDummy lDummy lCFTr\n"
-                         "{} {} {} {} {} {} f f f f f\n".format(
+                         "lHP1BC lFumigant lPFAS lSurfact lCFTr\n"
+                         "{} {} {} {} {} {} {} {} {} {} {}\n".format(
                 self.solute_transport["Epsi"],
                 "t" if self.solute_transport["lUpW"] else "f",
                 "t" if self.solute_transport["lArtD"] else "f",
@@ -1184,7 +1200,12 @@ class Model:
                 "t" if self.solute_transport["lWatDep"] else "f",
                 "t" if self.solute_transport["lDualEq"] else "f",
                 "f", "f",
-                "t" if self.solute_transport["lTort"] else "f"
+                "t" if self.solute_transport["lTort"] else "f",
+                "t" if self.solute_transport["lHP1BC"] else "f",
+                "t" if self.solute_transport["lFumigant"] else "f",
+                "t" if self.solute_transport["lPFAS"] else "f",
+                "t" if self.solute_transport["lSurfact"] else "f",
+                "t" if self.solute_transport["lCFTr"] else "f"
             ))
 
             # Write the material parameters
@@ -1277,7 +1298,7 @@ class Model:
                  f"{self.atmosphere.index.size}\n"]
 
         # Print some values
-        vars5 = ["lDailyVar", "lSinusVar", "lLai", "lBCCycles", "lInterc",
+        vars5 = ["DailyVar", "SinusVar", "lLay", "lBCCycles", "lInterc", "lHeadInt",
                  "\n"]
 
         lines.append(" ".join(vars5))
@@ -1376,7 +1397,7 @@ class Model:
             if self.CO2Transport is not None:
                 usecols += ["COVol", "COMean", "CO2BalT", "CncBalT"]
 
-            if self.water_flow["iModel"] in [5, 6, 7]:
+            if self.water_flow["Model"] in [5, 6, 7]:
                 usecols += ["W-VolumeI", "cMeanIm"]
 
         data = read_balance(path=path, usecols=usecols)
@@ -1409,7 +1430,7 @@ class Model:
                        "sum(vBot)", "hTop", "hRoot", "hBot", "RunOff",
                        "Volume"]
 
-            if self.water_flow["iModel"] > 4:
+            if self.water_flow["Model"] > 4:
                 usecols.append("Cum(WTrans)")
             if self.basic_info["lSnow"]:
                 usecols.append("SnowLayer")
@@ -1469,12 +1490,12 @@ class Model:
             9: list(range(17))
         }
 
-        level2 = models[self.water_flow["iModel"]]
+        level2 = models[self.water_flow["Model"]]
         level1 = ["water"] * len(level2)
 
         if self.solute_transport is not None:
             models = {
-                0: ["bulk.d", "DisperL", "frac", "mobile_wc"],
+                0: ["Bulk.d", "DisperL.", "Frac", "Mobile WC"],
                 1: [],
                 2: [],
                 3: [],
