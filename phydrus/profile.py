@@ -10,7 +10,7 @@ from pandas import read_csv, DataFrame
 
 
 def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,
-                   ak=1.0, ath=1.0, temp=20.0, conc=None, sconc=None):
+                   ak=1.0, ath=1.0, temp=20.0, theta=None, conc=None, sconc=None):
     """
     Method to create a DataFrame describing the soil profile.
 
@@ -44,6 +44,8 @@ def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,
         both lTemp or lChem are equal to .false.; if lTemp=.false. and
         lChem=.true. then set equal to 0 or any other initial value to be used
         later for temperature dependent water flow and solute transport).
+    theta: float, optional
+        Initial values of the water content. (do not specify if lInitW is equal to .false.)
     conc: float, optional
     sconc: float, optional
 
@@ -52,11 +54,21 @@ def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,
         bot = [bot]
     steps = int(top - bot[-1] / dx) + 1
     grid = linspace(top, bot[-1], steps)
-    cols = ["x", "h", "Mat", "Lay", "Beta", "Axz", "Bxz", "Dxz", "Temp",
+
+    # if the initial condition is given in water content
+    if theta is not None:
+        cols = ["x", "theta", "Mat", "Lay", "Beta", "Axz", "Bxz", "Dxz", "Temp",
             "Conc", "SConc"]
+        variables = [theta, mat, lay, beta, ah, ak, ath, temp, conc, sconc]
+    # if the initial condition is given in pressure head
+    else:
+        cols = ["x", "h", "Mat", "Lay", "Beta", "Axz", "Bxz", "Dxz", "Temp",
+            "Conc", "SConc"]
+        variables = [h, mat, lay, beta, ah, ak, ath, temp, conc, sconc]
+        
     data = DataFrame(columns=cols)
     data["x"] = grid
-    variables = [h, mat, lay, beta, ah, ak, ath, temp, conc, sconc]
+    
 
     if len(bot) == 1:
         data.loc[:, cols[1:]] = full((len(grid), len(cols[1:])), variables)
