@@ -109,7 +109,7 @@ def profile_from_file(fname="PROFILE.DAT", ws=None):
         # Read the profile data into a Pandas DataFrame
         data = read_csv(file, skiprows=start, skipfooter=2, index_col=0,
                         skipinitialspace=True, usecols=range(0, 11),
-                        delim_whitespace=True, engine='python', names=None)
+                        sep=r'\s+', engine='python', names=None)
         data.columns = ["x", "h", "Mat", "Lay", "Beta", "Axz", "Bxz", "Dxz",
                         "Temp", "Conc"]
         data.index.name = None

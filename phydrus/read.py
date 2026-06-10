@@ -97,7 +97,7 @@ def read_i_check(path="I_CHECK.OUT"):
             # Read data into a Pandas DataFrame
             nrows = e - start - 2
             data[i] = read_csv(file, skiprows=start + 1, nrows=nrows,
-                               skipinitialspace=True, delim_whitespace=True,
+                               skipinitialspace=True, sep=r'\s+',
                                names=names, dtype=float)
             start = e
         return data
@@ -213,13 +213,13 @@ def _read_file(path, start, end="end", usecols=None, idx_col=None,
         # Read data into a Pandas DataFrame
         data = read_csv(file, skiprows=s, nrows=e - s - 2, usecols=usecols,
                         index_col=idx_col, skipinitialspace=True,
-                        delim_whitespace=True)
+                        sep=r'\s+')
 
         if remove_first_row:
             data = data.drop(index=data.index[0]).apply(to_numeric,
-                                                        errors="ignore")
+                                                        errors="coerce")
         else:
-            data = data.apply(to_numeric, errors="ignore")
+            data = data.apply(to_numeric, errors="coerce")
 
     return data
 
@@ -257,7 +257,7 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
                 break
 
     df1 = read_csv(path, skiprows=start, index_col=0, nrows=end - start - 1,
-                   skipinitialspace=True, delim_whitespace=True, engine="c")
+                   skipinitialspace=True, sep=r'\s+', engine="c")
     if cols is None:
         cols = ["h", "theta", "Temp"]
     if conc:
@@ -319,7 +319,7 @@ def read_nod_inf(path="NOD_INF.OUT", times=None):
                 file.seek(0)  # Go back to start of file
                 data[time] = read_csv(file, skiprows=s,
                                       skipinitialspace=True,
-                                      delim_whitespace=True,
+                                      sep=r'\s+',
                                       nrows=e - s - 2)
                 data[time] = data[time].drop([0])
                 data[time] = data[time].apply(to_numeric)
