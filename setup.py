@@ -36,6 +36,15 @@ setup(
     platforms='Windows, Mac OS-X',
     install_requires=['numpy>=1.15', 'matplotlib>=2.0', 'pandas>=1.0',
                       'scipy>=1.1'],
+    extras_require={
+        'compilation': ['mfpymake>=1.5.0'],
+        'all': ['mfpymake>=1.5.0'],
+    },
     packages=find_packages(exclude=[]),
     package_data={"source": ["hydrus", "hydrus.exe"], },
+    entry_points={
+        'console_scripts': [
+            'phydrus-compile=phydrus.compile:main',
+        ],
+    },
 )
