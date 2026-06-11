@@ -132,13 +132,13 @@ def read_i_check(path="I_CHECK.OUT"):
             # Read data into a Pandas DataFrame
             nrows = e - start - 2
             data[i] = read_csv(
-              file, skiprows=start + 1, 
-              nrows=nrows,
-              skipinitialspace=True, 
-              delim_whitespace=True,
-              sep=r'\s+',   
-              names=names, 
-              dtype=float
+                file,
+                skiprows=start + 1,
+                nrows=nrows,
+                skipinitialspace=True,
+                delim_whitespace=True,
+                names=names,
+                dtype=float,
             )
             start = e
         return data
