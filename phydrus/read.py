@@ -132,13 +132,13 @@ def read_i_check(path="I_CHECK.OUT"):
             # Read data into a Pandas DataFrame
             nrows = e - start - 2
             data[i] = read_csv(
-                file,
-                skiprows=start + 1,
-                nrows=nrows,
-                skipinitialspace=True,
-                delim_whitespace=True,
-                names=names,
-                dtype=float,
+              file, skiprows=start + 1, 
+              nrows=nrows,
+              skipinitialspace=True, 
+              delim_whitespace=True,
+              sep=r'\s+',   
+              names=names, 
+              dtype=float
             )
             start = e
         return data
@@ -267,7 +267,7 @@ def _read_file(
         if remove_first_row:
             data = data.drop(index=data.index[0]).apply(to_numeric, errors="ignore")
         else:
-            data = data.apply(to_numeric, errors="ignore")
+            data = data.apply(to_numeric, errors="coerce")
 
     return data
 
@@ -304,15 +304,8 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
                 end = i
                 break
 
-    df1 = read_csv(
-        path,
-        skiprows=start,
-        index_col=0,
-        nrows=end - start - 1,
-        skipinitialspace=True,
-        delim_whitespace=True,
-        engine="c",
-    )
+    df1 = read_csv(path, skiprows=start, index_col=0, nrows=end - start - 1,
+                   skipinitialspace=True, sep=r'\s+', engine="c", delim_whitespace=True,)
     if cols is None:
         cols = ["h", "theta", "Temp"]
     if conc:
@@ -391,6 +384,7 @@ def read_nod_inf(path="NOD_INF.OUT"):
             d[time] = read_csv(
                 BytesIO(data),
                 delim_whitespace=True,
+                sep=r'\s+',
                 skiprows=[1],
                 index_col=0,
             ).astype(float)
