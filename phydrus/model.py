@@ -1,23 +1,23 @@
 """This file contains the model class."""
 
 import os
-from subprocess import run
 from logging import getLogger
+from subprocess import run
 
 from numpy import arange, linspace
 from pandas import DataFrame, DatetimeIndex, MultiIndex
 
 from .plot import Plots
 from .read import (
-    read_profile,
-    read_nod_inf,
-    read_run_inf,
-    read_tlevel,
+    read_alevel,
     read_balance,
     read_i_check,
+    read_nod_inf,
     read_obs_node,
+    read_profile,
+    read_run_inf,
     read_solute,
-    read_alevel,
+    read_tlevel,
 )
 from .version import __version__
 
@@ -183,10 +183,7 @@ class Model:
             self.exe_name = exe_name
 
     def add_profile(self, profile):
-        """
-        Method to add the soil profile to the model.
-
-        """
+        """Method to add the soil profile to the model."""
         self.profile = profile
 
     def add_material(self, material):
@@ -737,7 +734,6 @@ class Model:
             used when irootin = 2.
 
         """
-
         # Store the root growth information depending on the model.
         if irootin == 0:
             root_growth = {"iRootIn": irootin}
@@ -1081,7 +1077,6 @@ class Model:
             Array of specified print-times.
 
         """
-
         self.time_info = {
             "dt": dt,
             "dtMin": dtmin,
@@ -1150,7 +1145,7 @@ class Model:
         cmd = [self.exe_name, self.ws_name, "-1"]
         result = run(cmd)
 
-        if silent == False:
+        if not silent:
             # Provide the user with some feedback about the simulation
             if result.returncode == 0:
                 self.logger.info("Hydrus-1D Simulation Successful.")
@@ -1468,12 +1463,12 @@ class Model:
         with open(fname, "w") as file:
             file.writelines(lines)
 
-        if silent == False:
+        if not silent:
             self.logger.info("Successfully wrote %s", fname)
 
     def write_atmosphere(self, fname="ATMOSPH.IN", silent=False):
         """
-        Method to write the ATMOSPH.IN file
+        Method to write the ATMOSPH.IN file.
 
         Parameters
         ----------
@@ -1484,9 +1479,9 @@ class Model:
         # 1 Write Header information
         lines = [
             f"Pcp_File_Version={self.basic_info['iVer']}\n",
-            f"*** BLOCK I: ATMOSPHERIC INFORMATION  "
-            f"**********************************\nMaxAL "
-            f"(MaxAL = number of atmospheric data-records)\n",
+            "*** BLOCK I: ATMOSPHERIC INFORMATION  "
+            "**********************************\nMaxAL "
+            "(MaxAL = number of atmospheric data-records)\n",
             f"{self.atmosphere.index.size}\n",
         ]
 
@@ -1520,7 +1515,7 @@ class Model:
         with open(fname, "w") as file:
             file.writelines(lines)
 
-        if silent == False:
+        if not silent:
             self.logger.info("Successfully wrote %s", fname)
 
     def write_profile(self, fname="PROFILE.DAT", silent=False):
@@ -1556,7 +1551,7 @@ class Model:
                 ]
             )
 
-        if silent == False:
+        if not silent:
             self.logger.info("Successfully wrote %s", fname)
 
     def read_profile(self, fname="PROFILE.OUT"):
@@ -1696,7 +1691,6 @@ class Model:
 
         Examples
         --------
-
         >>> m = ml.get_empty_material_df(n=2)
         >>> m.loc[1:2] = [[0.08, 0.3421, 0.03, 5, 1, -0.5],
         >>>               [0.08, 0.3421, 0.03, 5, 0.1, -0.5]]

@@ -15,17 +15,24 @@ exe = os.path.join(os.getcwd(), "hydrus")
 # Create the basic model
 desc = "Infiltration and drainage in a large caisson"
 
-ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
-              mass_units="mmol", time_unit="min", length_unit="cm")
+ml = ps.Model(
+    exe_name=exe,
+    ws_name=ws,
+    name="model",
+    description=desc,
+    mass_units="mmol",
+    time_unit="min",
+    length_unit="cm",
+)
 
-times = ml.add_time_info(tinit=90, tmax=273, print_times=True, dt=0.1,
-                         dtmax=0.5, printinit=120)
+times = ml.add_time_info(
+    tinit=90, tmax=273, print_times=True, dt=0.1, dtmax=0.5, printinit=120
+)
 
 ml.add_waterflow(top_bc=1, bot_bc=0, rtop=0)
 
 m = ml.get_empty_material_df(n=2)
-m.loc[1:2] = [[0.08, 0.3421, 0.03, 5, 1, -0.5],
-              [0.08, 0.3421, 0.03, 5, 0.1, -0.5]]
+m.loc[1:2] = [[0.08, 0.3421, 0.03, 5, 1, -0.5], [0.08, 0.3421, 0.03, 5, 0.1, -0.5]]
 
 ml.add_material(m)
 

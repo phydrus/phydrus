@@ -5,8 +5,8 @@ DataFrame.
 
 from os import path
 
-from numpy import linspace, full
-from pandas import read_csv, DataFrame
+from numpy import full, linspace
+from pandas import DataFrame, read_csv
 
 
 def create_profile(
@@ -124,7 +124,7 @@ def create_profile(
 
 def profile_from_file(fname="PROFILE.DAT", ws=None):
     """
-    Method to create a profile DataFrame from a profile.dat file
+    Method to create a profile DataFrame from a profile.dat file.
 
     Parameters
     ----------
@@ -140,7 +140,6 @@ def profile_from_file(fname="PROFILE.DAT", ws=None):
 
     Examples
     --------
-
     >>> profile = ps.create_profile(h=0.342)
 
     """

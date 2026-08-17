@@ -49,7 +49,7 @@ def _initialize_logger(logger=None, level=logging.INFO):
     Internal method to create a logger instance to log program output.
 
     Parameters
-    -------
+    ----------
     logger : logging.Logger
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout Phydrus,  including all sub modules
@@ -71,7 +71,7 @@ def set_console_handler(
     Method to add a console handler to the logger of Phydrus.
 
     Parameters
-    -------
+    ----------
     logger : logging.Logger
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout Phydrus, including all sub modules
@@ -141,7 +141,7 @@ def add_file_handlers(
     Method to add file handlers in the logger of Phydrus.
 
     Parameters
-    -------
+    ----------
     logger : logging.Logger
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout Phydrus, including all sub modules
@@ -168,7 +168,7 @@ def remove_file_handlers(logger=None):
     Method to remove any file handlers in the logger of Phydrus.
 
     Parameters
-    -------
+    ----------
     logger : logging.Logger
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout Phydrus, including all sub modules
@@ -184,7 +184,7 @@ def remove_file_handlers(logger=None):
 def partitioning_grass(P, ET, a=0.45, ch=5, k=0.463, return_SCF=False):
     """
     Partitioning according to equation 2.75 in the Manual v4.0 and
-    Sutanto, Wenninger, Coenders and Uhlenbrook [2021]
+    Sutanto, Wenninger, Coenders and Uhlenbrook [2021].
 
     Parameters
     ----------
@@ -206,7 +206,6 @@ def partitioning_grass(P, ET, a=0.45, ch=5, k=0.463, return_SCF=False):
     Et,p (array) - Potential Transpiration (rRoot) [cm]
     Es,p (array) - Potential Soil Evaporation (rSoil) [cm]
     """
-
     LAI = 0.24 * ch
     SCF = 1 - exp(-k * LAI)
     I = a * LAI * (1 - 1 / (1 + SCF * P / (a * LAI)))
@@ -214,7 +213,7 @@ def partitioning_grass(P, ET, a=0.45, ch=5, k=0.463, return_SCF=False):
     Ep = maximum(ET - I, 0)
     Etp = Ep * SCF
     Esp = Ep * (1 - SCF)
-    if return_SCF == True:
+    if return_SCF:
         return Pnet, I, Etp, Esp, SCF
     else:
         return Pnet, I, Etp, Esp
@@ -222,7 +221,7 @@ def partitioning_grass(P, ET, a=0.45, ch=5, k=0.463, return_SCF=False):
 
 def get_gwt(pressure_head, depth):
     """Function to get the groundwater table depth given a
-    pressure head array and an depth array
+    pressure head array and an depth array.
 
     Parameters
     ----------
@@ -237,7 +236,7 @@ def get_gwt(pressure_head, depth):
         Depth of the groundwater table
     """
     sign = signbit(pressure_head)
-    if sign.any() == False:
+    if not sign.any():
         gwt = depth[0]  # take top elevation
     elif sign.sum() == len(pressure_head):
         gwt = depth[-1]  # take bottom elevation

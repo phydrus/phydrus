@@ -3,7 +3,8 @@ import numpy as np
 
 
 def share_xaxes(axes):
-    """share x-axes.
+    """Share x-axes.
+
     Parameters
     ----------
     axes : list of matplotlib.Axes
@@ -44,7 +45,7 @@ class Plots:
         plot_h=True,
         ax=None,
     ):
-        """Method to plot the soil profyle
+        """Method to plot the soil profyle.
 
         Parameters
         ----------
@@ -68,7 +69,6 @@ class Plots:
         ax: matplotlib axes instance
 
         """
-
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
 

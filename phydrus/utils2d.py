@@ -65,7 +65,7 @@ def read_mesh_txt(path="MESHTRIA.TXT"):
 
 def read_mesh(path):
     """Generate x, y and triangle lists from the MESHTRIA.000 or MESHTIRA.TXT
-    file from HYDRUS-2D
+    file from HYDRUS-2D.
 
     Returns
     -------
@@ -85,7 +85,7 @@ def read_mesh(path):
 
 
 def read_obsnod_out(path="ObsNod.out", col="hNew"):
-    """Read the ObsNod.out file of HYDRUS-2D
+    """Read the ObsNod.out file of HYDRUS-2D.
 
     Parameters
     ----------
@@ -99,7 +99,6 @@ def read_obsnod_out(path="ObsNod.out", col="hNew"):
     -------
     DataFrame with nodes as columns and timesteps as index (pandas DataFrame)
     """
-
     with open(path) as f:
         for _ in range(4):
             line = f.readline()
@@ -113,7 +112,7 @@ def read_obsnod_out(path="ObsNod.out", col="hNew"):
 
 
 def read_bin_out(path="h.out"):
-    """Read binary h.out, th.out or v.out file from HYDRUS-2D
+    """Read binary h.out, th.out or v.out file from HYDRUS-2D.
 
     Parameters
     ----------
@@ -121,14 +120,14 @@ def read_bin_out(path="h.out"):
         Path to the file, by default 'h.out'
 
     Returns
-    ----------
+    -------
         array with floats32
     """
     return np.fromfile(path, "float32")
 
 
 def read_h_out(path="h.out"):
-    """Read binary h.out file from HYDRUS-2D
+    """Read binary h.out file from HYDRUS-2D.
 
     Parameters
     ----------
@@ -136,14 +135,14 @@ def read_h_out(path="h.out"):
         Path to the file, by default 'h.out'
 
     Returns
-    ----------
+    -------
         array with floats32
     """
     return read_bin_out(path)
 
 
 def read_th_out(path="th.out"):
-    """Read binary th.out file from HYDRUS-2D
+    """Read binary th.out file from HYDRUS-2D.
 
     Parameters
     ----------
@@ -151,14 +150,14 @@ def read_th_out(path="th.out"):
         Path to the file, by default 'th.out'
 
     Returns
-    ----------
+    -------
         array with floats32
     """
     return read_bin_out(path)
 
 
 def read_v_out(path="v.out"):
-    """Read binary v.out file from HYDRUS-2D
+    """Read binary v.out file from HYDRUS-2D.
 
     Parameters
     ----------
@@ -166,7 +165,7 @@ def read_v_out(path="v.out"):
         Path to the file, by default 'v.out'
 
     Returns
-    ----------
+    -------
         array with floats32
     """
     return read_bin_out(path)
