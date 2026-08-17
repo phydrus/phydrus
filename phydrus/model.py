@@ -1,6 +1,4 @@
-"""This file contains the model class.
-
-"""
+"""This file contains the model class."""
 
 import os
 from subprocess import run
@@ -10,8 +8,17 @@ from numpy import arange, linspace
 from pandas import DataFrame, DatetimeIndex, MultiIndex
 
 from .plot import Plots
-from .read import read_profile, read_nod_inf, read_run_inf, read_tlevel, \
-    read_balance, read_i_check, read_obs_node, read_solute, read_alevel
+from .read import (
+    read_profile,
+    read_nod_inf,
+    read_run_inf,
+    read_tlevel,
+    read_balance,
+    read_i_check,
+    read_obs_node,
+    read_solute,
+    read_alevel,
+)
 from .version import __version__
 
 
@@ -53,9 +60,17 @@ class Model:
 
     """
 
-    def __init__(self, exe_name, ws_name, name="model", description=None,
-                 length_unit="cm", time_unit="days", mass_units="mmol",
-                 print_screen=False):
+    def __init__(
+        self,
+        exe_name,
+        ws_name,
+        name="model",
+        description=None,
+        length_unit="cm",
+        time_unit="days",
+        mass_units="mmol",
+        print_screen=False,
+    ):
 
         # Set logger to log all events
         self.logger = getLogger(__name__)
@@ -158,9 +173,11 @@ class Model:
         """
         # Store the hydrus executable and the project workspace
         if not os.path.exists(exe_name):
-            self.logger.error("Path to the Hydrus-1D executable seems "
-                              "incorrect, please check the path to the "
-                              "executable.")
+            self.logger.error(
+                "Path to the Hydrus-1D executable seems "
+                "incorrect, please check the path to the "
+                "executable."
+            )
             raise FileNotFoundError
         else:
             self.exe_name = exe_name
@@ -196,11 +213,12 @@ class Model:
         phydrus.Model.get_empty_material_df
 
         """
-        if material.columns.size != \
-                self.get_empty_material_df().columns.size:
-            raise TypeError("the number of parameters (columns) describing "
-                            "the material does not match the water flow "
-                            "model. Please check the number of parameters.")
+        if material.columns.size != self.get_empty_material_df().columns.size:
+            raise TypeError(
+                "the number of parameters (columns) describing "
+                "the material does not match the water flow "
+                "model. Please check the number of parameters."
+            )
         else:
             self.materials = material
 
@@ -228,14 +246,32 @@ class Model:
         """
         for obs in depths:
             nodes = self.profile.iloc[
-                (self.profile['x'] - obs).abs().argsort().iloc[:1]]
+                (self.profile["x"] - obs).abs().argsort().iloc[:1]
+            ]
             node = nodes.index.values.astype(int)[0]
             self.obs_nodes.append(node)
 
-    def add_waterflow(self, model=0, maxit=10, tolth=1e-3, tolh=1, ha=1e-6,
-                      hb=1e4, linitw=False, top_bc=0, bot_bc=0, hseep=0,
-                      rtop=None, rbot=None, rroot=None, gw_level=None,
-                      aqh=None, bqh=None, hysteresis=0, ikappa=-1):
+    def add_waterflow(
+        self,
+        model=0,
+        maxit=10,
+        tolth=1e-3,
+        tolh=1,
+        ha=1e-6,
+        hb=1e4,
+        linitw=False,
+        top_bc=0,
+        bot_bc=0,
+        hseep=0,
+        rtop=None,
+        rbot=None,
+        rroot=None,
+        gw_level=None,
+        aqh=None,
+        bqh=None,
+        hysteresis=0,
+        ikappa=-1,
+    ):
         """
         Method to add a water_flow module to the model.
 
@@ -340,21 +376,27 @@ class Model:
         if bot_bc == 5:
             for var in [gw_level, aqh, bqh]:
                 if var is None:
-                    raise TypeError("When the groundwater level is used as "
-                                    "bottom boundary condition, the keyword "
-                                    "{} needs to be provided".format(var))
+                    raise TypeError(
+                        "When the groundwater level is used as "
+                        "bottom boundary condition, the keyword "
+                        "{} needs to be provided".format(var)
+                    )
         # If Constant Flux is used as top boundary condition
         if top_bc == 1:
             if rtop is None:
-                raise TypeError("When the Constant Flux is used as top "
-                                "boundary condition, the keyword rtop needs "
-                                "to be provided")
+                raise TypeError(
+                    "When the Constant Flux is used as top "
+                    "boundary condition, the keyword rtop needs "
+                    "to be provided"
+                )
         # If Constant Flux is used as bottom boundary condition
         if bot_bc == 1:
             if rbot is None:
-                raise TypeError("When the Constant Flux is used as bottom "
-                                "boundary condition, the keyword rbot needs "
-                                "to be provided")
+                raise TypeError(
+                    "When the Constant Flux is used as bottom "
+                    "boundary condition, the keyword rbot needs "
+                    "to be provided"
+                )
         if bot_bc == 7:
             raise NotImplementedError
 
@@ -391,13 +433,31 @@ class Model:
 
             self.basic_info["lWat"] = True
         else:
-            raise Warning("Water flow was already provided. Please delete "
-                          "the old information first.")
+            raise Warning(
+                "Water flow was already provided. Please delete "
+                "the old information first."
+            )
 
-    def add_atmospheric_bc(self, atmosphere, ldailyvar=False, lsinusvar=False,
-                           llai=False, rextinct=0.463, hcrits=1e30, tatm=0,
-                           prec=0, rsoil=0, rroot=0, hcrita=1e5, rb=0, hb=0,
-                           ht=0, ttop=0, tbot=0, ampl=0):
+    def add_atmospheric_bc(
+        self,
+        atmosphere,
+        ldailyvar=False,
+        lsinusvar=False,
+        llai=False,
+        rextinct=0.463,
+        hcrits=1e30,
+        tatm=0,
+        prec=0,
+        rsoil=0,
+        rroot=0,
+        hcrita=1e5,
+        rb=0,
+        hb=0,
+        ht=0,
+        ttop=0,
+        tbot=0,
+        ampl=0,
+    ):
         """
         Method to add the atmospheric boundary condition to the model.
 
@@ -474,29 +534,55 @@ class Model:
                 "hCritS": hcrits,
             }
         else:
-
-            raise Warning("Atmospheric information was already provided. "
-                          "Please delete the old information first through "
-                          "ml.del_atmosphere().")
+            raise Warning(
+                "Atmospheric information was already provided. "
+                "Please delete the old information first through "
+                "ml.del_atmosphere()."
+            )
 
         # Because carbon dioxide transport nor major ion chemistry are
         # implemented
         ctop = 0.0
         cbot = 0.0
 
-        data = {"tAtm": tatm, "Prec": prec, "rSoil": rsoil, "rRoot": rroot,
-                "hCritA": hcrita, "rB": rb, "hB": hb, "ht": ht, "tTop": ttop,
-                "tBot": tbot, "Ampl": ampl, "cTop": ctop, "cBot": cbot}
+        data = {
+            "tAtm": tatm,
+            "Prec": prec,
+            "rSoil": rsoil,
+            "rRoot": rroot,
+            "hCritA": hcrita,
+            "rB": rb,
+            "hB": hb,
+            "ht": ht,
+            "tTop": ttop,
+            "tBot": tbot,
+            "Ampl": ampl,
+            "cTop": ctop,
+            "cBot": cbot,
+        }
 
-        self.atmosphere = DataFrame(data=data, index=atmosphere.index)
+        self.atmosphere = DataFrame(data=data, index=atmosphere.index, dtype=float)
         self.atmosphere.update(atmosphere)
 
         # Enable atmosphere module
         self.basic_info["AtmInf"] = True
 
-    def add_root_uptake(self, model=0, crootmax=0, omegac=0.5, p0=-10,
-                        p2h=-200, p2l=-800, p3=-8000, r2h=0.5, r2l=0.1,
-                        poptm=None, p50=-800, pexp=3, lsolred=False):
+    def add_root_uptake(
+        self,
+        model=0,
+        crootmax=0,
+        omegac=0.5,
+        p0=-10,
+        p2h=-200,
+        p2l=-800,
+        p3=-8000,
+        r2h=0.5,
+        r2l=0.1,
+        poptm=None,
+        p50=-800,
+        pexp=3,
+        lsolred=False,
+    ):
         """
         Method to add rootwater update modeule to the model.
 
@@ -550,11 +636,14 @@ class Model:
         # Number of pressure heads should equal the number of materials.
         if poptm:
             if len(poptm) != self.n_materials:
-                raise Warning("Length of pressure heads poptm does not "
-                              "equal the number of materials!")
+                raise Warning(
+                    "Length of pressure heads poptm does not "
+                    "equal the number of materials!"
+                )
         if lsolred:
-            raise Warning("Reduced water uptake due to salinity is not "
-                          "implemented yet..")
+            raise Warning(
+                "Reduced water uptake due to salinity is not implemented yet.."
+            )
 
         if self.root_uptake is None:
             self.root_uptake = {
@@ -576,15 +665,28 @@ class Model:
 
             self.basic_info["lSink"] = True
         else:
-            msg = "Root water uptake model is already present in the model." \
-                  " Remove the old root water uptake model first using " \
-                  "ml.del_root_water_uptake()"
+            msg = (
+                "Root water uptake model is already present in the model."
+                " Remove the old root water uptake model first using "
+                "ml.del_root_water_uptake()"
+            )
             raise InterruptedError(msg)
 
-    def add_root_growth(self, irootin=0, ngrowth=None, tgrowth=None,
-                        rootdepth=None, irfak=None, trmin=None, trmed=None,
-                        trmax=None, xrmin=None, xrmed=None, xrmax=None,
-                        trperiod=None):
+    def add_root_growth(
+        self,
+        irootin=0,
+        ngrowth=None,
+        tgrowth=None,
+        rootdepth=None,
+        irfak=None,
+        trmin=None,
+        trmed=None,
+        trmax=None,
+        xrmin=None,
+        xrmed=None,
+        xrmax=None,
+        trperiod=None,
+    ):
         """
         Method to add root growth to the model.
 
@@ -638,15 +740,13 @@ class Model:
 
         # Store the root growth information depending on the model.
         if irootin == 0:
-            root_growth = {
-                "iRootIn": irootin
-            }
+            root_growth = {"iRootIn": irootin}
         elif irootin == 1:
             root_growth = {
                 "iRootIn": irootin,
                 "nGrowht": ngrowth,
                 "tGrwoth": tgrowth,
-                "RootDepth": rootdepth
+                "RootDepth": rootdepth,
             }
         elif irootin == 2:
             root_growth = {
@@ -658,27 +758,43 @@ class Model:
                 "xRMin": xrmin,
                 "xRMed": xrmed,
                 "xRMax": xrmax,
-                "tRPeriod": trperiod
+                "tRPeriod": trperiod,
             }
             if irfak == 1:
                 root_growth["tRMed"] = 0
                 root_growth["xRMed"] = 0
         else:
-            raise Warning("Option %s for irootin is not support in Hydrus."
-                          % irootin)
+            raise Warning("Option %s for irootin is not support in Hydrus." % irootin)
 
         if self.root_growth is None:
             self.root_growth = root_growth
             self.basic_info["lRoot"] = True
         else:
-            raise Warning("Root growth model already exists. Please delete "
-                          "the old root growth model first using "
-                          "ml.del_root_growth().")
+            raise Warning(
+                "Root growth model already exists. Please delete "
+                "the old root growth model first using "
+                "ml.del_root_growth()."
+            )
 
-    def add_solute_transport(self, model=0, epsi=0.5, lupw=False, lartd=False,
-                             ltdep=False, ctola=0, ctolr=0, maxit=0, pecr=2,
-                             ltort=True, lwatdep=False, top_bc=-1, bot_bc=0,
-                             dsurf=None, catm=None, tpulse=1):
+    def add_solute_transport(
+        self,
+        model=0,
+        epsi=0.5,
+        lupw=False,
+        lartd=False,
+        ltdep=False,
+        ctola=0,
+        ctolr=0,
+        maxit=0,
+        pecr=2,
+        ltort=True,
+        lwatdep=False,
+        top_bc=-1,
+        bot_bc=0,
+        dsurf=None,
+        catm=None,
+        tpulse=1,
+    ):
         """
         Method to add solute transport to the model.
 
@@ -789,13 +905,15 @@ class Model:
                 "kBotCh": bot_bc,
                 "dSurf": dsurf,
                 "cAtm": catm,
-                "tPulse": tpulse
+                "tPulse": tpulse,
             }
             self.basic_info["lChem"] = True
         else:
-            raise Warning("Solute transport model already exists. Please "
-                          "delete the old solute transport model first using "
-                          "ml.del_solute_transport().")
+            raise Warning(
+                "Solute transport model already exists. Please "
+                "delete the old solute transport model first using "
+                "ml.del_solute_transport()."
+            )
 
     def add_solute(self, data, difw=0, difg=0, top_conc=0, bot_conc=0):
         """
@@ -823,11 +941,28 @@ class Model:
         phydrus.Model.add_solute_transport
 
         """
-        self.solutes.append({"data": data, "difw": difw, "difg": difg,
-                             "top_conc": top_conc, "bot_conc": bot_conc})
+        self.solutes.append(
+            {
+                "data": data,
+                "difw": difw,
+                "difg": difg,
+                "top_conc": top_conc,
+                "bot_conc": bot_conc,
+            }
+        )
 
-    def add_heat_transport(self, parameters, ampl, top_bc, top_temp, bot_bc,
-                           bot_temp, tperiod=1, icampbell=1, snowmelt=0.43):
+    def add_heat_transport(
+        self,
+        parameters,
+        ampl,
+        top_bc,
+        top_temp,
+        bot_bc,
+        bot_temp,
+        tperiod=1,
+        icampbell=1,
+        snowmelt=0.43,
+    ):
         """
         Method to add heat transport to the model.
 
@@ -884,18 +1019,31 @@ class Model:
                 "kTopT": top_bc,
                 "tTop": top_temp,
                 "kBotT": bot_bc,
-                "tBot": bot_temp
+                "tBot": bot_temp,
             }
             self.basic_info["lTemp"] = True
         else:
-            raise Warning("Heat transport model already exists. Please "
-                          "delete the old heat transport model first using "
-                          "ml.del_heat_transport().")
+            raise Warning(
+                "Heat transport model already exists. Please "
+                "delete the old heat transport model first using "
+                "ml.del_heat_transport()."
+            )
 
-    def add_time_info(self, tinit=0, tmax=1, dt=0.01, dtmin=1e-5, dtmax=5,
-                      print_times=False, printinit=None, printmax=None,
-                      dtprint=None, nsteps=None, from_atmo=False,
-                      print_array=None):
+    def add_time_info(
+        self,
+        tinit=0,
+        tmax=1,
+        dt=0.01,
+        dtmin=1e-5,
+        dtmax=5,
+        print_times=False,
+        printinit=None,
+        printmax=None,
+        dtprint=None,
+        nsteps=None,
+        from_atmo=False,
+        print_array=None,
+    ):
         """
         Method to produce time information.
 
@@ -934,12 +1082,24 @@ class Model:
 
         """
 
-        self.time_info = {"dt": dt, "dtMin": dtmin, "dtMax": dtmax,
-                          "dMul": 1.3, "dMul2": 0.7, "ItMin": 3, "ItMax": 7,
-                          "MPL": None, "tInit": tinit, "tMax": tmax,
-                          "lPrint": print_times, "nPrintSteps": 1,
-                          "tPrintInterval": 1, "lEnter": False,
-                          "TPrint(1)": None, "TPrint(MPL)": None}
+        self.time_info = {
+            "dt": dt,
+            "dtMin": dtmin,
+            "dtMax": dtmax,
+            "dMul": 1.3,
+            "dMul2": 0.7,
+            "ItMin": 3,
+            "ItMax": 7,
+            "MPL": None,
+            "tInit": tinit,
+            "tMax": tmax,
+            "lPrint": print_times,
+            "nPrintSteps": 1,
+            "tPrintInterval": 1,
+            "lEnter": False,
+            "TPrint(1)": None,
+            "TPrint(MPL)": None,
+        }
 
         if print_array is not None:
             self.time_info["MPL"] = len(print_array)
@@ -947,9 +1107,11 @@ class Model:
             return self.times
         if from_atmo:
             if self.atmosphere is None:
-                raise Warning("Atmospheric information not provided. Please "
-                              "provide atmosheric information through: "
-                              "ml.add_atmospheric_bc().")
+                raise Warning(
+                    "Atmospheric information not provided. Please "
+                    "provide atmosheric information through: "
+                    "ml.add_atmospheric_bc()."
+                )
             if isinstance(self.atmosphere.index, DatetimeIndex):
                 times = self.atmosphere.index.dayofyear
             else:
@@ -964,7 +1126,7 @@ class Model:
                 if printmax is None:
                     printmax = tmax
                 if nsteps is None:
-                    times = arange(printinit, printmax+1, step=dtprint)
+                    times = arange(printinit, printmax + 1, step=dtprint)
                 else:
                     times = linspace(printinit, printmax, num=nsteps + 1)
                 if printinit == tinit:
@@ -987,7 +1149,7 @@ class Model:
         # Run Hydrus executable.
         cmd = [self.exe_name, self.ws_name, "-1"]
         result = run(cmd)
-        
+
         if silent == False:
             # Provide the user with some feedback about the simulation
             if result.returncode == 0:
@@ -1033,39 +1195,76 @@ class Model:
             f"{self.basic_info['TUnit']}\n{self.basic_info['MUnit']}\n"
         ]
 
-        vars_list = [["lWat   ", "lChem ", "lTemp ", "lSink ", "lRoot ", "lShort ",
-                      "lWDep ", "lScreen", "AtmInf", "lEquil ", "lInverse", "\n"],
-                     ["lSnow ", "lHP1  ", "lMeteo", "lVapor", "lActRSU", 
-                     "lFlux", "lIrrig", "\n"]]
+        vars_list = [
+            [
+                "lWat   ",
+                "lChem ",
+                "lTemp ",
+                "lSink ",
+                "lRoot ",
+                "lShort ",
+                "lWDep ",
+                "lScreen",
+                "AtmInf",
+                "lEquil ",
+                "lInverse",
+                "\n",
+            ],
+            [
+                "lSnow ",
+                "lHP1  ",
+                "lMeteo",
+                "lVapor",
+                "lActRSU",
+                "lFlux",
+                "lIrrig",
+                "\n",
+            ],
+        ]
 
         for variables in vars_list:
             lines.append("  ".join(variables))
-            lines.append("  ".join("t      " if self.basic_info[var.strip()] else "f     " for
-                                   var in variables[:-1]))
+            lines.append(
+                "  ".join(
+                    "t      " if self.basic_info[var.strip()] else "f     "
+                    for var in variables[:-1]
+                )
+            )
             lines.append("\n")
 
-        lines.append(f"NMat   NLay   CosAlfa\n{self.n_materials}      "
-                     f"{self.n_layers}      {self.basic_info['CosAlfa']}\n")
+        lines.append(
+            f"NMat   NLay   CosAlfa\n{self.n_materials}      "
+            f"{self.n_layers}      {self.basic_info['CosAlfa']}\n"
+        )
 
         # Write block B: WATER FLOW INFORMATION
         lines.append(string.format("B: WATER FLOW INFORMATION ", "*", "<", 72))
-        lines.append("MaxIt  TolTh   TolH   (maximum number of iterations and "
-                     "tolerances)\n")
-        lines.append("  ".join([f"{self.water_flow[var]} " for var in ("MaxIt", "TolTh", "TolH")]))
+        lines.append(
+            "MaxIt  TolTh   TolH   (maximum number of iterations and tolerances)\n"
+        )
+        lines.append(
+            "  ".join(
+                [f"{self.water_flow[var]} " for var in ("MaxIt", "TolTh", "TolH")]
+            )
+        )
         lines.append("\n")
 
-        vars_list = [["TopInf", "WLayer", "KodTop", "lInitW", "\n"],
-                     ["BotInf", "qGWLF", "FreeD", "SeepF", "KodBot", "qDrain",
-                      "hSeep", "\n"]]
+        vars_list = [
+            ["TopInf", "WLayer", "KodTop", "lInitW", "\n"],
+            ["BotInf", "qGWLF", "FreeD", "SeepF", "KodBot", "qDrain", "hSeep", "\n"],
+        ]
 
-        upper_condition = (self.water_flow["KodTop"] < 0
-                           and not self.water_flow["TopInf"])
+        upper_condition = (
+            self.water_flow["KodTop"] < 0 and not self.water_flow["TopInf"]
+        )
 
-        lower_condition = ((self.water_flow["KodBot"] < 0)
-                           and not self.water_flow["BotInf"]
-                           and not self.water_flow["qGWLF"]
-                           and not self.water_flow["FreeD"]
-                           and not self.water_flow["SeepF"])
+        lower_condition = (
+            (self.water_flow["KodBot"] < 0)
+            and not self.water_flow["BotInf"]
+            and not self.water_flow["qGWLF"]
+            and not self.water_flow["FreeD"]
+            and not self.water_flow["SeepF"]
+        )
 
         if upper_condition or lower_condition:
             vars_list.append(["rTop", "rBot", "rRoot", "\n"])
@@ -1104,9 +1303,10 @@ class Model:
         # Write BLOCK C: TIME INFORMATION
         lines.append(string.format("C: TIME INFORMATION ", "*", "<", 72))
         vars_list = [
-            ["dt", "dtMin", "dtMax", "dMul", "dMul2", "ItMin", "ItMax",
-             "MPL", "\n"], ["tInit", "tMax", "\n"],
-            ["lPrint", "nPrintSteps", "tPrintInterval", "lEnter", "\n"]]
+            ["dt", "dtMin", "dtMax", "dMul", "dMul2", "ItMin", "ItMax", "MPL", "\n"],
+            ["tInit", "tMax", "\n"],
+            ["lPrint", "nPrintSteps", "tPrintInterval", "lEnter", "\n"],
+        ]
         for variables in vars_list:
             lines.append(" ".join(variables))
             values = []
@@ -1124,13 +1324,13 @@ class Model:
         lines.append("TPrint(1),TPrint(2),...,TPrint(MPL)\n")
         for i in range((len(self.times) + 5) // 6):
             lines.append(
-                " ".join([str(time) for time in self.times[i * 6:i * 6 + 6]]))
+                " ".join([str(time) for time in self.times[i * 6 : i * 6 + 6]])
+            )
             lines.append("\n")
 
         # Write BLOCK D: Root Growth Information
         if self.basic_info["lRoot"]:
-            lines.append(
-                string.format("D: ROOT GROWTH INFORMATION ", "*", "<", 72))
+            lines.append(string.format("D: ROOT GROWTH INFORMATION ", "*", "<", 72))
             lines.append(f"iRootDepthEntry\n{self.root_growth['iRootIn']}\n")
             d = self.root_growth.copy()
             d.pop("iRootIn")
@@ -1140,96 +1340,107 @@ class Model:
 
         # Write Block E - Heat transport information
         if self.basic_info["lTemp"]:
-            lines.append(string.format("E: HEAT TRANSPORT INFORMATION ",
-                                       "*", "<", 72))
+            lines.append(string.format("E: HEAT TRANSPORT INFORMATION ", "*", "<", 72))
             lines.append(self.heat_parameters.to_string(index=False))
             lines.append(
                 "\n tAmpl tPeriod Campbell SnowMF lDummy lDummy lDummy "
                 "lDummy lDummy\n"
                 "{} {} {} {} f f f f f\n"
                 "kTopT TTop kBotT TBot\n"
-                "{} {} {} {}\n".format(self.heat_transport["Ampl"],
-                                       self.heat_transport["tPeriod"],
-                                       self.heat_transport["iCampbell"],
-                                       self.heat_transport["SnowMF"],
-                                       self.heat_transport["kTopT"],
-                                       self.heat_transport["tTop"],
-                                       self.heat_transport["kBotT"],
-                                       self.heat_transport["tBot"]))
+                "{} {} {} {}\n".format(
+                    self.heat_transport["Ampl"],
+                    self.heat_transport["tPeriod"],
+                    self.heat_transport["iCampbell"],
+                    self.heat_transport["SnowMF"],
+                    self.heat_transport["kTopT"],
+                    self.heat_transport["tTop"],
+                    self.heat_transport["kBotT"],
+                    self.heat_transport["tBot"],
+                )
+            )
 
         # Write Block F - Solute transport information
         if self.basic_info["lChem"]:
-            lines.append(string.format("F: SOLUTE TRANSPORT INFORMATION ",
-                                       "*", "<", 72))
-            lines.append(" Epsi lUpW lArtD lTDep cTolA cTolR MaxItC PeCr "
-                         "No.Solutes lTort iBacter lFiltr nChPar\n"
-                         "{} {} {} {} {} {} {} {} {} {} {} {} {}\n"
-                         "iNonEqul lWatDep lDualNEq lInitM lInitEq lTort "
-                         "lDummy lDummy lDummy lDummy lCFTr\n"
-                         "{} {} {} {} {} {} f f f f f\n".format(
-                self.solute_transport["Epsi"],
-                "t" if self.solute_transport["lUpW"] else "f",
-                "t" if self.solute_transport["lArtD"] else "f",
-                "t" if self.solute_transport["ltDep"] else "f",
-                self.solute_transport["cTolA"],
-                self.solute_transport["cTolR"],
-                self.solute_transport["MaxItC"],
-                self.solute_transport["PeCr"],
-                self.n_solutes,
-                "t" if self.solute_transport["lTort"] else "f",
-                self.solute_transport["iBacter"],
-                "t" if self.solute_transport["lFiltr"] else "f",
-                self.get_empty_solute_df().columns.size + 2,
-                self.solute_transport["iNonEqual"],
-                "t" if self.solute_transport["lWatDep"] else "f",
-                "t" if self.solute_transport["lDualEq"] else "f",
-                "f", "f",
-                "t" if self.solute_transport["lTort"] else "f"
-            ))
+            lines.append(
+                string.format("F: SOLUTE TRANSPORT INFORMATION ", "*", "<", 72)
+            )
+            lines.append(
+                " Epsi lUpW lArtD lTDep cTolA cTolR MaxItC PeCr "
+                "No.Solutes lTort iBacter lFiltr nChPar\n"
+                "{} {} {} {} {} {} {} {} {} {} {} {} {}\n"
+                "iNonEqul lWatDep lDualNEq lInitM lInitEq lTort "
+                "lDummy lDummy lDummy lDummy lCFTr\n"
+                "{} {} {} {} {} {} f f f f f\n".format(
+                    self.solute_transport["Epsi"],
+                    "t" if self.solute_transport["lUpW"] else "f",
+                    "t" if self.solute_transport["lArtD"] else "f",
+                    "t" if self.solute_transport["ltDep"] else "f",
+                    self.solute_transport["cTolA"],
+                    self.solute_transport["cTolR"],
+                    self.solute_transport["MaxItC"],
+                    self.solute_transport["PeCr"],
+                    self.n_solutes,
+                    "t" if self.solute_transport["lTort"] else "f",
+                    self.solute_transport["iBacter"],
+                    "t" if self.solute_transport["lFiltr"] else "f",
+                    self.get_empty_solute_df().columns.size + 2,
+                    self.solute_transport["iNonEqual"],
+                    "t" if self.solute_transport["lWatDep"] else "f",
+                    "t" if self.solute_transport["lDualEq"] else "f",
+                    "f",
+                    "f",
+                    "t" if self.solute_transport["lTort"] else "f",
+                )
+            )
 
             # Write the material parameters
             lines.append(self.materials["solute"].to_string(index=False))
             lines.append("\n")
 
             for sol in self.solutes:
-                lines.append(f"DifW DifG\n{sol['difw']} {sol['difg']}\n"
-                             f"{sol['data'].to_string(index=False)}\n")
+                lines.append(
+                    f"DifW DifG\n{sol['difw']} {sol['difg']}\n"
+                    f"{sol['data'].to_string(index=False)}\n"
+                )
 
-            lines.append("kTopSolute SolTop kBotSolute SolBot\n"
-                         "{} {} {} {}\n".format(
-                self.solute_transport["kTopCh"],
-                " ".join([f"{s['top_conc']}" for s in self.solutes]),
-                self.solute_transport["kBotCh"],
-                " ".join([f"{s['bot_conc']}" for s in self.solutes])))
+            lines.append(
+                "kTopSolute SolTop kBotSolute SolBot\n{} {} {} {}\n".format(
+                    self.solute_transport["kTopCh"],
+                    " ".join([f"{s['top_conc']}" for s in self.solutes]),
+                    self.solute_transport["kBotCh"],
+                    " ".join([f"{s['bot_conc']}" for s in self.solutes]),
+                )
+            )
             if self.solute_transport["kTopCh"] == -2:
-                lines.append("dSurf cAtm\n""{} {}\n".format(
-                    self.solute_transport["dSurf"],
-                    self.solute_transport["cAtm"]))
+                lines.append(
+                    "dSurf cAtm\n{} {}\n".format(
+                        self.solute_transport["dSurf"], self.solute_transport["cAtm"]
+                    )
+                )
 
-            lines.append("tPulse\n{}\n".format(
-                self.solute_transport["tPulse"]))
+            lines.append("tPulse\n{}\n".format(self.solute_transport["tPulse"]))
 
         # Write Block G - Root water uptake information
         if self.basic_info["lSink"]:
-            lines.append(string.format("G: ROOT WATER UPTAKE INFORMATION ",
-                                       "*", "<", 72))
+            lines.append(
+                string.format("G: ROOT WATER UPTAKE INFORMATION ", "*", "<", 72)
+            )
             vars_list = [["iMoSink", "cRootMax", "OmegaC", "\n"]]
 
             if self.root_uptake["iMoSink"] == 0:
-                vars_list.append(
-                    ["P0", "P2H", "P2L", "P3", "r2H", "r2L", "\n"])
+                vars_list.append(["P0", "P2H", "P2L", "P3", "r2H", "r2L", "\n"])
             elif self.root_uptake["iMoSink"] == 1:
                 vars_list.append(["P50", "P3", "\n"])
 
             for variables in vars_list:
                 lines.append(" ".join(variables))
-                lines.append("    ".join(f"{self.root_uptake[var]}" for var in
-                                         variables[:-1]))
+                lines.append(
+                    "    ".join(f"{self.root_uptake[var]}" for var in variables[:-1])
+                )
                 lines.append("\n")
 
             lines.append("POptm(1),POptm(2),...,POptm(NMat)\n")
-            lines.append("    ".join(f"{p}" for p in self.root_uptake[
-                "POptm"]))
+            lines.append("    ".join(f"{p}" for p in self.root_uptake["POptm"]))
             lines.append("\n")
 
             if self.basic_info["lChem"]:
@@ -1237,9 +1448,11 @@ class Model:
 
         # Write Block J - Inverse solution information
         if self.basic_info["lInverse"]:
-            raise NotImplementedError("The inverse modeling module from "
-                                      "Hydrus-1D will not be supported. "
-                                      "Python packages are used for this.")
+            raise NotImplementedError(
+                "The inverse modeling module from "
+                "Hydrus-1D will not be supported. "
+                "Python packages are used for this."
+            )
 
         # Write Block K – Carbon dioxide transport information
 
@@ -1248,8 +1461,7 @@ class Model:
             raise NotImplementedError
 
         # Write END statement
-        lines.append(string.format("END OF INPUT FILE SELECTOR.IN ",
-                                   "*", "<", 72))
+        lines.append(string.format("END OF INPUT FILE SELECTOR.IN ", "*", "<", 72))
 
         # Write the actual file
         fname = os.path.join(self.ws_name, fname)
@@ -1270,15 +1482,16 @@ class Model:
 
         """
         # 1 Write Header information
-        lines = [f"Pcp_File_Version={self.basic_info['iVer']}\n",
-                 f"*** BLOCK I: ATMOSPHERIC INFORMATION  "
-                 f"**********************************\nMaxAL "
-                 f"(MaxAL = number of atmospheric data-records)\n",
-                 f"{self.atmosphere.index.size}\n"]
+        lines = [
+            f"Pcp_File_Version={self.basic_info['iVer']}\n",
+            f"*** BLOCK I: ATMOSPHERIC INFORMATION  "
+            f"**********************************\nMaxAL "
+            f"(MaxAL = number of atmospheric data-records)\n",
+            f"{self.atmosphere.index.size}\n",
+        ]
 
         # Print some values
-        vars5 = ["lDailyVar", "lSinusVar", "lLai", "lBCCycles", "lInterc",
-                 "\n"]
+        vars5 = ["lDailyVar", "lSinusVar", "lLai", "lBCCycles", "lInterc", "\n"]
 
         lines.append(" ".join(vars5))
         vals = []
@@ -1293,12 +1506,15 @@ class Model:
                     vals.append(str(val))
         lines.append(" ".join(vals))
 
-        lines.append(f"\nhCritS (max. allowed pressure head at the soil "
-                     f"surface)\n{self.atmosphere_info['hCritS']}\n")
+        lines.append(
+            f"\nhCritS (max. allowed pressure head at the soil "
+            f"surface)\n{self.atmosphere_info['hCritS']}\n"
+        )
 
         lines.append(self.atmosphere.to_string(index=False))
-        lines.append("\nend*** END OF INPUT FILE ATMOSPH.IN "
-                     "**********************************\n")
+        lines.append(
+            "\nend*** END OF INPUT FILE ATMOSPH.IN **********************************\n"
+        )
         # Write the actual file
         fname = os.path.join(self.ws_name, fname)
         with open(fname, "w") as file:
@@ -1322,17 +1538,23 @@ class Model:
         with open(fname, "w") as file:
             # 1 Write Header information
             file.writelines(
-                [f"Pcp_File_Version={self.basic_info['iVer']}\n0\n"
-                 f"{self.profile.index.size} {self.n_solutes}"
-                 f" {1 if self.basic_info['lChem'] else 0}"
-                 f" {1 if self.basic_info['lChem'] else 0}"])
+                [
+                    f"Pcp_File_Version={self.basic_info['iVer']}\n0\n"
+                    f"{self.profile.index.size} {self.n_solutes}"
+                    f" {1 if self.basic_info['lChem'] else 0}"
+                    f" {1 if self.basic_info['lChem'] else 0}"
+                ]
+            )
 
             # 2. Write the profile data
             self.profile.to_string(file)
 
             file.writelines(
-                [f"\n{len(self.obs_nodes)}\n",
-                 "".join(["   {}".format(i) for i in self.obs_nodes])])
+                [
+                    f"\n{len(self.obs_nodes)}\n",
+                    "".join(["   {}".format(i) for i in self.obs_nodes]),
+                ]
+            )
 
         if silent == False:
             self.logger.info("Successfully wrote %s", fname)
@@ -1350,8 +1572,16 @@ class Model:
         path = os.path.join(self.ws_name, fname)
 
         if usecols is None:
-            usecols = ["TLevel", "Time", "dt", "Iter", "ItCum", "KodT",
-                       "KodB", "Convergency", ]
+            usecols = [
+                "TLevel",
+                "Time",
+                "dt",
+                "Iter",
+                "ItCum",
+                "KodT",
+                "KodB",
+                "Convergency",
+            ]
             if self.solute_transport is not None:
                 usecols.append("IterC")
 
@@ -1364,11 +1594,18 @@ class Model:
             raise FileNotFoundError(f"File {path} has not been found.")
 
         if usecols is None:
-            usecols = ["Area", "W-volume", "In-flow", "h Mean", "Top Flux",
-                       "Bot Flux", "WatBalT", "WatBalR"]
+            usecols = [
+                "Area",
+                "W-volume",
+                "In-flow",
+                "h Mean",
+                "Top Flux",
+                "Bot Flux",
+                "WatBalT",
+                "WatBalR",
+            ]
             if self.solute_transport is not None:
-                usecols += ["ConcVol", "ConcVolIm", "cMean", "CncBalT",
-                            "CncBalR"]
+                usecols += ["ConcVol", "ConcVolIm", "cMean", "CncBalT", "CncBalR"]
 
             if self.heat_transport is not None:
                 usecols += ["TVol", "TMean"]
@@ -1383,8 +1620,7 @@ class Model:
 
         return data
 
-    def read_obs_node(self, fname="OBS_NODE.OUT", nodes=None, conc=False,
-                      cols=None):
+    def read_obs_node(self, fname="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
         path = os.path.join(self.ws_name, fname)
         if self.basic_info["lChem"]:
             conc = True
@@ -1404,10 +1640,24 @@ class Model:
         path = os.path.join(self.ws_name, fname)
 
         if usecols is None:
-            usecols = ["Time", "rTop", "rRoot", "vTop", "vRoot", "vBot",
-                       "sum(rTop)", "sum(rRoot)", "sum(vTop)", "sum(vRoot)",
-                       "sum(vBot)", "hTop", "hRoot", "hBot", "RunOff",
-                       "Volume"]
+            usecols = [
+                "Time",
+                "rTop",
+                "rRoot",
+                "vTop",
+                "vRoot",
+                "vBot",
+                "sum(rTop)",
+                "sum(rRoot)",
+                "sum(vTop)",
+                "sum(vRoot)",
+                "sum(vBot)",
+                "hTop",
+                "hRoot",
+                "hBot",
+                "RunOff",
+                "Volume",
+            ]
 
             if self.water_flow["iModel"] > 4:
                 usecols.append("Cum(WTrans)")
@@ -1456,17 +1706,26 @@ class Model:
         """
         models = {
             0: ["thr", "ths", "Alfa", "n", "Ks", "l"],
-            1: ["thr", "ths", "Alfa", "n", "Ks", "l", "thm", "tha", "thk",
-                "Kk"],
+            1: ["thr", "ths", "Alfa", "n", "Ks", "l", "thm", "tha", "thk", "Kk"],
             2: ["thr", "ths", "Alfa", "n", "Ks", "l"],
             3: ["thr", "ths", "Alfa", "n", "Ks", "l"],
             4: ["thr", "ths", "Alfa", "n", "Ks", "l"],
             5: ["thr", "ths", "Alfa", "n", "Ks", "l", "w", "Alfa2", "n2"],
-            6: ["thr", "ths", "Alfa", "n", "Ks", "l", "thr_im", "ths_im",
-                "omega"],
-            7: ["thr", "ths", "Alfa", "n", "Ks", "l", "thr_im", "ths_im",
-                "Alfa_im", "n_im", "Ka"],
-            9: list(range(17))
+            6: ["thr", "ths", "Alfa", "n", "Ks", "l", "thr_im", "ths_im", "omega"],
+            7: [
+                "thr",
+                "ths",
+                "Alfa",
+                "n",
+                "Ks",
+                "l",
+                "thr_im",
+                "ths_im",
+                "Alfa_im",
+                "n_im",
+                "Ka",
+            ],
+            9: list(range(17)),
         }
 
         level2 = models[self.water_flow["iModel"]]
@@ -1482,7 +1741,7 @@ class Model:
                 5: [],
                 6: [],
                 7: [],
-                8: []
+                8: [],
             }
 
             cols2 = models[self.solute_transport["iNonEqual"]]
@@ -1491,37 +1750,123 @@ class Model:
 
         columns = MultiIndex.from_arrays([level1, level2])
 
-        return DataFrame(columns=columns, index=arange(1, n + 1),
-                         data=0, dtype=float)
+        return DataFrame(columns=columns, index=arange(1, n + 1), data=0, dtype=float)
 
     def get_empty_heat_df(self):
         """Get an empty DataFrame to fill in the heat parameters."""
         columns = ["thn", "tho", "lambda", "b1", "b2", "b3", "Cn", "C0", "Cw"]
-        return DataFrame(columns=columns, index=self.materials.index,
-                         dtype=float)
+        return DataFrame(columns=columns, index=self.materials.index, dtype=float)
 
     def get_empty_solute_df(self):
         """Get an empty DataFrame with the solute parameters as columns."""
         models = {
-            0: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
-                "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
-            1: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
-                "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
-            2: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
-                "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
-            3: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "ipsi", "mu_sw",
-                "s_max", "ka2", "kd2", "b1", "ka1", "kd1"],
-            4: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "dc", "dp",
-                "smax2", "alfa2", "kd2", "smax1", "alfa1", "kd1"],
-            5: ["ks", "nu", "beta", "kg", "mu_lw", "mu_ls", "mu_lg", "mu_sw",
-                "mu_ss", "mu_sg", "gamma_w", "gamma_s", "gamma_g", "omega"],
+            0: [
+                "ks",
+                "nu",
+                "beta",
+                "kg",
+                "mu_lw",
+                "mu_ls",
+                "mu_lg",
+                "mu_sw",
+                "mu_ss",
+                "mu_sg",
+                "gamma_w",
+                "gamma_s",
+                "gamma_g",
+                "omega",
+            ],
+            1: [
+                "ks",
+                "nu",
+                "beta",
+                "kg",
+                "mu_lw",
+                "mu_ls",
+                "mu_lg",
+                "mu_sw",
+                "mu_ss",
+                "mu_sg",
+                "gamma_w",
+                "gamma_s",
+                "gamma_g",
+                "omega",
+            ],
+            2: [
+                "ks",
+                "nu",
+                "beta",
+                "kg",
+                "mu_lw",
+                "mu_ls",
+                "mu_lg",
+                "mu_sw",
+                "mu_ss",
+                "mu_sg",
+                "gamma_w",
+                "gamma_s",
+                "gamma_g",
+                "omega",
+            ],
+            3: [
+                "ks",
+                "nu",
+                "beta",
+                "kg",
+                "mu_lw",
+                "mu_ls",
+                "ipsi",
+                "mu_sw",
+                "s_max",
+                "ka2",
+                "kd2",
+                "b1",
+                "ka1",
+                "kd1",
+            ],
+            4: [
+                "ks",
+                "nu",
+                "beta",
+                "kg",
+                "mu_lw",
+                "mu_ls",
+                "dc",
+                "dp",
+                "smax2",
+                "alfa2",
+                "kd2",
+                "smax1",
+                "alfa1",
+                "kd1",
+            ],
+            5: [
+                "ks",
+                "nu",
+                "beta",
+                "kg",
+                "mu_lw",
+                "mu_ls",
+                "mu_lg",
+                "mu_sw",
+                "mu_ss",
+                "mu_sg",
+                "gamma_w",
+                "gamma_s",
+                "gamma_g",
+                "omega",
+            ],
             6: NotImplementedError,
             7: NotImplementedError,
             8: NotImplementedError,
         }
 
-        df = DataFrame(columns=models[self.solute_transport["iNonEqual"]],
-                       index=self.materials.index, data=0, dtype=float)
+        df = DataFrame(
+            columns=models[self.solute_transport["iNonEqual"]],
+            index=self.materials.index,
+            data=0,
+            dtype=float,
+        )
         return df
 
     def _set_bc_settings(self):

@@ -9,8 +9,22 @@ from numpy import linspace, full
 from pandas import read_csv, DataFrame
 
 
-def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,
-                   ak=1.0, ath=1.0, temp=20.0, theta=None, conc=None, sconc=None):
+def create_profile(
+    top=0,
+    bot=-1,
+    dx=0.1,
+    h=0,
+    lay=1,
+    mat=1,
+    beta=0,
+    ah=1.0,
+    ak=1.0,
+    ath=1.0,
+    temp=20.0,
+    theta=None,
+    conc=None,
+    sconc=None,
+):
     """
     Method to create a DataFrame describing the soil profile.
 
@@ -57,18 +71,39 @@ def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,
 
     # if the initial condition is given in water content
     if theta is not None:
-        cols = ["x", "theta", "Mat", "Lay", "Beta", "Axz", "Bxz", "Dxz", "Temp",
-            "Conc", "SConc"]
+        cols = [
+            "x",
+            "theta",
+            "Mat",
+            "Lay",
+            "Beta",
+            "Axz",
+            "Bxz",
+            "Dxz",
+            "Temp",
+            "Conc",
+            "SConc",
+        ]
         variables = [theta, mat, lay, beta, ah, ak, ath, temp, conc, sconc]
     # if the initial condition is given in pressure head
     else:
-        cols = ["x", "h", "Mat", "Lay", "Beta", "Axz", "Bxz", "Dxz", "Temp",
-            "Conc", "SConc"]
+        cols = [
+            "x",
+            "h",
+            "Mat",
+            "Lay",
+            "Beta",
+            "Axz",
+            "Bxz",
+            "Dxz",
+            "Temp",
+            "Conc",
+            "SConc",
+        ]
         variables = [h, mat, lay, beta, ah, ak, ath, temp, conc, sconc]
-        
+
     data = DataFrame(columns=cols)
     data["x"] = grid
-    
 
     if len(bot) == 1:
         data.loc[:, cols[1:]] = full((len(grid), len(cols[1:])), variables)
@@ -79,7 +114,7 @@ def create_profile(top=0, bot=-1, dx=0.1, h=0, lay=1, mat=1, beta=0, ah=1.0,
                 variables[i] = [arg] * len(bot)
 
         for i, b in enumerate(bot):
-            layer = ((data.loc[:, "x"] <= top) & (data.loc[:, "x"] > (b - dx)))
+            layer = (data.loc[:, "x"] <= top) & (data.loc[:, "x"] > (b - dx))
             data.loc[layer, cols[1:]] = [var[i] for var in variables]
             top = b
     data = data.fillna("")
@@ -119,11 +154,29 @@ def profile_from_file(fname="PROFILE.DAT", ws=None):
                 break
         file.seek(0)  # Go back to start of file
         # Read the profile data into a Pandas DataFrame
-        data = read_csv(file, skiprows=start, skipfooter=2, index_col=0,
-                        skipinitialspace=True, usecols=range(0, 11),
-                        sep=r'\s+', engine='python', names=None)
-        data.columns = ["x", "h", "Mat", "Lay", "Beta", "Axz", "Bxz", "Dxz",
-                        "Temp", "Conc"]
+        data = read_csv(
+            file,
+            skiprows=start,
+            skipfooter=2,
+            index_col=0,
+            skipinitialspace=True,
+            usecols=range(0, 11),
+            sep=r"\s+",
+            engine="python",
+            names=None,
+        )
+        data.columns = [
+            "x",
+            "h",
+            "Mat",
+            "Lay",
+            "Beta",
+            "Axz",
+            "Bxz",
+            "Dxz",
+            "Temp",
+            "Conc",
+        ]
         data.index.name = None
 
     return data

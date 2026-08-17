@@ -14,11 +14,12 @@ or
 
 """
 
-from pandas import read_csv, DataFrame, to_numeric, concat
-from numpy import floor, arange
-from io import StringIO, BytesIO
-import linecache
 import os
+from io import BytesIO
+
+from numpy import arange
+from pandas import DataFrame, read_csv, to_numeric
+
 from .decorators import check_file_path
 
 
@@ -65,7 +66,7 @@ def read_profile(path="PROFILE.OUT"):
             skipfooter=1,
             index_col=cols[0],
             usecols=cols[:-5],
-            delim_whitespace=True,
+            delimiter=r"\s+",
             engine="python",
         )
         data = data.rename(columns=dict(zip(cols[1:-5], cols[4:]))).reindex(
@@ -136,7 +137,7 @@ def read_i_check(path="I_CHECK.OUT"):
                 skiprows=start + 1,
                 nrows=nrows,
                 skipinitialspace=True,
-                delim_whitespace=True,
+                delimiter=r"\s+",
                 names=names,
                 dtype=float,
             )
@@ -245,12 +246,17 @@ def _read_file(
     """
     with open(path) as file:
         # Find the starting line
+        e = None
         for i, line in enumerate(file.readlines()):
             if start in line:
                 s = i
             elif end in line:
                 e = i
                 break
+
+        if e is None:
+            e = i
+
         file.seek(0)  # Go back to start of file
 
         # Read data into a Pandas DataFrame
@@ -261,11 +267,11 @@ def _read_file(
             usecols=usecols,
             index_col=idx_col,
             skipinitialspace=True,
-            delim_whitespace=True,
+            delimiter=r"\s+",
         )
 
         if remove_first_row:
-            data = data.drop(index=data.index[0]).apply(to_numeric, errors="ignore")
+            data = data.drop(index=data.index[0]).apply(to_numeric)
         else:
             data = data.apply(to_numeric, errors="coerce")
 
@@ -296,6 +302,7 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
     """
     data = {}
     with open(path) as file:
+        end = None
         # Find the starting times to read the information
         for i, line in enumerate(file.readlines()):
             if "time" in line:
@@ -304,8 +311,18 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
                 end = i
                 break
 
-    df1 = read_csv(path, skiprows=start, index_col=0, nrows=end - start - 1,
-                   skipinitialspace=True, sep=r'\s+', engine="c", delim_whitespace=True,)
+    if end is None:
+        end = i
+
+    df1 = read_csv(
+        path,
+        skiprows=start,
+        index_col=0,
+        nrows=end - start - 1,
+        skipinitialspace=True,
+        sep=r"\s+",
+        engine="c",
+    )
     if cols is None:
         cols = ["h", "theta", "Temp"]
     if conc:
@@ -383,8 +400,7 @@ def read_nod_inf(path="NOD_INF.OUT"):
             data = fo.read(e - h)
             d[time] = read_csv(
                 BytesIO(data),
-                delim_whitespace=True,
-                sep=r'\s+',
+                sep=r"\s+",
                 skiprows=[1],
                 index_col=0,
             ).astype(float)

@@ -84,7 +84,7 @@ class Plots:
         if vmax is None:
             vmax = col.max()
         coln = (col - vmin) / (vmax - vmin)
-        colors = plt.cm.get_cmap(cmap, len(col))(coln.values)
+        colors = plt.get_cmap(cmap, len(col))(coln.values)
 
         if show_grid:
             edgecolor = (0.169, 0.169, 0.169, 0.2)
@@ -200,7 +200,6 @@ class Plots:
     def water_flow(
         self, data="Potential Surface Flux", figsize=(6, 3), ax=None, **kwargs
     ):
-
         """
         Method to plot the water flow information.
 

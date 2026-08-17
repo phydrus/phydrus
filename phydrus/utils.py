@@ -1,11 +1,9 @@
-"""The utils module contains utility funtions for Phydrus.
-
-"""
+"""The utils module contains utility funtions for Phydrus."""
 
 import logging
 from logging import handlers
-from numpy import exp, maximum, argmin, array, signbit, where, diff
 
+from numpy import diff, exp, maximum, signbit, where
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +25,13 @@ def show_versions():
     Matplotlib version: 3.3.2
 
     """
-    from phydrus import __version__ as ps_version
-    from pandas import __version__ as pd_version
-    from numpy import __version__ as np_version
-    from matplotlib import __version__ as mpl_version
     from sys import version as os_version
+
+    from matplotlib import __version__ as mpl_version
+    from numpy import __version__ as np_version
+    from pandas import __version__ as pd_version
+
+    from phydrus import __version__ as ps_version
 
     msg = (
         f"Python version: {os_version}\n"
@@ -247,7 +247,5 @@ def get_gwt(pressure_head, depth):
             idx = idx[0]
         gwt = (0 - pressure_head[idx + 1]) * (depth[idx] - depth[idx + 1]) / (
             pressure_head[idx] - pressure_head[idx + 1]
-        ) + depth[
-            idx + 1
-        ]  # linearly interpolate
+        ) + depth[idx + 1]  # linearly interpolate
     return gwt
