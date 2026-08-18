@@ -17,8 +17,15 @@ exe = os.path.join(os.getcwd(), "hydrus")
 # Create the basic model
 desc = "Root uptake with meteorological data"
 
-ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
-              mass_units="mmol", time_unit="days", length_unit="cm")
+ml = ps.Model(
+    exe_name=exe,
+    ws_name=ws,
+    name="model",
+    description=desc,
+    mass_units="mmol",
+    time_unit="days",
+    length_unit="cm",
+)
 
 # Time info
 times = ml.add_time_info(tmax=213, print_times=True)
@@ -47,4 +54,4 @@ ml.write_input()
 ml.simulate()
 
 df = ml.read_tlevel()
-df['vBot'].plot()
+df["vBot"].plot()

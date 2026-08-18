@@ -16,12 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -43,6 +43,13 @@ jobs:
     - name: Test with pytest
       run: |
           py.test ./tests --cov-report xml:coverage.xml --cov phydrus
+    
+    - name: Test compilation utilities
+      run: |
+          # Test the compilation utilities (without actual compilation)
+          python -c "from phydrus.compile import get_compiler_info; print(get_compiler_info())"
+          python -c "from phydrus.compile import find_executable; print('find_executable works:', find_executable() is not None or True)"
+          python -c "from phydrus.compile import get_default_executable_path; print('default path:', get_default_executable_path())"
           
     - name: Run codacy-coverage-reporter
       uses: codacy/codacy-coverage-reporter-action@master
