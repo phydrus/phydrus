@@ -40,6 +40,3 @@ Phydrus is a community effort and help is always welcome. If you have found a bu
 ## Citing Phydrus
 If you use phydrus for one of your projects, we ask that you cite the code as follows:
 *Collenteur, R.A., Brunetti, G., and M. Vremec (2019) Phydrus: Python implementation of the HYDRUS-1D unsaturated zone model. Version X.X.X* 
-
-## 17 March 2026 Revisions
-In gain dual permeability functionality, the selector input code was altered to include qTop, and van Genuchten parameters were split onto two lines. Read_tlevel_out() was modified to recognize dual permeability headings. Root growth methods 0 and 1 were also functionalized: for root method 1, the selector.in code was modified to include root depth for each day; for root method 0, a column for 'RootDepth' was added to the atmosph.in code, and tTop, tBot, Ampl, cTop, and cBot were removed. Finally, read.py, profile.py, and plot.py were edited to avoid FutureWarnings and type incompatibilities.
