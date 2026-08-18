@@ -1,5 +1,4 @@
-"""The read module contains methods that can be used to read in- and output
-files.
+"""The read module contains methods that can be used to read in- and output files.
 
 The methods can be used stand-alone but are also available from the
 Model object. All the methods return the data as Pandas DataFrames.
@@ -321,8 +320,6 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
     if conc:
         cols.append("Conc")
         cols.append("Temp")
-        if lFlux == False:
-            cols.remove("Flux")
 
     for i, node in enumerate(nodes):
         if i > 0:

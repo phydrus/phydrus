@@ -180,7 +180,7 @@ class Model:
 
         """
         from .compile import ensure_executable
-        
+
         # Store the hydrus executable and the project workspace
         if not os.path.exists(exe_name):
             if compile_if_missing:
@@ -203,9 +203,9 @@ class Model:
         """
         self.profile = profile
 
-        if self.water_flow['iModel'] == 9:
+        if self.water_flow["iModel"] == 9:
             if qtop != None:
-                self.qtop= qtop
+                self.qtop = qtop
 
     def add_material(self, material):
         """
@@ -563,24 +563,64 @@ class Model:
         ctop = 0.0
         cbot = 0.0
 
-        if self.water_flow['iModel'] != 9:
+        if self.water_flow["iModel"] != 9:
             if self.root_growth:
-                if self.root_growth['iRootIn'] == 0:
-                    data = {"tAtm": tatm, "Prec": prec, "rSoil": rsoil, "rRoot": rroot,
-                            "hCritA": hcrita, "rB": rb, "hB": hb, "ht": ht, 
-                            "RootDepth": self.root_growth["RootDepth"]}
-                elif self.root_growth['iRootIn'] != 0:
-                    data = {"tAtm": tatm, "Prec": prec, "rSoil": rsoil, "rRoot": rroot,
-                            "hCritA": hcrita, "rB": rb, "hB": hb, "ht": ht, "tTop": ttop,
-                            "tBot": tbot, "Ampl": ampl, "cTop": ctop, "cBot": cbot}
+                if self.root_growth["iRootIn"] == 0:
+                    data = {
+                        "tAtm": tatm,
+                        "Prec": prec,
+                        "rSoil": rsoil,
+                        "rRoot": rroot,
+                        "hCritA": hcrita,
+                        "rB": rb,
+                        "hB": hb,
+                        "ht": ht,
+                        "RootDepth": self.root_growth["RootDepth"],
+                    }
+                elif self.root_growth["iRootIn"] != 0:
+                    data = {
+                        "tAtm": tatm,
+                        "Prec": prec,
+                        "rSoil": rsoil,
+                        "rRoot": rroot,
+                        "hCritA": hcrita,
+                        "rB": rb,
+                        "hB": hb,
+                        "ht": ht,
+                        "tTop": ttop,
+                        "tBot": tbot,
+                        "Ampl": ampl,
+                        "cTop": ctop,
+                        "cBot": cbot,
+                    }
             else:
-                data = {"tAtm": tatm, "Prec": prec, "rSoil": rsoil, "rRoot": rroot,
-                            "hCritA": hcrita, "rB": rb, "hB": hb, "ht": ht, "tTop": ttop,
-                            "tBot": tbot, "Ampl": ampl, "cTop": ctop, "cBot": cbot}
+                data = {
+                    "tAtm": tatm,
+                    "Prec": prec,
+                    "rSoil": rsoil,
+                    "rRoot": rroot,
+                    "hCritA": hcrita,
+                    "rB": rb,
+                    "hB": hb,
+                    "ht": ht,
+                    "tTop": ttop,
+                    "tBot": tbot,
+                    "Ampl": ampl,
+                    "cTop": ctop,
+                    "cBot": cbot,
+                }
 
-        if self.water_flow['iModel'] == 9:
-            data = {"tAtm": tatm, "Prec": prec, "rSoil": rsoil, "rRoot": rroot,
-                "hCritA": hcrita, "rB": rb, "hB": hb, "ht": ht}
+        if self.water_flow["iModel"] == 9:
+            data = {
+                "tAtm": tatm,
+                "Prec": prec,
+                "rSoil": rsoil,
+                "rRoot": rroot,
+                "hCritA": hcrita,
+                "rB": rb,
+                "hB": hb,
+                "ht": ht,
+            }
 
         self.atmosphere = DataFrame(data=data, index=atmosphere.index, dtype=float)
         self.atmosphere.update(atmosphere)
@@ -1319,11 +1359,11 @@ class Model:
             raise
 
         # Write the material parameters
-        if(len(self.materials["water"].columns) < 17):
+        if len(self.materials["water"].columns) < 17:
             lines.append(self.materials["water"].to_string(index=False))
             lines.append("\n")
-        
-        if(len(self.materials["water"].columns) == 17):
+
+        if len(self.materials["water"].columns) == 17:
             data1 = self.materials["water"].iloc[:, 0:6]
             data2 = self.materials["water"].iloc[:, 6:17]
 
@@ -1370,25 +1410,25 @@ class Model:
             lines.append(string.format("D: ROOT GROWTH INFORMATION ", "*", "<", 72))
             lines.append(f"iRootDepthEntry\n{self.root_growth['iRootIn']}\n")
 
-            if self.root_growth['iRootIn'] == 2:
+            if self.root_growth["iRootIn"] == 2:
                 d = self.root_growth.copy()
                 d.pop("iRootIn")
                 d["\n"] = "\n"
                 lines.append("    ".join(d.keys()))
                 lines.append("    ".join(f"{p}" for p in d.values()))
 
-            if self.root_growth['iRootIn'] == 1:
+            if self.root_growth["iRootIn"] == 1:
                 lines.append("nGrowth\n")
                 lines.append(f"{self.root_growth['nGrowth']}\n")
 
-                width = len(str(self.root_growth['nGrowth']))
+                width = len(str(self.root_growth["nGrowth"]))
 
                 lines.append(str("Time RootDepth\n"))
 
-                for i in list(range(self.root_growth['nGrowth'])):
-                    lines.append(str(self.root_growth['tGrowth'][i]).ljust(width))
+                for i in list(range(self.root_growth["nGrowth"])):
+                    lines.append(str(self.root_growth["tGrowth"][i]).ljust(width))
                     lines.append(" ")
-                    lines.append(str(self.root_growth['RootDepth'][i]))
+                    lines.append(str(self.root_growth["RootDepth"][i]))
                     lines.append("\n")
 
         # Write Block E - Heat transport information
@@ -1546,7 +1586,7 @@ class Model:
         # Print some values
         vars5 = ["lDailyVar", "lSinusVar", "lLai", "lBCCycles", "lInterc", "\n"]
 
-        if self.water_flow['iModel'] != 9:
+        if self.water_flow["iModel"] != 9:
             lines.append(" ".join(vars5))
             vals = []
             for var in vars5[:-1]:
@@ -1560,9 +1600,20 @@ class Model:
                         vals.append(str(val))
             lines.append(" ".join(vals))
 
-        if self.water_flow['iModel'] == 9:
-            varsdp = ["DailyVar", "SinusVar", "lLay", "lBCCycles", "lInterc", "lDummy", "lDummy", "lDummy", "lDummy", "lDummy",
-                 "\n"]
+        if self.water_flow["iModel"] == 9:
+            varsdp = [
+                "DailyVar",
+                "SinusVar",
+                "lLay",
+                "lBCCycles",
+                "lInterc",
+                "lDummy",
+                "lDummy",
+                "lDummy",
+                "lDummy",
+                "lDummy",
+                "\n",
+            ]
             valsdp = ["f", "f", "f", "f", "f", "f", "f", "f", "f", "f"]
             lines.append(" ".join(varsdp))
             lines.append(" ".join(valsdp))
@@ -1687,7 +1738,9 @@ class Model:
             conc = True
         if nodes is None:
             nodes = self.obs_nodes
-        data = read_obs_node(path=path, nodes=nodes, conc=conc, cols=cols, lFlux=self.basic_info['lFlux'])
+        data = read_obs_node(
+            path=path, nodes=nodes, conc=conc, cols=cols, lFlux=self.basic_info["lFlux"]
+        )
         return data
 
     def read_i_check(self, fname="I_CHECK.OUT"):
@@ -1725,11 +1778,32 @@ class Model:
                 usecols.append("SnowLayer")
 
             if self.water_flow["iModel"] == 9:
-                usecols = ["Time", "rTopT", "rRootT", "vTopT", "vRootT", "vBotT",
-                        "sum(rTopT)", "sum(rRoot)", "sum(vTopT)", "sum(vRoot)",
-                        "sum(vBotT)", "hTop", "hRoot", "hBot", "vTopF", "sum(vTopF)",
-                        "vTopM", "sum(vTopM)", "vFrac", "sum(vFrac)", "vBotF", "sum(vBotF)",
-                        "vBotM", "sum(vBotM)",]
+                usecols = [
+                    "Time",
+                    "rTopT",
+                    "rRootT",
+                    "vTopT",
+                    "vRootT",
+                    "vBotT",
+                    "sum(rTopT)",
+                    "sum(rRoot)",
+                    "sum(vTopT)",
+                    "sum(vRoot)",
+                    "sum(vBotT)",
+                    "hTop",
+                    "hRoot",
+                    "hBot",
+                    "vTopF",
+                    "sum(vTopF)",
+                    "vTopM",
+                    "sum(vTopM)",
+                    "vFrac",
+                    "sum(vFrac)",
+                    "vBotF",
+                    "sum(vBotF)",
+                    "vBotM",
+                    "sum(vBotM)",
+                ]
 
         data = read_tlevel(path=path, usecols=usecols)
 
@@ -1777,12 +1851,39 @@ class Model:
             3: ["thr", "ths", "Alfa", "n", "Ks", "l"],
             4: ["thr", "ths", "Alfa", "n", "Ks", "l"],
             5: ["thr", "ths", "Alfa", "n", "Ks", "l", "w", "Alfa2", "n2"],
-            6: ["thr", "ths", "Alfa", "n", "Ks", "l", "thr_im", "ths_im",
-                "omega"],
-            7: ["thr", "ths", "Alfa", "n", "Ks", "l", "thr_im", "ths_im",
-                "Alfa_im", "n_im", "Ka"],
-            9: ["thr", "ths", "Alfa", "n", "Ks", "l", "thrFr", "thsFr", 
-                "AlfaFr","nFr", "KsFr", "lFr", "W", "beta", "gamma", "a", "Ka"]
+            6: ["thr", "ths", "Alfa", "n", "Ks", "l", "thr_im", "ths_im", "omega"],
+            7: [
+                "thr",
+                "ths",
+                "Alfa",
+                "n",
+                "Ks",
+                "l",
+                "thr_im",
+                "ths_im",
+                "Alfa_im",
+                "n_im",
+                "Ka",
+            ],
+            9: [
+                "thr",
+                "ths",
+                "Alfa",
+                "n",
+                "Ks",
+                "l",
+                "thrFr",
+                "thsFr",
+                "AlfaFr",
+                "nFr",
+                "KsFr",
+                "lFr",
+                "W",
+                "beta",
+                "gamma",
+                "a",
+                "Ka",
+            ],
         }
 
         level2 = models[self.water_flow["iModel"]]

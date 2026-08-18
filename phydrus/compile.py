@@ -22,11 +22,13 @@ logger = getLogger(__name__)
 
 class CompilationError(Exception):
     """Exception raised when compilation fails."""
+
     pass
 
 
 class DownloadError(Exception):
     """Exception raised when downloading source code fails."""
+
     pass
 
 
@@ -197,7 +199,7 @@ def compile_with_make(source_dir, target_exe=None, make_command="make"):
     """
     # Store original target if provided
     original_target_exe = target_exe
-    
+
     if target_exe is None:
         if platform.system() == "Windows":
             target_exe = os.path.join(source_dir, "hydrus.exe")
@@ -216,10 +218,7 @@ def compile_with_make(source_dir, target_exe=None, make_command="make"):
 
         # Run make
         result = subprocess.run(
-            [make_command],
-            capture_output=True,
-            text=True,
-            check=False
+            [make_command], capture_output=True, text=True, check=False
         )
 
         if result.returncode != 0:
@@ -242,13 +241,16 @@ def compile_with_make(source_dir, target_exe=None, make_command="make"):
                 if os.path.exists(alt_path):
                     found_exe = alt_path
                     break
-            
+
             if found_exe is None:
                 raise CompilationError(f"Executable not found in {source_dir}")
-            
+
             # If a custom target was provided and it differs from where we found it,
             # move the executable to the desired location
-            if original_target_exe is not None and os.path.abspath(original_target_exe) != found_exe:
+            if (
+                original_target_exe is not None
+                and os.path.abspath(original_target_exe) != found_exe
+            ):
                 # Ensure target directory exists
                 target_dir = os.path.dirname(target_exe)
                 if target_dir and not os.path.exists(target_dir):
