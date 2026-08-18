@@ -1,5 +1,17 @@
 from logging import getLogger
 
+from .compile import (
+    CompilationError,
+    DownloadError,
+    compile_hydrus,
+    compile_with_make,
+    compile_with_pymake,
+    download_source_code,
+    ensure_executable,
+    find_executable,
+    get_compiler_info,
+    get_default_executable_path,
+)
 from .model import Model
 from .profile import create_profile
 from .read import (

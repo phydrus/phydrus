@@ -152,7 +152,7 @@ class Model:
         else:
             return len(self.profile.loc[:, "Lay"].unique())
 
-    def set_executable(self, exe_name):
+    def set_executable(self, exe_name, compile_if_missing=False):
         """
         Method to set the path to the Hydrus-1D executable.
 
@@ -160,25 +160,39 @@ class Model:
         ----------
         exe_name: str
             String with the path to the Hydrus-1D executable.
+        compile_if_missing: bool, optional
+            If True and the executable is not found, attempt to compile it.
+            Defaults to False.
 
         Examples
         --------
         >>> exe = os.path.join(os.getcwd(), 'hydrus.exe')
         >>> ml.set_executable(exe)
 
+        >>> # Automatically compile if executable is missing
+        >>> ml.set_executable(exe, compile_if_missing=True)
+
         Notes
         -----
         This method may also be used to re-set the path to the executable.
+        If compile_if_missing is True, it will use the compile_hydrus function
+        to attempt to compile the executable from source code.
 
         """
+        from .compile import ensure_executable
+        
         # Store the hydrus executable and the project workspace
         if not os.path.exists(exe_name):
-            self.logger.error(
-                "Path to the Hydrus-1D executable seems "
-                "incorrect, please check the path to the "
-                "executable."
-            )
-            raise FileNotFoundError
+            if compile_if_missing:
+                self.logger.info("Executable not found, attempting to compile...")
+                exe_name = ensure_executable(exe_name, compile_if_missing=True)
+            else:
+                self.logger.error(
+                    "Path to the Hydrus-1D executable seems "
+                    "incorrect, please check the path to the "
+                    "executable."
+                )
+                raise FileNotFoundError
         else:
             self.exe_name = exe_name
 
