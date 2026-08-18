@@ -1,0 +1,110 @@
+[build-system]
+requires = ["setuptools>=64.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phydrus"
+dynamic = ["version"]
+description = "Python implementation of the HYDRUS-1D model"
+readme = "README.md"
+license = {text = "GNU General Public License v3.0"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Raoul Collenteur", email = "raoul.collenteur@hydroconsult.ch"},
+    {name = "Matevz Vremec"},
+]
+
+keywords = ["hydrology"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Other Audience",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+    'Programming Language :: Python :: 3 :: Only',
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Hydrology",
+]
+dependencies = [
+    "numpy>=2.0.0",
+    "matplotlib>=3.9.0",
+    "pandas>=2.2.0,<4.0",
+    "scipy>=1.16",
+]
+
+[project.optional-dependencies]
+ruffing = ["ruff"]
+ci = [
+    "pastas[pytesting,solvers,interactive,caching,mpmath]",
+    "jupyter",
+    "coverage",
+    "corner",
+    "tqdm",
+]
+rtd = [
+    "pastas[solvers]",
+    "Ipython",
+    "ipykernel",
+    "pydata-sphinx-theme",
+    "sphinx",
+    "sphinxcontrib-bibtex",
+    "requests",
+    "numpydoc",
+    "sphinx-design",
+    "myst_nb",
+    "sphinx-autoapi",
+]
+
+[project.urls]
+Homepage = "https://github.com/phydrus/phydrus"
+Source = "https://github.com/phydrus/phydrus"
+Tracker = "https://github.com/phydrus/phydrus/issues"
+Help = "https://github.com/phydrus/phydrus/discussions"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools.package-data]
+phydrus = ["source/*"]
+
+[tool.ruff]
+extend-include = ["*.ipynb"]
+show-fixes = true
+fix = true
+
+[tool.ruff.lint]
+extend-select = ["I", "D"]
+pydocstyle.convention = "numpy"
+
+[tool.tox.env.ruff]
+description = "run ruff checks"
+extras = ["ruffing"]
+commands = [
+    [
+        "ruff",
+        "check",
+        "--extend-select",
+        "I",
+    ],
+    [
+        "ruff",
+        "format",
+        "--check",
+    ],
+]
+
+[tool.tox.env.ruff_preview]
+description = "run ruff checks preview mode"
+extras = ["ruffing"]
+commands = [
+    [
+        "ruff",
+        "check",
+        "--extend-select",
+        "I",
+        "--preview",
+        "--exit-zero",
+    ],
+]

@@ -23,3 +23,4 @@ phydrus.egg-info
 **/*.ipynb_checkpoints/
 
 .vscode/*
+source_code/
