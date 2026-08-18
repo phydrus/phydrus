@@ -53,7 +53,7 @@ def read_mesh_txt(path="MESHTRIA.TXT"):
         for _ in range(3):
             line = fo.readline()
 
-        tri = np.empty([nCells, 3])
+        tri = np.empty((nCells, 3), dtype=np.int64)
         for i in range(nCells):
             line = fo.readline().split()
             tri[i, 0] = int(line[1])
