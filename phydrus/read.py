@@ -317,9 +317,12 @@ def read_obs_node(path="OBS_NODE.OUT", nodes=None, conc=False, cols=None):
         engine="c",
     )
     if cols is None:
-        cols = ["h", "theta", "Temp"]
+        cols = ["h", "theta", "Flux"]
     if conc:
         cols.append("Conc")
+        cols.append("Temp")
+        if lFlux == False:
+            cols.remove("Flux")
 
     for i, node in enumerate(nodes):
         if i > 0:
