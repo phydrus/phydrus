@@ -360,7 +360,7 @@ def read_nod_inf(path="NOD_INF.OUT"):
     end_count = []
     time_count = []
     line_count = None
-    with open(path, "r+") as fo:
+    with open(path, "r") as fo:
         line = fo.readline()
         while line:
             if "Time:" in line[0:7]:
